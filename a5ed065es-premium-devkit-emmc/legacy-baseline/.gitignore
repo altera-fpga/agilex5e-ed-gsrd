@@ -1,0 +1,38 @@
+# Standard Quartus generated directories
+/dni/
+/output_files/
+/qdb/
+/tmp-clearbox/
+
+# IP generated subdirectories
+/hps_subsys/hps_subsys/
+/hps_subsys/ip/hps_subsys/agilex_hps/
+/hps_subsys/ip/hps_subsys/f2sdram_adapter/
+/hps_subsys/ip/hps_subsys/gts_inst/
+/hps_subsys/ip/qsys_top/emif_hps/
+/hps_subsys/ip/qsys_top/emif_io96b_hps/
+/ip/qsys_top/clk_100/
+/ip/qsys_top/ext_hps_f2sdram_master/
+/ip/qsys_top/ocm/
+/ip/qsys_top/rst_in/
+/ip/qsys_top/altera_ace5lite_cache_coherency_translator_0/
+/ip/qsys_top/gts_inst/
+/jtag_subsys/ip/jtag_subsys/hps_m/
+/ip/qsys_top/user_rst_clkgate_0/
+/jtag_subsys/ip/jtag_subsys/fpga_m/
+/jtag_subsys/ip/jtag_subsys/hps_f2sdram/
+/jtag_subsys/ip/jtag_subsys/jtag_clk/
+/jtag_subsys/ip/jtag_subsys/jtag_rst_in/
+/jtag_subsys/jtag_subsys/
+/peripheral_subsys/ip/peripheral_subsys/button_pio/
+/peripheral_subsys/ip/peripheral_subsys/dipsw_pio/
+/peripheral_subsys/ip/peripheral_subsys/led_pio/
+/peripheral_subsys/ip/peripheral_subsys/pb_cpu_0/
+/peripheral_subsys/ip/peripheral_subsys/periph_clk/
+/peripheral_subsys/ip/peripheral_subsys/periph_rst_in/
+/peripheral_subsys/ip/peripheral_subsys/sysid/
+/peripheral_subsys/peripheral_subsys/
+/qsys_top/
+
+# Simscript directories
+/sim_setup_legacy_baseline/
