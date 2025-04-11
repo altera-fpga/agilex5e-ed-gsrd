@@ -1,0 +1,72 @@
+[tool.black]
+line-length = 88
+
+# target black on specific folders, if needed
+# include = '''
+#   (
+#     ^\/build\/\w*\.pyi?$
+#     |^\/scripts\/.*\.pyi?$
+#   )
+# '''
+# 'extend-exclude' excludes files or directories in addition to the defaults
+
+exclude = '''
+    /
+    (\.direnv|\.eggs|\.git|\.hg
+    |\.mypy_cache|\.nox|\.tox|\.venv|venv|\.svn
+    |__pypackages__|googletest|linux64)
+    /
+'''
+
+# extend-exclude = '''
+# A regex preceded with ^/ will apply only to files and directories
+# in the root of the project.
+# (
+#  ^/_tools
+#  | ^/external_tests
+# )
+# '''
+
+
+[tool.flake8]
+
+count = true
+show-source = true
+statistics = true
+
+# changes required to make flake8 compatible with black
+# https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
+# max-length=88, ignore rule E203
+max-line-length = 88
+
+# ignores that are applied globally
+extend-ignore = [
+# W503: Line break occurred before a binary operator, soon to be updated to recommend the opposite style, so current style check is wrong
+  "W503",
+# E203: Colons should not have any space before them.
+#	  conflicts with black, PEP8 says black is correct and flake8 is wrong
+#	  https://github.com/psf/black/issues/1437
+  "E203",
+]
+
+# F error codes (PyFlakes): https://flake8.pycqa.org/en/latest/user/error-codes.html
+# E erorr codes (PyCodeStyle): https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes
+# W rules (Flake8): https://www.flake8rules.com/
+
+# global ignore patterns
+extend-exclude = [
+]
+
+
+[tool.whitespace_check]
+# List of glob expressions to scan
+#include = [
+#  "some_file_re"
+#]
+
+# List of regexp strings that are used to ignore files and directories during
+exclude = [
+  "\\.pyc$",
+  "\\.ip$",
+  "\\.qsys$"
+]
