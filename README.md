@@ -42,16 +42,7 @@ This is only applicable if the feature is enabled.
 ## Tested Platform for the GHRD Build Flow
 * SUSE Linux Enterprise Server 12 SP5
 
-## Setup (Altera)
-
-Source environment by running:
-
-```bash
-source .github/env.sh
-
-```
-
-## Setup (External)
+## Setup
 
 Several tools are required to be in the path.
 
