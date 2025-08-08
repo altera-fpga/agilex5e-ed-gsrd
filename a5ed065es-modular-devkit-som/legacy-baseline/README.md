@@ -18,7 +18,7 @@ This reference design demonstrates the following system integration between Hard
   - Enable dual core Arm Cortex-A55 processor
   - HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I2C, JTAG, UART, and GPIO)  - HPS Clock and Reset
   - HPS FPGA Bridge and Interrupt
-- HPS EMIF configuration
+- HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
 - System integration with FPGA IPs
   - Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
   - Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
@@ -27,13 +27,14 @@ This reference design demonstrates the following system integration between Hard
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.1
+- **Quartus Version**: 25.1.1
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
 - **Category**: Golden Hardware Reference Design (GHRD)
 - **Source**: Quartus Prime Pro
 - **URL**: https://www.github.com/altera-fpga/agilex5e-ed-gsrd
 - **Design Package**: a5ed065es-modular-devkit-som-legacy-baseline.zip
+- **Documentations**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/
 
 ## GHRD Overview
 ![GHRD_overview](/images/agilex5_ghrd_overview.svg)

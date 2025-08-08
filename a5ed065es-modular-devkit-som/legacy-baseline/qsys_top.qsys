@@ -14,8 +14,8 @@ refer to the applicable agreement for further details, at
 https://fpgasoftware.intel.com/eula.-->
 <ipxact:design xmlns:altera="http://www.altera.com/XMLSchema/IPXact2014/extensions" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
   <ipxact:vendor>Altera Corporation</ipxact:vendor>
-  <ipxact:library>qsys_top</ipxact:library>
-  <ipxact:name>qsys_top</ipxact:name>
+  <ipxact:library>$${FILENAME}</ipxact:library>
+  <ipxact:name>$${FILENAME}</ipxact:name>
   <ipxact:version>1.0</ipxact:version>
   <ipxact:componentInstances></ipxact:componentInstances>
   <ipxact:vendorExtensions>
@@ -348,12 +348,12 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;boundary&gt;
         &lt;interfaces&gt;
             &lt;interface&gt;
-                &lt;name&gt;clock&lt;/name&gt;
+                &lt;name&gt;clk&lt;/name&gt;
                 &lt;type&gt;clock&lt;/type&gt;
                 &lt;isStart&gt;false&lt;/isStart&gt;
                 &lt;ports&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi_clock&lt;/name&gt;
+                        &lt;name&gt;clk&lt;/name&gt;
                         &lt;role&gt;clk&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -387,7 +387,7 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;isStart&gt;false&lt;/isStart&gt;
                 &lt;ports&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi_reset&lt;/name&gt;
+                        &lt;name&gt;reset&lt;/name&gt;
                         &lt;role&gt;reset&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -403,21 +403,22 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;parameterValueMap&gt;
                         &lt;entry&gt;
                             &lt;key&gt;associatedClock&lt;/key&gt;
+                            &lt;value&gt;clk&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;synchronousEdges&lt;/key&gt;
-                            &lt;value&gt;NONE&lt;/value&gt;
+                            &lt;value&gt;DEASSERT&lt;/value&gt;
                         &lt;/entry&gt;
                     &lt;/parameterValueMap&gt;
                 &lt;/parameters&gt;
             &lt;/interface&gt;
             &lt;interface&gt;
-                &lt;name&gt;m0&lt;/name&gt;
+                &lt;name&gt;m_ace5lite&lt;/name&gt;
                 &lt;type&gt;ace5lite&lt;/type&gt;
                 &lt;isStart&gt;true&lt;/isStart&gt;
                 &lt;ports&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awid&lt;/name&gt;
                         &lt;role&gt;awid&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;5&lt;/width&gt;
@@ -426,7 +427,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awaddr&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awaddr&lt;/name&gt;
                         &lt;role&gt;awaddr&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;32&lt;/width&gt;
@@ -435,7 +436,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awdomain&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awdomain&lt;/name&gt;
                         &lt;role&gt;awdomain&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -444,7 +445,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awsnoop&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awsnoop&lt;/name&gt;
                         &lt;role&gt;awsnoop&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -453,7 +454,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awlen&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awlen&lt;/name&gt;
                         &lt;role&gt;awlen&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -462,7 +463,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awsize&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awsize&lt;/name&gt;
                         &lt;role&gt;awsize&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;3&lt;/width&gt;
@@ -471,7 +472,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arsize&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arsize&lt;/name&gt;
                         &lt;role&gt;arsize&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;3&lt;/width&gt;
@@ -480,7 +481,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awburst&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awburst&lt;/name&gt;
                         &lt;role&gt;awburst&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -489,7 +490,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awlock&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awlock&lt;/name&gt;
                         &lt;role&gt;awlock&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -498,7 +499,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awcache&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awcache&lt;/name&gt;
                         &lt;role&gt;awcache&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -507,7 +508,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awprot&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awprot&lt;/name&gt;
                         &lt;role&gt;awprot&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;3&lt;/width&gt;
@@ -516,7 +517,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awqos&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awqos&lt;/name&gt;
                         &lt;role&gt;awqos&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -525,70 +526,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awvalid&lt;/name&gt;
-                        &lt;role&gt;awvalid&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awready&lt;/name&gt;
-                        &lt;role&gt;awready&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_wdata&lt;/name&gt;
-                        &lt;role&gt;wdata&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;256&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_wstrb&lt;/name&gt;
-                        &lt;role&gt;wstrb&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;32&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_wlast&lt;/name&gt;
-                        &lt;role&gt;wlast&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_wvalid&lt;/name&gt;
-                        &lt;role&gt;wvalid&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_wready&lt;/name&gt;
-                        &lt;role&gt;wready&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awstashnid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awstashnid&lt;/name&gt;
                         &lt;role&gt;awstashnid&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;11&lt;/width&gt;
@@ -597,7 +535,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awstashniden&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awstashniden&lt;/name&gt;
                         &lt;role&gt;awstashniden&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -606,7 +544,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awstashlpid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awstashlpid&lt;/name&gt;
                         &lt;role&gt;awstashlpid&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;5&lt;/width&gt;
@@ -615,7 +553,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awstashlpiden&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awstashlpiden&lt;/name&gt;
                         &lt;role&gt;awstashlpiden&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -624,7 +562,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awatop&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awatop&lt;/name&gt;
                         &lt;role&gt;awatop&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;6&lt;/width&gt;
@@ -633,7 +571,70 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_bid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awvalid&lt;/name&gt;
+                        &lt;role&gt;awvalid&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_awready&lt;/name&gt;
+                        &lt;role&gt;awready&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_wdata&lt;/name&gt;
+                        &lt;role&gt;wdata&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;256&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_wstrb&lt;/name&gt;
+                        &lt;role&gt;wstrb&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;32&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_wlast&lt;/name&gt;
+                        &lt;role&gt;wlast&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_wvalid&lt;/name&gt;
+                        &lt;role&gt;wvalid&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_wready&lt;/name&gt;
+                        &lt;role&gt;wready&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;m_ace5lite_bid&lt;/name&gt;
                         &lt;role&gt;bid&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;5&lt;/width&gt;
@@ -642,7 +643,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_bresp&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_bresp&lt;/name&gt;
                         &lt;role&gt;bresp&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -651,7 +652,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_bvalid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_bvalid&lt;/name&gt;
                         &lt;role&gt;bvalid&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -660,7 +661,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_bready&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_bready&lt;/name&gt;
                         &lt;role&gt;bready&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -669,7 +670,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arid&lt;/name&gt;
                         &lt;role&gt;arid&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;5&lt;/width&gt;
@@ -678,7 +679,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_araddr&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_araddr&lt;/name&gt;
                         &lt;role&gt;araddr&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;32&lt;/width&gt;
@@ -687,7 +688,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_ardomain&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_ardomain&lt;/name&gt;
                         &lt;role&gt;ardomain&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -696,7 +697,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arsnoop&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arsnoop&lt;/name&gt;
                         &lt;role&gt;arsnoop&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -705,7 +706,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arlen&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arlen&lt;/name&gt;
                         &lt;role&gt;arlen&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -714,7 +715,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arburst&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arburst&lt;/name&gt;
                         &lt;role&gt;arburst&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -723,7 +724,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arlock&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arlock&lt;/name&gt;
                         &lt;role&gt;arlock&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -732,7 +733,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arcache&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arcache&lt;/name&gt;
                         &lt;role&gt;arcache&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -741,7 +742,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arprot&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arprot&lt;/name&gt;
                         &lt;role&gt;arprot&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;3&lt;/width&gt;
@@ -750,7 +751,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arqos&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arqos&lt;/name&gt;
                         &lt;role&gt;arqos&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -759,7 +760,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arvalid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arvalid&lt;/name&gt;
                         &lt;role&gt;arvalid&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -768,7 +769,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arready&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arready&lt;/name&gt;
                         &lt;role&gt;arready&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -777,7 +778,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_rid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_rid&lt;/name&gt;
                         &lt;role&gt;rid&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;5&lt;/width&gt;
@@ -786,7 +787,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_rdata&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_rdata&lt;/name&gt;
                         &lt;role&gt;rdata&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;256&lt;/width&gt;
@@ -795,7 +796,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_rresp&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_rresp&lt;/name&gt;
                         &lt;role&gt;rresp&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -804,7 +805,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_rlast&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_rlast&lt;/name&gt;
                         &lt;role&gt;rlast&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -813,7 +814,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_rvalid&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_rvalid&lt;/name&gt;
                         &lt;role&gt;rvalid&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -822,7 +823,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_rready&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_rready&lt;/name&gt;
                         &lt;role&gt;rready&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -831,7 +832,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_aruser&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_aruser&lt;/name&gt;
                         &lt;role&gt;aruser&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -840,7 +841,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awuser&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awuser&lt;/name&gt;
                         &lt;role&gt;awuser&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -849,7 +850,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_arregion&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_arregion&lt;/name&gt;
                         &lt;role&gt;arregion&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -858,7 +859,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_awregion&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_awregion&lt;/name&gt;
                         &lt;role&gt;awregion&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -867,7 +868,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_wuser&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_wuser&lt;/name&gt;
                         &lt;role&gt;wuser&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -876,7 +877,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_buser&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_buser&lt;/name&gt;
                         &lt;role&gt;buser&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -885,7 +886,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;ace5_fpga2hps_ruser&lt;/name&gt;
+                        &lt;name&gt;m_ace5lite_ruser&lt;/name&gt;
                         &lt;role&gt;ruser&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -900,76 +901,16 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;parameters&gt;
                     &lt;parameterValueMap&gt;
                         &lt;entry&gt;
-                            &lt;key&gt;associatedClock&lt;/key&gt;
-                            &lt;value&gt;clock&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;associatedReset&lt;/key&gt;
-                            &lt;value&gt;reset&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;trustzoneAware&lt;/key&gt;
-                            &lt;value&gt;true&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;wakeupSignals&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;uniqueIdSupport&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;poison&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;traceSignals&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;isTranslator&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;maximumOutstandingReads&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;maximumOutstandingWrites&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;maximumOutstandingTransactions&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;dataCheck&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;addressCheck&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;securityAttribute&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;userData&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
                             &lt;key&gt;readIssuingCapability&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
+                            &lt;value&gt;8&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;writeIssuingCapability&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
+                            &lt;value&gt;8&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;combinedIssuingCapability&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
+                            &lt;value&gt;16&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
@@ -992,6 +933,38 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
+                            &lt;key&gt;associatedClock&lt;/key&gt;
+                            &lt;value&gt;clk&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedReset&lt;/key&gt;
+                            &lt;value&gt;reset&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;trustzoneAware&lt;/key&gt;
+                            &lt;value&gt;true&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;wakeupSignals&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;poison&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;traceSignals&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;dataCheck&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;addressCheck&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
                             &lt;key&gt;atomicTransactions&lt;/key&gt;
                             &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
@@ -1001,18 +974,18 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;untranslatedTransactions&lt;/key&gt;
-                            &lt;value&gt;FALSE&lt;/value&gt;
+                            &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
                     &lt;/parameterValueMap&gt;
                 &lt;/parameters&gt;
             &lt;/interface&gt;
             &lt;interface&gt;
-                &lt;name&gt;s0&lt;/name&gt;
+                &lt;name&gt;s_axi&lt;/name&gt;
                 &lt;type&gt;axi4&lt;/type&gt;
                 &lt;isStart&gt;false&lt;/isStart&gt;
                 &lt;ports&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awid&lt;/name&gt;
+                        &lt;name&gt;s_axi_awid&lt;/name&gt;
                         &lt;role&gt;awid&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;5&lt;/width&gt;
@@ -1021,7 +994,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awaddr&lt;/name&gt;
+                        &lt;name&gt;s_axi_awaddr&lt;/name&gt;
                         &lt;role&gt;awaddr&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;32&lt;/width&gt;
@@ -1030,7 +1003,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awlen&lt;/name&gt;
+                        &lt;name&gt;s_axi_awlen&lt;/name&gt;
                         &lt;role&gt;awlen&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -1039,7 +1012,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awsize&lt;/name&gt;
+                        &lt;name&gt;s_axi_awsize&lt;/name&gt;
                         &lt;role&gt;awsize&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;3&lt;/width&gt;
@@ -1048,16 +1021,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arsize&lt;/name&gt;
-                        &lt;role&gt;arsize&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;3&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awburst&lt;/name&gt;
+                        &lt;name&gt;s_axi_awburst&lt;/name&gt;
                         &lt;role&gt;awburst&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;2&lt;/width&gt;
@@ -1066,7 +1030,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awlock&lt;/name&gt;
+                        &lt;name&gt;s_axi_awlock&lt;/name&gt;
                         &lt;role&gt;awlock&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -1075,7 +1039,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awcache&lt;/name&gt;
+                        &lt;name&gt;s_axi_awcache&lt;/name&gt;
                         &lt;role&gt;awcache&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -1084,7 +1048,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awprot&lt;/name&gt;
+                        &lt;name&gt;s_axi_awprot&lt;/name&gt;
                         &lt;role&gt;awprot&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;3&lt;/width&gt;
@@ -1093,7 +1057,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awqos&lt;/name&gt;
+                        &lt;name&gt;s_axi_awqos&lt;/name&gt;
                         &lt;role&gt;awqos&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -1102,7 +1066,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awvalid&lt;/name&gt;
+                        &lt;name&gt;s_axi_awvalid&lt;/name&gt;
                         &lt;role&gt;awvalid&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -1111,7 +1075,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awready&lt;/name&gt;
+                        &lt;name&gt;s_axi_awready&lt;/name&gt;
                         &lt;role&gt;awready&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;1&lt;/width&gt;
@@ -1120,259 +1084,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_wdata&lt;/name&gt;
-                        &lt;role&gt;wdata&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;256&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_wstrb&lt;/name&gt;
-                        &lt;role&gt;wstrb&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;32&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_wlast&lt;/name&gt;
-                        &lt;role&gt;wlast&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_wvalid&lt;/name&gt;
-                        &lt;role&gt;wvalid&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_wready&lt;/name&gt;
-                        &lt;role&gt;wready&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_bid&lt;/name&gt;
-                        &lt;role&gt;bid&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;5&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_bresp&lt;/name&gt;
-                        &lt;role&gt;bresp&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;2&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_bvalid&lt;/name&gt;
-                        &lt;role&gt;bvalid&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_bready&lt;/name&gt;
-                        &lt;role&gt;bready&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arid&lt;/name&gt;
-                        &lt;role&gt;arid&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;5&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_araddr&lt;/name&gt;
-                        &lt;role&gt;araddr&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;32&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arlen&lt;/name&gt;
-                        &lt;role&gt;arlen&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;8&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arburst&lt;/name&gt;
-                        &lt;role&gt;arburst&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;2&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arlock&lt;/name&gt;
-                        &lt;role&gt;arlock&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arcache&lt;/name&gt;
-                        &lt;role&gt;arcache&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;4&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arprot&lt;/name&gt;
-                        &lt;role&gt;arprot&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;3&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arqos&lt;/name&gt;
-                        &lt;role&gt;arqos&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;4&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arvalid&lt;/name&gt;
-                        &lt;role&gt;arvalid&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arready&lt;/name&gt;
-                        &lt;role&gt;arready&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_rid&lt;/name&gt;
-                        &lt;role&gt;rid&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;5&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_rdata&lt;/name&gt;
-                        &lt;role&gt;rdata&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;256&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_rresp&lt;/name&gt;
-                        &lt;role&gt;rresp&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;2&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_rlast&lt;/name&gt;
-                        &lt;role&gt;rlast&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_rvalid&lt;/name&gt;
-                        &lt;role&gt;rvalid&lt;/role&gt;
-                        &lt;direction&gt;Output&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_rready&lt;/name&gt;
-                        &lt;role&gt;rready&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;1&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_aruser&lt;/name&gt;
-                        &lt;role&gt;aruser&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;8&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awuser&lt;/name&gt;
-                        &lt;role&gt;awuser&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;8&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_arregion&lt;/name&gt;
-                        &lt;role&gt;arregion&lt;/role&gt;
-                        &lt;direction&gt;Input&lt;/direction&gt;
-                        &lt;width&gt;4&lt;/width&gt;
-                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                    &lt;/port&gt;
-                    &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_awregion&lt;/name&gt;
+                        &lt;name&gt;s_axi_awregion&lt;/name&gt;
                         &lt;role&gt;awregion&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;4&lt;/width&gt;
@@ -1381,7 +1093,52 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_wuser&lt;/name&gt;
+                        &lt;name&gt;s_axi_wdata&lt;/name&gt;
+                        &lt;role&gt;wdata&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;256&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_wstrb&lt;/name&gt;
+                        &lt;role&gt;wstrb&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;32&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_wlast&lt;/name&gt;
+                        &lt;role&gt;wlast&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_wvalid&lt;/name&gt;
+                        &lt;role&gt;wvalid&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_wready&lt;/name&gt;
+                        &lt;role&gt;wready&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_wuser&lt;/name&gt;
                         &lt;role&gt;wuser&lt;/role&gt;
                         &lt;direction&gt;Input&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -1390,7 +1147,43 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_buser&lt;/name&gt;
+                        &lt;name&gt;s_axi_bid&lt;/name&gt;
+                        &lt;role&gt;bid&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;5&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_bresp&lt;/name&gt;
+                        &lt;role&gt;bresp&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;2&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_bvalid&lt;/name&gt;
+                        &lt;role&gt;bvalid&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_bready&lt;/name&gt;
+                        &lt;role&gt;bready&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_buser&lt;/name&gt;
                         &lt;role&gt;buser&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -1399,7 +1192,169 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                     &lt;/port&gt;
                     &lt;port&gt;
-                        &lt;name&gt;axi4_fpga2hps_ruser&lt;/name&gt;
+                        &lt;name&gt;s_axi_arid&lt;/name&gt;
+                        &lt;role&gt;arid&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;5&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_araddr&lt;/name&gt;
+                        &lt;role&gt;araddr&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;32&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arlen&lt;/name&gt;
+                        &lt;role&gt;arlen&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;8&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arsize&lt;/name&gt;
+                        &lt;role&gt;arsize&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;3&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arburst&lt;/name&gt;
+                        &lt;role&gt;arburst&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;2&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arlock&lt;/name&gt;
+                        &lt;role&gt;arlock&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arcache&lt;/name&gt;
+                        &lt;role&gt;arcache&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;4&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arprot&lt;/name&gt;
+                        &lt;role&gt;arprot&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;3&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arqos&lt;/name&gt;
+                        &lt;role&gt;arqos&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;4&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arvalid&lt;/name&gt;
+                        &lt;role&gt;arvalid&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arready&lt;/name&gt;
+                        &lt;role&gt;arready&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_arregion&lt;/name&gt;
+                        &lt;role&gt;arregion&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;4&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_rid&lt;/name&gt;
+                        &lt;role&gt;rid&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;5&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_rdata&lt;/name&gt;
+                        &lt;role&gt;rdata&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;256&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_rresp&lt;/name&gt;
+                        &lt;role&gt;rresp&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;2&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_rlast&lt;/name&gt;
+                        &lt;role&gt;rlast&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_rvalid&lt;/name&gt;
+                        &lt;role&gt;rvalid&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_rready&lt;/name&gt;
+                        &lt;role&gt;rready&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;s_axi_ruser&lt;/name&gt;
                         &lt;role&gt;ruser&lt;/role&gt;
                         &lt;direction&gt;Output&lt;/direction&gt;
                         &lt;width&gt;8&lt;/width&gt;
@@ -1415,7 +1370,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;parameterValueMap&gt;
                         &lt;entry&gt;
                             &lt;key&gt;associatedClock&lt;/key&gt;
-                            &lt;value&gt;clock&lt;/value&gt;
+                            &lt;value&gt;clk&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;associatedReset&lt;/key&gt;
@@ -1475,15 +1430,15 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;readAcceptanceCapability&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
+                            &lt;value&gt;8&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;writeAcceptanceCapability&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
+                            &lt;value&gt;8&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;combinedAcceptanceCapability&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
+                            &lt;value&gt;16&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;readDataReorderingDepth&lt;/key&gt;
@@ -1538,7 +1493,7 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;/boundary&gt;
     &lt;originalModuleInfo&gt;
         &lt;className&gt;altera_ace5lite_cache_coherency_translator&lt;/className&gt;
-        &lt;version&gt;1.0.0&lt;/version&gt;
+        &lt;version&gt;2.1.1&lt;/version&gt;
         &lt;displayName&gt;Altera ACE5-Lite Cache Coherency Translator&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
@@ -1547,13 +1502,13 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;systemInfos&gt;
         &lt;connPtSystemInfos&gt;
             &lt;entry&gt;
-                &lt;key&gt;s0&lt;/key&gt;
+                &lt;key&gt;s_axi&lt;/key&gt;
                 &lt;value&gt;
-                    &lt;connectionPointName&gt;s0&lt;/connectionPointName&gt;
+                    &lt;connectionPointName&gt;s_axi&lt;/connectionPointName&gt;
                     &lt;suppliedSystemInfos&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
-                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='s0' start='0x0' end='0x100000000' datawidth='256' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='s_axi' start='0x0' end='0x100000000' datawidth='256' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
@@ -1582,12 +1537,12 @@ https://fpgasoftware.intel.com/eula.-->
               <ipxact:value>&lt;boundaryDefinition&gt;
     &lt;interfaces&gt;
         &lt;interface&gt;
-            &lt;name&gt;clock&lt;/name&gt;
+            &lt;name&gt;clk&lt;/name&gt;
             &lt;type&gt;clock&lt;/type&gt;
             &lt;isStart&gt;false&lt;/isStart&gt;
             &lt;ports&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi_clock&lt;/name&gt;
+                    &lt;name&gt;clk&lt;/name&gt;
                     &lt;role&gt;clk&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1621,7 +1576,7 @@ https://fpgasoftware.intel.com/eula.-->
             &lt;isStart&gt;false&lt;/isStart&gt;
             &lt;ports&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi_reset&lt;/name&gt;
+                    &lt;name&gt;reset&lt;/name&gt;
                     &lt;role&gt;reset&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1637,21 +1592,22 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;parameterValueMap&gt;
                     &lt;entry&gt;
                         &lt;key&gt;associatedClock&lt;/key&gt;
+                        &lt;value&gt;clk&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;synchronousEdges&lt;/key&gt;
-                        &lt;value&gt;NONE&lt;/value&gt;
+                        &lt;value&gt;DEASSERT&lt;/value&gt;
                     &lt;/entry&gt;
                 &lt;/parameterValueMap&gt;
             &lt;/parameters&gt;
         &lt;/interface&gt;
         &lt;interface&gt;
-            &lt;name&gt;m0&lt;/name&gt;
+            &lt;name&gt;m_ace5lite&lt;/name&gt;
             &lt;type&gt;ace5lite&lt;/type&gt;
             &lt;isStart&gt;true&lt;/isStart&gt;
             &lt;ports&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awid&lt;/name&gt;
                     &lt;role&gt;awid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;5&lt;/width&gt;
@@ -1660,7 +1616,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awaddr&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awaddr&lt;/name&gt;
                     &lt;role&gt;awaddr&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;32&lt;/width&gt;
@@ -1669,7 +1625,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awdomain&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awdomain&lt;/name&gt;
                     &lt;role&gt;awdomain&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -1678,7 +1634,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awsnoop&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awsnoop&lt;/name&gt;
                     &lt;role&gt;awsnoop&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -1687,7 +1643,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awlen&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awlen&lt;/name&gt;
                     &lt;role&gt;awlen&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -1696,7 +1652,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awsize&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awsize&lt;/name&gt;
                     &lt;role&gt;awsize&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;3&lt;/width&gt;
@@ -1705,7 +1661,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arsize&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arsize&lt;/name&gt;
                     &lt;role&gt;arsize&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;3&lt;/width&gt;
@@ -1714,7 +1670,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awburst&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awburst&lt;/name&gt;
                     &lt;role&gt;awburst&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -1723,7 +1679,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awlock&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awlock&lt;/name&gt;
                     &lt;role&gt;awlock&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1732,7 +1688,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awcache&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awcache&lt;/name&gt;
                     &lt;role&gt;awcache&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -1741,7 +1697,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awprot&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awprot&lt;/name&gt;
                     &lt;role&gt;awprot&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;3&lt;/width&gt;
@@ -1750,7 +1706,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awqos&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awqos&lt;/name&gt;
                     &lt;role&gt;awqos&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -1759,70 +1715,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awvalid&lt;/name&gt;
-                    &lt;role&gt;awvalid&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awready&lt;/name&gt;
-                    &lt;role&gt;awready&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_wdata&lt;/name&gt;
-                    &lt;role&gt;wdata&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;256&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_wstrb&lt;/name&gt;
-                    &lt;role&gt;wstrb&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;32&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_wlast&lt;/name&gt;
-                    &lt;role&gt;wlast&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_wvalid&lt;/name&gt;
-                    &lt;role&gt;wvalid&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_wready&lt;/name&gt;
-                    &lt;role&gt;wready&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awstashnid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awstashnid&lt;/name&gt;
                     &lt;role&gt;awstashnid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;11&lt;/width&gt;
@@ -1831,7 +1724,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awstashniden&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awstashniden&lt;/name&gt;
                     &lt;role&gt;awstashniden&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1840,7 +1733,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awstashlpid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awstashlpid&lt;/name&gt;
                     &lt;role&gt;awstashlpid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;5&lt;/width&gt;
@@ -1849,7 +1742,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awstashlpiden&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awstashlpiden&lt;/name&gt;
                     &lt;role&gt;awstashlpiden&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1858,7 +1751,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awatop&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awatop&lt;/name&gt;
                     &lt;role&gt;awatop&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;6&lt;/width&gt;
@@ -1867,7 +1760,70 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_bid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awvalid&lt;/name&gt;
+                    &lt;role&gt;awvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_awready&lt;/name&gt;
+                    &lt;role&gt;awready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_wdata&lt;/name&gt;
+                    &lt;role&gt;wdata&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;256&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_wstrb&lt;/name&gt;
+                    &lt;role&gt;wstrb&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_wlast&lt;/name&gt;
+                    &lt;role&gt;wlast&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_wvalid&lt;/name&gt;
+                    &lt;role&gt;wvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_wready&lt;/name&gt;
+                    &lt;role&gt;wready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_bid&lt;/name&gt;
                     &lt;role&gt;bid&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;5&lt;/width&gt;
@@ -1876,7 +1832,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_bresp&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_bresp&lt;/name&gt;
                     &lt;role&gt;bresp&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -1885,7 +1841,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_bvalid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_bvalid&lt;/name&gt;
                     &lt;role&gt;bvalid&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1894,7 +1850,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_bready&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_bready&lt;/name&gt;
                     &lt;role&gt;bready&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1903,7 +1859,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arid&lt;/name&gt;
                     &lt;role&gt;arid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;5&lt;/width&gt;
@@ -1912,7 +1868,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_araddr&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_araddr&lt;/name&gt;
                     &lt;role&gt;araddr&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;32&lt;/width&gt;
@@ -1921,7 +1877,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_ardomain&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_ardomain&lt;/name&gt;
                     &lt;role&gt;ardomain&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -1930,7 +1886,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arsnoop&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arsnoop&lt;/name&gt;
                     &lt;role&gt;arsnoop&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -1939,7 +1895,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arlen&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arlen&lt;/name&gt;
                     &lt;role&gt;arlen&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -1948,7 +1904,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arburst&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arburst&lt;/name&gt;
                     &lt;role&gt;arburst&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -1957,7 +1913,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arlock&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arlock&lt;/name&gt;
                     &lt;role&gt;arlock&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -1966,7 +1922,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arcache&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arcache&lt;/name&gt;
                     &lt;role&gt;arcache&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -1975,7 +1931,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arprot&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arprot&lt;/name&gt;
                     &lt;role&gt;arprot&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;3&lt;/width&gt;
@@ -1984,7 +1940,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arqos&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arqos&lt;/name&gt;
                     &lt;role&gt;arqos&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -1993,7 +1949,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arvalid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arvalid&lt;/name&gt;
                     &lt;role&gt;arvalid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2002,7 +1958,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arready&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arready&lt;/name&gt;
                     &lt;role&gt;arready&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2011,7 +1967,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_rid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_rid&lt;/name&gt;
                     &lt;role&gt;rid&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;5&lt;/width&gt;
@@ -2020,7 +1976,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_rdata&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_rdata&lt;/name&gt;
                     &lt;role&gt;rdata&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;256&lt;/width&gt;
@@ -2029,7 +1985,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_rresp&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_rresp&lt;/name&gt;
                     &lt;role&gt;rresp&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -2038,7 +1994,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_rlast&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_rlast&lt;/name&gt;
                     &lt;role&gt;rlast&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2047,7 +2003,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_rvalid&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_rvalid&lt;/name&gt;
                     &lt;role&gt;rvalid&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2056,7 +2012,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_rready&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_rready&lt;/name&gt;
                     &lt;role&gt;rready&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2065,7 +2021,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_aruser&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_aruser&lt;/name&gt;
                     &lt;role&gt;aruser&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2074,7 +2030,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awuser&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awuser&lt;/name&gt;
                     &lt;role&gt;awuser&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2083,7 +2039,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_arregion&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_arregion&lt;/name&gt;
                     &lt;role&gt;arregion&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -2092,7 +2048,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_awregion&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_awregion&lt;/name&gt;
                     &lt;role&gt;awregion&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -2101,7 +2057,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_wuser&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_wuser&lt;/name&gt;
                     &lt;role&gt;wuser&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2110,7 +2066,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_buser&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_buser&lt;/name&gt;
                     &lt;role&gt;buser&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2119,7 +2075,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;ace5_fpga2hps_ruser&lt;/name&gt;
+                    &lt;name&gt;m_ace5lite_ruser&lt;/name&gt;
                     &lt;role&gt;ruser&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2134,72 +2090,16 @@ https://fpgasoftware.intel.com/eula.-->
             &lt;parameters&gt;
                 &lt;parameterValueMap&gt;
                     &lt;entry&gt;
-                        &lt;key&gt;associatedClock&lt;/key&gt;
-                        &lt;value&gt;clock&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;associatedReset&lt;/key&gt;
-                        &lt;value&gt;reset&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;trustzoneAware&lt;/key&gt;
-                        &lt;value&gt;true&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;wakeupSignals&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;uniqueIdSupport&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;poison&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;traceSignals&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;maximumOutstandingReads&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;maximumOutstandingWrites&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;maximumOutstandingTransactions&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;dataCheck&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;addressCheck&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;securityAttribute&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
-                        &lt;key&gt;userData&lt;/key&gt;
-                        &lt;value&gt;false&lt;/value&gt;
-                    &lt;/entry&gt;
-                    &lt;entry&gt;
                         &lt;key&gt;readIssuingCapability&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
+                        &lt;value&gt;8&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;writeIssuingCapability&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
+                        &lt;value&gt;8&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;combinedIssuingCapability&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
+                        &lt;value&gt;16&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
@@ -2222,6 +2122,38 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                        &lt;value&gt;clk&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                        &lt;value&gt;reset&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;trustzoneAware&lt;/key&gt;
+                        &lt;value&gt;true&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;wakeupSignals&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;poison&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;traceSignals&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;dataCheck&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;addressCheck&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
                         &lt;key&gt;atomicTransactions&lt;/key&gt;
                         &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
@@ -2231,18 +2163,18 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;untranslatedTransactions&lt;/key&gt;
-                        &lt;value&gt;FALSE&lt;/value&gt;
+                        &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
                 &lt;/parameterValueMap&gt;
             &lt;/parameters&gt;
         &lt;/interface&gt;
         &lt;interface&gt;
-            &lt;name&gt;s0&lt;/name&gt;
+            &lt;name&gt;s_axi&lt;/name&gt;
             &lt;type&gt;axi4&lt;/type&gt;
             &lt;isStart&gt;false&lt;/isStart&gt;
             &lt;ports&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awid&lt;/name&gt;
+                    &lt;name&gt;s_axi_awid&lt;/name&gt;
                     &lt;role&gt;awid&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;5&lt;/width&gt;
@@ -2251,7 +2183,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awaddr&lt;/name&gt;
+                    &lt;name&gt;s_axi_awaddr&lt;/name&gt;
                     &lt;role&gt;awaddr&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;32&lt;/width&gt;
@@ -2260,7 +2192,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awlen&lt;/name&gt;
+                    &lt;name&gt;s_axi_awlen&lt;/name&gt;
                     &lt;role&gt;awlen&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2269,7 +2201,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awsize&lt;/name&gt;
+                    &lt;name&gt;s_axi_awsize&lt;/name&gt;
                     &lt;role&gt;awsize&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;3&lt;/width&gt;
@@ -2278,16 +2210,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arsize&lt;/name&gt;
-                    &lt;role&gt;arsize&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;3&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awburst&lt;/name&gt;
+                    &lt;name&gt;s_axi_awburst&lt;/name&gt;
                     &lt;role&gt;awburst&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
@@ -2296,7 +2219,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awlock&lt;/name&gt;
+                    &lt;name&gt;s_axi_awlock&lt;/name&gt;
                     &lt;role&gt;awlock&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2305,7 +2228,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awcache&lt;/name&gt;
+                    &lt;name&gt;s_axi_awcache&lt;/name&gt;
                     &lt;role&gt;awcache&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -2314,7 +2237,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awprot&lt;/name&gt;
+                    &lt;name&gt;s_axi_awprot&lt;/name&gt;
                     &lt;role&gt;awprot&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;3&lt;/width&gt;
@@ -2323,7 +2246,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awqos&lt;/name&gt;
+                    &lt;name&gt;s_axi_awqos&lt;/name&gt;
                     &lt;role&gt;awqos&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -2332,7 +2255,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awvalid&lt;/name&gt;
+                    &lt;name&gt;s_axi_awvalid&lt;/name&gt;
                     &lt;role&gt;awvalid&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2341,7 +2264,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awready&lt;/name&gt;
+                    &lt;name&gt;s_axi_awready&lt;/name&gt;
                     &lt;role&gt;awready&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;1&lt;/width&gt;
@@ -2350,259 +2273,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_wdata&lt;/name&gt;
-                    &lt;role&gt;wdata&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;256&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_wstrb&lt;/name&gt;
-                    &lt;role&gt;wstrb&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;32&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_wlast&lt;/name&gt;
-                    &lt;role&gt;wlast&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_wvalid&lt;/name&gt;
-                    &lt;role&gt;wvalid&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_wready&lt;/name&gt;
-                    &lt;role&gt;wready&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_bid&lt;/name&gt;
-                    &lt;role&gt;bid&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;5&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_bresp&lt;/name&gt;
-                    &lt;role&gt;bresp&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;2&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_bvalid&lt;/name&gt;
-                    &lt;role&gt;bvalid&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_bready&lt;/name&gt;
-                    &lt;role&gt;bready&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arid&lt;/name&gt;
-                    &lt;role&gt;arid&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;5&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_araddr&lt;/name&gt;
-                    &lt;role&gt;araddr&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;32&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arlen&lt;/name&gt;
-                    &lt;role&gt;arlen&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arburst&lt;/name&gt;
-                    &lt;role&gt;arburst&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;2&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arlock&lt;/name&gt;
-                    &lt;role&gt;arlock&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arcache&lt;/name&gt;
-                    &lt;role&gt;arcache&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;4&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arprot&lt;/name&gt;
-                    &lt;role&gt;arprot&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;3&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arqos&lt;/name&gt;
-                    &lt;role&gt;arqos&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;4&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arvalid&lt;/name&gt;
-                    &lt;role&gt;arvalid&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arready&lt;/name&gt;
-                    &lt;role&gt;arready&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_rid&lt;/name&gt;
-                    &lt;role&gt;rid&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;5&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_rdata&lt;/name&gt;
-                    &lt;role&gt;rdata&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;256&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_rresp&lt;/name&gt;
-                    &lt;role&gt;rresp&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;2&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_rlast&lt;/name&gt;
-                    &lt;role&gt;rlast&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_rvalid&lt;/name&gt;
-                    &lt;role&gt;rvalid&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_rready&lt;/name&gt;
-                    &lt;role&gt;rready&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;1&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_aruser&lt;/name&gt;
-                    &lt;role&gt;aruser&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awuser&lt;/name&gt;
-                    &lt;role&gt;awuser&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_arregion&lt;/name&gt;
-                    &lt;role&gt;arregion&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;4&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_awregion&lt;/name&gt;
+                    &lt;name&gt;s_axi_awregion&lt;/name&gt;
                     &lt;role&gt;awregion&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
@@ -2611,7 +2282,52 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_wuser&lt;/name&gt;
+                    &lt;name&gt;s_axi_wdata&lt;/name&gt;
+                    &lt;role&gt;wdata&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;256&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_wstrb&lt;/name&gt;
+                    &lt;role&gt;wstrb&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_wlast&lt;/name&gt;
+                    &lt;role&gt;wlast&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_wvalid&lt;/name&gt;
+                    &lt;role&gt;wvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_wready&lt;/name&gt;
+                    &lt;role&gt;wready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_wuser&lt;/name&gt;
                     &lt;role&gt;wuser&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2620,7 +2336,43 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_buser&lt;/name&gt;
+                    &lt;name&gt;s_axi_bid&lt;/name&gt;
+                    &lt;role&gt;bid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;5&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_bresp&lt;/name&gt;
+                    &lt;role&gt;bresp&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_bvalid&lt;/name&gt;
+                    &lt;role&gt;bvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_bready&lt;/name&gt;
+                    &lt;role&gt;bready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_buser&lt;/name&gt;
                     &lt;role&gt;buser&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2629,7 +2381,169 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;axi4_fpga2hps_ruser&lt;/name&gt;
+                    &lt;name&gt;s_axi_arid&lt;/name&gt;
+                    &lt;role&gt;arid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;5&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_araddr&lt;/name&gt;
+                    &lt;role&gt;araddr&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arlen&lt;/name&gt;
+                    &lt;role&gt;arlen&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arsize&lt;/name&gt;
+                    &lt;role&gt;arsize&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arburst&lt;/name&gt;
+                    &lt;role&gt;arburst&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arlock&lt;/name&gt;
+                    &lt;role&gt;arlock&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arcache&lt;/name&gt;
+                    &lt;role&gt;arcache&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arprot&lt;/name&gt;
+                    &lt;role&gt;arprot&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arqos&lt;/name&gt;
+                    &lt;role&gt;arqos&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arvalid&lt;/name&gt;
+                    &lt;role&gt;arvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arready&lt;/name&gt;
+                    &lt;role&gt;arready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_arregion&lt;/name&gt;
+                    &lt;role&gt;arregion&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_rid&lt;/name&gt;
+                    &lt;role&gt;rid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;5&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_rdata&lt;/name&gt;
+                    &lt;role&gt;rdata&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;256&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_rresp&lt;/name&gt;
+                    &lt;role&gt;rresp&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_rlast&lt;/name&gt;
+                    &lt;role&gt;rlast&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_rvalid&lt;/name&gt;
+                    &lt;role&gt;rvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_rready&lt;/name&gt;
+                    &lt;role&gt;rready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s_axi_ruser&lt;/name&gt;
                     &lt;role&gt;ruser&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;8&lt;/width&gt;
@@ -2645,7 +2559,7 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;parameterValueMap&gt;
                     &lt;entry&gt;
                         &lt;key&gt;associatedClock&lt;/key&gt;
-                        &lt;value&gt;clock&lt;/value&gt;
+                        &lt;value&gt;clk&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;associatedReset&lt;/key&gt;
@@ -2669,6 +2583,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;traceSignals&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;isTranslator&lt;/key&gt;
                         &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
@@ -2701,15 +2619,15 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;readAcceptanceCapability&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
+                        &lt;value&gt;8&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;writeAcceptanceCapability&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
+                        &lt;value&gt;8&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;combinedAcceptanceCapability&lt;/key&gt;
-                        &lt;value&gt;1&lt;/value&gt;
+                        &lt;value&gt;16&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;readDataReorderingDepth&lt;/key&gt;
@@ -2805,7 +2723,24 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="hdlParameters" type="string">
               <ipxact:name>hdlParameters</ipxact:name>
               <ipxact:displayName>HDL Parameters</ipxact:displayName>
-              <ipxact:value>&lt;hdlParameterDescriptorDefinitionList/&gt;</ipxact:value>
+              <ipxact:value>&lt;hdlParameterDescriptorDefinitionList&gt;
+    &lt;hdlParameterDescriptorDefinition&gt;
+        &lt;enabled&gt;true&lt;/enabled&gt;
+        &lt;exported&gt;false&lt;/exported&gt;
+        &lt;parameterHdlType&gt;INTEGER&lt;/parameterHdlType&gt;
+        &lt;parameterName&gt;WSTRB_WIDTH&lt;/parameterName&gt;
+        &lt;parameterType&gt;java.lang.Integer&lt;/parameterType&gt;
+        &lt;parameterValue&gt;32&lt;/parameterValue&gt;
+    &lt;/hdlParameterDescriptorDefinition&gt;
+    &lt;hdlParameterDescriptorDefinition&gt;
+        &lt;enabled&gt;true&lt;/enabled&gt;
+        &lt;exported&gt;false&lt;/exported&gt;
+        &lt;parameterHdlType&gt;INTEGER&lt;/parameterHdlType&gt;
+        &lt;parameterName&gt;USER_WIDTH&lt;/parameterName&gt;
+        &lt;parameterType&gt;java.lang.Integer&lt;/parameterType&gt;
+        &lt;parameterValue&gt;8&lt;/parameterValue&gt;
+    &lt;/hdlParameterDescriptorDefinition&gt;
+&lt;/hdlParameterDescriptorDefinitionList&gt;</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="hlsFile" type="string">
               <ipxact:name>hlsFile</ipxact:name>
@@ -2837,7 +2772,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -3151,7 +3086,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -3793,6 +3728,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;optimizedReadsWithBE&lt;/key&gt;
                             &lt;value&gt;0&lt;/value&gt;
                         &lt;/entry&gt;
                     &lt;/parameterValueMap&gt;
@@ -4464,6 +4403,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
                         &lt;value&gt;0&lt;/value&gt;
                     &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;optimizedReadsWithBE&lt;/key&gt;
+                        &lt;value&gt;0&lt;/value&gt;
+                    &lt;/entry&gt;
                 &lt;/parameterValueMap&gt;
             &lt;/parameters&gt;
         &lt;/interface&gt;
@@ -4595,7 +4538,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -4738,11 +4681,37 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;/boundary&gt;
     &lt;originalModuleInfo&gt;
         &lt;className&gt;intel_srcss_gts&lt;/className&gt;
-        &lt;version&gt;3.1.1&lt;/version&gt;
-        &lt;displayName&gt;GTS Reset Sequencer Intel FPGA IP&lt;/displayName&gt;
+        &lt;version&gt;4.0.1&lt;/version&gt;
+        &lt;displayName&gt;GTS Reset Sequencer IP&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
-        &lt;descriptors/&gt;
+        &lt;descriptors&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device&lt;/parameterName&gt;
+                &lt;parameterType&gt;java.lang.String&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device_die_revisions&lt;/parameterName&gt;
+                &lt;parameterType&gt;[Ljava.lang.String;&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE_DIE_REVISIONS&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device_family&lt;/parameterName&gt;
+                &lt;parameterType&gt;java.lang.String&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE_FAMILY&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device_group&lt;/parameterName&gt;
+                &lt;parameterType&gt;[Ljava.lang.String;&lt;/parameterType&gt;
+                &lt;systemInfoArgs&gt;DEVICE_GROUP&lt;/systemInfoArgs&gt;
+                &lt;systemInfotype&gt;DEVICE_INFO&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+        &lt;/descriptors&gt;
     &lt;/systemInfoParameterDescriptors&gt;
     &lt;systemInfos&gt;
         &lt;connPtSystemInfos/&gt;
@@ -4771,6 +4740,82 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;width&gt;1&lt;/width&gt;
                     &lt;lowerBound&gt;0&lt;/lowerBound&gt;
                     &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ui.blockdiagram.direction&lt;/key&gt;
+                        &lt;value&gt;output&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/assignmentValueMap&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;i_refclk_bus_out&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;i_refclk_bus_out&lt;/name&gt;
+                    &lt;role&gt;refclk_bus_out&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ui.blockdiagram.direction&lt;/key&gt;
+                        &lt;value&gt;input&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/assignmentValueMap&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;o_shoreline_refclk_fail_stat&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;o_shoreline_refclk_fail_stat&lt;/name&gt;
+                    &lt;role&gt;shoreline_refclk_fail_stat&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
             &lt;/ports&gt;
@@ -4874,7 +4919,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -5375,8 +5420,8 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;/boundary&gt;
     &lt;originalModuleInfo&gt;
         &lt;className&gt;intel_onchip_memory&lt;/className&gt;
-        &lt;version&gt;1.4.9&lt;/version&gt;
-        &lt;displayName&gt;On-Chip Memory II (RAM or ROM) Intel FPGA IP&lt;/displayName&gt;
+        &lt;version&gt;1.4.10&lt;/version&gt;
+        &lt;displayName&gt;On-Chip Memory II (RAM or ROM) IP&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
         &lt;descriptors&gt;
@@ -5777,6 +5822,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
+                        &lt;key&gt;isTranslator&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
                         &lt;key&gt;maximumOutstandingReads&lt;/key&gt;
                         &lt;value&gt;1&lt;/value&gt;
                     &lt;/entry&gt;
@@ -6075,7 +6124,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -6346,7 +6395,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -6614,6 +6663,10 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
                             &lt;value&gt;0&lt;/value&gt;
                         &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;optimizedReadsWithBE&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
                     &lt;/parameterValueMap&gt;
                 &lt;/parameters&gt;
             &lt;/interface&gt;
@@ -6858,6 +6911,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;optimizedReadsWithBE&lt;/key&gt;
                             &lt;value&gt;0&lt;/value&gt;
                         &lt;/entry&gt;
                     &lt;/parameterValueMap&gt;
@@ -7106,6 +7163,10 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;key&gt;enableConcurrentSubordinateAccess&lt;/key&gt;
                             &lt;value&gt;0&lt;/value&gt;
                         &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;optimizedReadsWithBE&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
                     &lt;/parameterValueMap&gt;
                 &lt;/parameters&gt;
             &lt;/interface&gt;
@@ -7307,7 +7368,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;consumedSystemInfos&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
-                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='ocm.axi_s1' start='0x40000' end='0x80000' datawidth='128' /&amp;gt;&amp;lt;slave name='subsys_hps.usb31_phy_reconfig_slave' start='0x800000' end='0x1000000' datawidth='32' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='ocm.axi_s1' start='0x40000' end='0x80000' datawidth='128' /&amp;gt;&amp;lt;slave name='subsys_hps.usb31_phy_reconfig_slave' start='0x800000' end='0xA00000' datawidth='32' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
@@ -7341,7 +7402,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;consumedSystemInfos&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
-                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='altera_ace5lite_cache_coherency_translator_0.s0' start='0x0' end='0x100000000' datawidth='256' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='altera_ace5lite_cache_coherency_translator_0.s_axi' start='0x0' end='0x100000000' datawidth='256' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
@@ -7421,7 +7482,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="logicalView" type="string">
               <ipxact:name>logicalView</ipxact:name>
               <ipxact:displayName>Logical view</ipxact:displayName>
-              <ipxact:value>jtag_subsys/jtag_subsys.qsys</ipxact:value>
+              <ipxact:value>jtag_subsys.qsys</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="moduleAssignmentDefinition" type="string">
               <ipxact:name>moduleAssignmentDefinition</ipxact:name>
@@ -9552,11 +9613,11 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;addressSpan&lt;/key&gt;
-                            &lt;value&gt;8388608&lt;/value&gt;
+                            &lt;value&gt;2097152&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;addressUnits&lt;/key&gt;
-                            &lt;value&gt;WORDS&lt;/value&gt;
+                            &lt;value&gt;SYMBOLS&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;alwaysBurstMaxBurst&lt;/key&gt;
@@ -10368,66 +10429,6 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;parameters&gt;
                     &lt;parameterValueMap&gt;
                         &lt;entry&gt;
-                            &lt;key&gt;associatedClock&lt;/key&gt;
-                            &lt;value&gt;fpga2hps_clk&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;associatedReset&lt;/key&gt;
-                            &lt;value&gt;fpga2hps_rst&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;trustzoneAware&lt;/key&gt;
-                            &lt;value&gt;true&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;wakeupSignals&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;uniqueIdSupport&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;poison&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;traceSignals&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;isTranslator&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;maximumOutstandingReads&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;maximumOutstandingWrites&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;maximumOutstandingTransactions&lt;/key&gt;
-                            &lt;value&gt;1&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;dataCheck&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;addressCheck&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;securityAttribute&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                            &lt;key&gt;userData&lt;/key&gt;
-                            &lt;value&gt;false&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
                             &lt;key&gt;readAcceptanceCapability&lt;/key&gt;
                             &lt;value&gt;16&lt;/value&gt;
                         &lt;/entry&gt;
@@ -10484,6 +10485,38 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;entry&gt;
                             &lt;key&gt;dfhFeatureType&lt;/key&gt;
                             &lt;value&gt;3&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedClock&lt;/key&gt;
+                            &lt;value&gt;fpga2hps_clk&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedReset&lt;/key&gt;
+                            &lt;value&gt;fpga2hps_rst&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;trustzoneAware&lt;/key&gt;
+                            &lt;value&gt;true&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;wakeupSignals&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;poison&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;traceSignals&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;dataCheck&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;addressCheck&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;atomicTransactions&lt;/key&gt;
@@ -10581,7 +10614,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;name&gt;emif_hps_emif_mem_0_mem_dq&lt;/name&gt;
                         &lt;role&gt;mem_dq&lt;/role&gt;
                         &lt;direction&gt;Bidir&lt;/direction&gt;
-                        &lt;width&gt;32&lt;/width&gt;
+                        &lt;width&gt;40&lt;/width&gt;
                         &lt;lowerBound&gt;0&lt;/lowerBound&gt;
                         &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
@@ -10590,7 +10623,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;name&gt;emif_hps_emif_mem_0_mem_dqs_t&lt;/name&gt;
                         &lt;role&gt;mem_dqs_t&lt;/role&gt;
                         &lt;direction&gt;Bidir&lt;/direction&gt;
-                        &lt;width&gt;4&lt;/width&gt;
+                        &lt;width&gt;5&lt;/width&gt;
                         &lt;lowerBound&gt;0&lt;/lowerBound&gt;
                         &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
@@ -10599,7 +10632,7 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;name&gt;emif_hps_emif_mem_0_mem_dqs_c&lt;/name&gt;
                         &lt;role&gt;mem_dqs_c&lt;/role&gt;
                         &lt;direction&gt;Bidir&lt;/direction&gt;
-                        &lt;width&gt;4&lt;/width&gt;
+                        &lt;width&gt;5&lt;/width&gt;
                         &lt;lowerBound&gt;0&lt;/lowerBound&gt;
                         &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
                         &lt;terminationValue&gt;0&lt;/terminationValue&gt;
@@ -11876,7 +11909,7 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;consumedSystemInfos&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
-                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='subsys_periph.pb_cpu_0_s0' start='0x0' end='0x20000' datawidth='32' /&amp;gt;&amp;lt;slave name='subsys_hps.usb31_phy_reconfig_slave' start='0x800000' end='0x1000000' datawidth='32' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                            &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='subsys_periph.pb_cpu_0_s0' start='0x0' end='0x20000' datawidth='32' /&amp;gt;&amp;lt;slave name='subsys_hps.usb31_phy_reconfig_slave' start='0x800000' end='0xA00000' datawidth='32' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
@@ -12084,7 +12117,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="logicalView" type="string">
               <ipxact:name>logicalView</ipxact:name>
               <ipxact:displayName>Logical view</ipxact:displayName>
-              <ipxact:value>hps_subsys/hps_subsys.qsys</ipxact:value>
+              <ipxact:value>hps_subsys.qsys</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="moduleAssignmentDefinition" type="string">
               <ipxact:name>moduleAssignmentDefinition</ipxact:name>
@@ -12918,7 +12951,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="logicalView" type="string">
               <ipxact:name>logicalView</ipxact:name>
               <ipxact:displayName>Logical view</ipxact:displayName>
-              <ipxact:value>peripheral_subsys/peripheral_subsys.qsys</ipxact:value>
+              <ipxact:value>peripheral_subsys.qsys</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="moduleAssignmentDefinition" type="string">
               <ipxact:name>moduleAssignmentDefinition</ipxact:name>
@@ -12998,7 +13031,7 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;originalModuleInfo&gt;
         &lt;className&gt;intel_user_rst_clkgate&lt;/className&gt;
         &lt;version&gt;1.0.1&lt;/version&gt;
-        &lt;displayName&gt;Agilex Reset Release Intel FPGA IP&lt;/displayName&gt;
+        &lt;displayName&gt;Reset Release IP&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
         &lt;descriptors&gt;
@@ -13135,7 +13168,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="transformParameters" type="string">
               <ipxact:name>transformParameters</ipxact:name>
               <ipxact:displayName>Transform Parameters</ipxact:displayName>
-              <ipxact:value></ipxact:value>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
@@ -13247,7 +13280,7 @@ https://fpgasoftware.intel.com/eula.-->
         <altera:connection_parameter altera:parameter_name="qsys_mm.syncResets" altera:parameter_value="TRUE"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="qsys_mm.widthAdapterImplementation" altera:parameter_value="GENERIC_CONVERTER"></altera:connection_parameter>
       </altera:connection>
-      <altera:connection altera:kind="avalon" altera:version="25.1" altera:start="subsys_debug.hps_m_master" altera:end="altera_ace5lite_cache_coherency_translator_0.s0">
+      <altera:connection altera:kind="avalon" altera:version="25.1" altera:start="subsys_debug.hps_m_master" altera:end="altera_ace5lite_cache_coherency_translator_0.s_axi">
         <altera:connection_parameter altera:parameter_name="arbitrationPriority" altera:parameter_value="1"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="baseAddress" altera:parameter_value="0x0000"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="defaultConnection" altera:parameter_value="false"></altera:connection_parameter>
@@ -13310,7 +13343,7 @@ https://fpgasoftware.intel.com/eula.-->
         <altera:connection_parameter altera:parameter_name="qsys_mm.syncResets" altera:parameter_value="TRUE"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="qsys_mm.widthAdapterImplementation" altera:parameter_value="GENERIC_CONVERTER"></altera:connection_parameter>
       </altera:connection>
-      <altera:connection altera:kind="avalon" altera:version="25.1" altera:start="altera_ace5lite_cache_coherency_translator_0.m0" altera:end="subsys_hps.fpga2hps">
+      <altera:connection altera:kind="avalon" altera:version="25.1" altera:start="altera_ace5lite_cache_coherency_translator_0.m_ace5lite" altera:end="subsys_hps.fpga2hps">
         <altera:connection_parameter altera:parameter_name="arbitrationPriority" altera:parameter_value="1"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="baseAddress" altera:parameter_value="0x0000"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="defaultConnection" altera:parameter_value="false"></altera:connection_parameter>
@@ -13333,9 +13366,9 @@ https://fpgasoftware.intel.com/eula.-->
       </altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="subsys_debug.clk"></altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="subsys_periph.clk"></altera:connection>
+      <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="altera_ace5lite_cache_coherency_translator_0.clk"></altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="ocm.clk1"></altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="ext_hps_f2sdram_master.clock"></altera:connection>
-      <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="altera_ace5lite_cache_coherency_translator_0.clock"></altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="subsys_hps.f2sdram_adapter_clk"></altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="subsys_hps.f2sdram_clk"></altera:connection>
       <altera:connection altera:kind="clock" altera:version="25.1" altera:start="clk_100.out_clk" altera:end="subsys_hps.fpga2hps_clk"></altera:connection>
@@ -13405,10 +13438,10 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:busType vendor="intel" library="intel" name="ace5lite" version="25.1"></ipxact:busType>
           </ipxact:busInterface>
           <ipxact:busInterface>
-            <ipxact:name>altera_ace5lite_cache_coherency_translator_0.m0</ipxact:name>
+            <ipxact:name>altera_ace5lite_cache_coherency_translator_0.m_ace5lite</ipxact:name>
             <ipxact:busType vendor="intel" library="intel" name="ace5lite" version="25.1"></ipxact:busType>
             <ipxact:master>
-              <ipxact:addressSpaceRef addressSpaceRef="altera_ace5lite_cache_coherency_translator_0.m0">
+              <ipxact:addressSpaceRef addressSpaceRef="altera_ace5lite_cache_coherency_translator_0.m_ace5lite">
                 <ipxact:baseAddress>0x0000_0000</ipxact:baseAddress>
               </ipxact:addressSpaceRef>
             </ipxact:master>
@@ -13461,7 +13494,7 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:master>
           </ipxact:busInterface>
           <ipxact:busInterface>
-            <ipxact:name>altera_ace5lite_cache_coherency_translator_0.s0</ipxact:name>
+            <ipxact:name>altera_ace5lite_cache_coherency_translator_0.s_axi</ipxact:name>
             <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:busType>
           </ipxact:busInterface>
           <ipxact:busInterface>
@@ -13506,7 +13539,7 @@ https://fpgasoftware.intel.com/eula.-->
         </ipxact:busInterfaces>
         <ipxact:addressSpaces>
           <ipxact:addressSpace>
-            <ipxact:name>altera_ace5lite_cache_coherency_translator_0.m0</ipxact:name>
+            <ipxact:name>altera_ace5lite_cache_coherency_translator_0.m_ace5lite</ipxact:name>
             <ipxact:segments>
               <ipxact:segment>
                 <ipxact:name>subsys_hps.fpga2hps</ipxact:name>
@@ -13536,7 +13569,7 @@ https://fpgasoftware.intel.com/eula.-->
               <ipxact:segment>
                 <ipxact:name>subsys_hps.usb31_phy_reconfig_slave</ipxact:name>
                 <ipxact:addressOffset>0x0080_0000</ipxact:addressOffset>
-                <ipxact:range>0x0080_0000</ipxact:range>
+                <ipxact:range>0x0020_0000</ipxact:range>
               </ipxact:segment>
             </ipxact:segments>
           </ipxact:addressSpace>
@@ -13559,7 +13592,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:name>subsys_debug.hps_m_master</ipxact:name>
             <ipxact:segments>
               <ipxact:segment>
-                <ipxact:name>altera_ace5lite_cache_coherency_translator_0.s0</ipxact:name>
+                <ipxact:name>altera_ace5lite_cache_coherency_translator_0.s_axi</ipxact:name>
                 <ipxact:addressOffset>0x0000_0000</ipxact:addressOffset>
                 <ipxact:range>0x1_0000_0000</ipxact:range>
               </ipxact:segment>
@@ -13586,7 +13619,7 @@ https://fpgasoftware.intel.com/eula.-->
               <ipxact:segment>
                 <ipxact:name>subsys_hps.usb31_phy_reconfig_slave</ipxact:name>
                 <ipxact:addressOffset>0x0080_0000</ipxact:addressOffset>
-                <ipxact:range>0x0080_0000</ipxact:range>
+                <ipxact:range>0x0020_0000</ipxact:range>
               </ipxact:segment>
             </ipxact:segments>
           </ipxact:addressSpace>

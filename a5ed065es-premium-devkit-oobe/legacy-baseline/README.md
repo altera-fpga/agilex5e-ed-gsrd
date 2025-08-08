@@ -19,22 +19,35 @@ This reference design demonstrates the following system integration between Hard
   - HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
   - HPS Clock and Reset
   - HPS FPGA Bridge and Interrupt
-- HPS EMIF configuration
+- HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
 - System integration with FPGA IPs
   - Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
   - Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
   - 256KB of FPGA On-Chip Memory
 
+### USB modes
+This design supports USB 3.1 in both host and device mode.
+Once power up, the USB mode will remain and cannot be changed during runtime.
+
+The linux device tree (dts) needs to be configured.
+The dts can be set with "dr_mode".
+
+| dr_mode value | Equivalent USB mode |
+| :-- | :-- |
+| host | Host |
+| peripheral | Device |
+
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.1
+- **Quartus Version**: 25.1.1
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 - **Device Part**: A5ED013BB32AE5S
 - **Category**: Golden Hardware Reference Design (GHRD)
 - **Source**: Quartus Prime Pro
 - **URL**: https://www.github.com/altera-fpga/agilex5e-ed-gsrd
 - **Design Package**: a5ed065es-premium-devkit-oobe-legacy-baseline.zip
+- **Documentations**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/
 
 ## GHRD Overview
 ![GHRD_overview](/images/agilex5_ghrd_overview.svg)
