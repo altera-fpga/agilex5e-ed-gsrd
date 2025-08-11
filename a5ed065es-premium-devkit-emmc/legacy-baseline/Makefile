@@ -41,6 +41,7 @@ endif
 # Set defaults
 INSTALL_ROOT ?= $(THIS_MK_DIR)
 ARCHIVE_NAME ?= $(PROJECT_NAME)
+
 ##############################################################################
 # Set default goal before any targets. The default goal here is "test"
 ##############################################################################
@@ -76,8 +77,12 @@ ALL_INSTALL_SOF_TARGETS += $(addsuffix -install-sof,$(strip $(1)))
 
 $(strip $(1))-prep : output_files/prep-$(strip $(1)).done
 
+$(strip $(1))-qsys-ip-file-upgrade: pre-prep
+	$(MAKE) --no-print-directory ip-upgrade-helper
+	quartus_sh --ip_upgrade $(PROJECT_NAME) -revision $(strip $(1)) -mode all
+
 $(strip $(1))-ip-upgrade: pre-prep | output_files
-	flock --verbose output_files/ipupgrade.lock quartus_sh --ip_upgrade $(PROJECT_NAME) -revision $(strip $(1))
+	flock --verbose output_files/ipupgrade.lock $(MAKE) $(strip $(1))-qsys-ip-file-upgrade
 
 $(strip $(1))-generate-design :
 
@@ -109,8 +114,8 @@ output_files/pre-prep.done: | output_files
 
 output_files/prep-%.done: output_files/pre-prep.done | output_files
 	chmod a-w $(PROJECT_NAME).qpf
-	flock --verbose output_files/ipgenerate.lock quartus_ipgenerate top -c $* --simulation=verilog --synthesis=verilog
-	ip-setup-simulation --quartus-project=top --revision=$* --output-directory=sim_setup_$*
+	flock --verbose output_files/ipgenerate.lock quartus_ipgenerate top -c $* --simulation=verilog --synthesis=verilog --simulator=modelsim,vcsmx,riviera,xcelium |& tee output_files/$*.ipgen.rpt
+	ip-setup-simulation --quartus-project=top --revision=$* --output-directory=sim_setup_$* --simulator=modelsim,vcsmx,riviera,xcelium |& tee -a output_files/$*.ipgen.rpt
 	touch $@
 
 .PHONY: pre-prep
@@ -164,6 +169,9 @@ test : $(ALL_TEST_TARGETS)
 print-targets:
 	$(info $(ALL_TARGET_STEM_NAMES))
 
+# run script to upgrade IP and QSYS files
+ip-upgrade-helper:
+	qsys-script --qpf=top --script=qsys_update.tcl --system-file=qsys_top.qsys --search-path="custom_ip/**/*, $$"
 
 ###############################################################################
 #                           SW Build Targets

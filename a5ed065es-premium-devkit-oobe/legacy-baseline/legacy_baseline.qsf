@@ -1,18 +1,18 @@
 # -------------------------------------------------------------------------- #
 #
 # Copyright (C) 2025  Altera Corporation. All rights reserved.
-# Your use of Altera Corporation's design tools, logic functions 
-# and other software and tools, and any partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Altera Program License 
+# Your use of Altera Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Altera Program License
 # Subscription Agreement, the Altera Quartus Prime License Agreement,
 # the Altera IP License Agreement, or other applicable license
 # agreement, including, without limitation, that your use is for
 # the sole purpose of programming logic devices manufactured by
 # Altera and sold by Altera or its authorized distributors.  Please
-# refer to the Altera Software License Subscription Agreements 
+# refer to the Altera Software License Subscription Agreements
 # on the Quartus Prime software download page.
 #
 # -------------------------------------------------------------------------- #
@@ -22,10 +22,10 @@
 # Date created = 15:43:58  March 05, 2025
 #
 # -------------------------------------------------------------------------- #
-set_global_assignment -name TOP_LEVEL_ENTITY ghrd_agilex5_top
+set_global_assignment -name TOP_LEVEL_ENTITY legacy_baseline_top
 set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
 set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
-set_global_assignment -name LAST_QUARTUS_VERSION "25.1.0 Pro Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "25.1.1 Pro Edition"
 set_global_assignment -name FAMILY "Agilex 5"
 set_global_assignment -name DEVICE A5ED065BB32AE6SR0
 
@@ -35,7 +35,6 @@ set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 # Set the defaulr parallelizaiton to 4
 set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
 # Define the board as default (None)
-set_global_assignment -name BOARD default
 # Convert timing failures to errors
 set_global_assignment -name PROMOTE_WARNING_TO_ERROR 332148
 # Include custom IP in IP search path
@@ -221,19 +220,8 @@ set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio1_io4
 set_global_assignment -name NUMBER_OF_SLAVE_DEVICE 2
 
 # Back-Annotate Pin Location Assignment
-set_location_assignment PIN_T124 -to hps_jtag_tdo
-set_location_assignment PIN_D132 -to hps_sdmmc_CCLK
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_CCLK
-set_location_assignment PIN_L135 -to hps_usb1_STP
-set_location_assignment PIN_M127 -to hps_emac2_TX_CLK
-set_location_assignment PIN_K127 -to hps_emac2_TX_CTL
-set_location_assignment PIN_K124 -to hps_emac2_TXD0
-set_location_assignment PIN_Y127 -to hps_emac2_TXD1
-set_location_assignment PIN_U134 -to hps_emac2_PPS
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_PPS
-set_location_assignment PIN_F127 -to hps_emac2_TXD2
-set_location_assignment PIN_Y124 -to hps_emac2_TXD3
-set_location_assignment PIN_AG115 -to hps_emac2_MDC
 set_location_assignment PIN_W134 -to hps_uart0_TX
 set_location_assignment PIN_H108 -to emif_hps_emif_mem_0_mem_ck_t
 set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V SSTL" -to emif_hps_emif_mem_0_mem_ck_t
@@ -293,159 +281,153 @@ set_location_assignment PIN_H117 -to emif_hps_emif_mem_0_mem_reset_n
 set_instance_assignment -name IO_STANDARD "SSTL-12" -to emif_hps_emif_mem_0_mem_reset_n
 set_location_assignment PIN_K108 -to emif_hps_emif_mem_0_mem_par
 set_instance_assignment -name IO_STANDARD "SSTL-12" -to emif_hps_emif_mem_0_mem_par
-set_location_assignment PIN_AB132 -to hps_sdmmc_CMD
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_CMD
-set_location_assignment PIN_E135 -to hps_sdmmc_D0
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D0
-set_location_assignment PIN_F132 -to hps_sdmmc_D1
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D1
-set_location_assignment PIN_AA135 -to hps_sdmmc_D2
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D2
-set_location_assignment PIN_V127 -to hps_sdmmc_D3
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D3
-set_location_assignment PIN_AD135 -to hps_usb1_DATA0
-set_location_assignment PIN_M132 -to hps_usb1_DATA1
-set_location_assignment PIN_K132 -to hps_usb1_DATA2
-set_location_assignment PIN_AG129 -to hps_usb1_DATA3
-set_location_assignment PIN_J134 -to hps_usb1_DATA4
-set_location_assignment PIN_AG120 -to hps_usb1_DATA5
-set_location_assignment PIN_G134 -to hps_usb1_DATA6
-set_location_assignment PIN_G135 -to hps_usb1_DATA7
-set_location_assignment PIN_R134 -to hps_emac2_MDIO
-set_location_assignment PIN_N135 -to hps_i3c1_SDA
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i3c1_SDA
-set_location_assignment PIN_AK120 -to hps_i3c1_SCL
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i3c1_SCL
-set_location_assignment PIN_W135 -to hps_gpio0_io0
-set_location_assignment PIN_U135 -to hps_gpio0_io1
-set_location_assignment PIN_T132 -to hps_gpio0_io11
-set_location_assignment PIN_AG123 -to hps_gpio1_io3
-set_location_assignment PIN_B134 -to hps_gpio1_io4
-set_location_assignment PIN_AG90 -to emif_hps_emif_mem_0_mem_dqs_t[0]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[0]
-set_location_assignment PIN_F95 -to emif_hps_emif_mem_0_mem_dqs_t[1]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[1]
-set_location_assignment PIN_AG93 -to emif_hps_emif_mem_0_mem_dqs_c[0]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[0]
-set_location_assignment PIN_D95 -to emif_hps_emif_mem_0_mem_dqs_c[1]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[1]
-set_location_assignment PIN_Y84 -to emif_hps_emif_mem_0_mem_dq[0]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[0]
-set_location_assignment PIN_AG104 -to emif_hps_emif_mem_0_mem_dq[1]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[1]
-set_location_assignment PIN_AC100 -to emif_hps_emif_mem_0_mem_dq[2]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[2]
-set_location_assignment PIN_AC96 -to emif_hps_emif_mem_0_mem_dq[3]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[3]
-set_location_assignment PIN_Y98 -to emif_hps_emif_mem_0_mem_dq[4]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[4]
-set_location_assignment PIN_Y95 -to emif_hps_emif_mem_0_mem_dq[5]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[5]
-set_location_assignment PIN_Y87 -to emif_hps_emif_mem_0_mem_dq[6]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[6]
-set_location_assignment PIN_AG100 -to emif_hps_emif_mem_0_mem_dq[7]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[7]
-set_location_assignment PIN_D84 -to emif_hps_emif_mem_0_mem_dq[8]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[8]
-set_location_assignment PIN_F84 -to emif_hps_emif_mem_0_mem_dq[9]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[9]
-set_location_assignment PIN_M87 -to emif_hps_emif_mem_0_mem_dq[10]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[10]
-set_location_assignment PIN_K87 -to emif_hps_emif_mem_0_mem_dq[11]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[11]
-set_location_assignment PIN_K98 -to emif_hps_emif_mem_0_mem_dq[12]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[12]
-set_location_assignment PIN_M98 -to emif_hps_emif_mem_0_mem_dq[13]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[13]
-set_location_assignment PIN_F98 -to emif_hps_emif_mem_0_mem_dq[14]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[14]
-set_location_assignment PIN_H98 -to emif_hps_emif_mem_0_mem_dq[15]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[15]
-set_location_assignment PIN_K84 -to emif_hps_emif_mem_0_mem_dq[16]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[16]
-set_location_assignment PIN_M84 -to emif_hps_emif_mem_0_mem_dq[17]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[17]
-set_location_assignment PIN_T84 -to emif_hps_emif_mem_0_mem_dq[18]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[18]
-set_location_assignment PIN_P84 -to emif_hps_emif_mem_0_mem_dq[19]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[19]
-set_location_assignment PIN_V98 -to emif_hps_emif_mem_0_mem_dq[20]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[20]
-set_location_assignment PIN_T98 -to emif_hps_emif_mem_0_mem_dq[21]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[21]
-set_location_assignment PIN_P95 -to emif_hps_emif_mem_0_mem_dq[22]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[22]
-set_location_assignment PIN_T95 -to emif_hps_emif_mem_0_mem_dq[23]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[23]
-set_location_assignment PIN_A128 -to emif_hps_emif_mem_0_mem_dq[24]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[24]
-set_location_assignment PIN_B130 -to emif_hps_emif_mem_0_mem_dq[25]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[25]
-set_location_assignment PIN_A130 -to emif_hps_emif_mem_0_mem_dq[26]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[26]
-set_location_assignment PIN_B116 -to emif_hps_emif_mem_0_mem_dq[27]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[27]
-set_location_assignment PIN_A116 -to emif_hps_emif_mem_0_mem_dq[28]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[28]
-set_location_assignment PIN_B113 -to emif_hps_emif_mem_0_mem_dq[29]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[29]
-set_location_assignment PIN_A113 -to emif_hps_emif_mem_0_mem_dq[30]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[30]
-set_location_assignment PIN_B128 -to emif_hps_emif_mem_0_mem_dq[31]
-set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[31]
-set_location_assignment PIN_K95 -to emif_hps_emif_mem_0_mem_dqs_t[2]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[2]
-set_location_assignment PIN_B122 -to emif_hps_emif_mem_0_mem_dqs_t[3]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[3]
-set_location_assignment PIN_M95 -to emif_hps_emif_mem_0_mem_dqs_c[2]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[2]
-set_location_assignment PIN_A125 -to emif_hps_emif_mem_0_mem_dqs_c[3]
-set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[3]
-set_location_assignment PIN_N134 -to hps_osc_clk
-set_location_assignment PIN_P132 -to hps_usb1_CLK
-set_location_assignment PIN_J135 -to hps_usb1_DIR
-set_location_assignment PIN_AD134 -to hps_usb1_NXT
 set_location_assignment PIN_AK115 -to hps_uart0_RX
-set_location_assignment PIN_AL120 -to hps_emac2_PPS_TRIG
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_PPS_TRIG
-set_location_assignment PIN_Y132 -to hps_jtag_tms
-set_location_assignment PIN_P124 -to hps_jtag_tdi
-set_location_assignment PIN_M124 -to hps_emac2_RX_CLK
-set_location_assignment PIN_AB127 -to hps_emac2_RX_CTL
-set_location_assignment PIN_H127 -to hps_emac2_RXD0
-set_location_assignment PIN_AB124 -to hps_emac2_RXD1
-set_location_assignment PIN_F124 -to hps_emac2_RXD2
-set_location_assignment PIN_D124 -to hps_emac2_RXD3
-set_location_assignment PIN_T127 -to hps_jtag_tck
 set_location_assignment PIN_AK111 -to emif_hps_emif_oct_0_oct_rzqin
 set_instance_assignment -name IO_STANDARD "1.2-V" -to emif_hps_emif_oct_0_oct_rzqin
 set_location_assignment PIN_Y108 -to emif_hps_emif_mem_0_mem_alert_n
+
 set_location_assignment PIN_AB117 -to emif_hps_emif_ref_clk_0_clk
 set_location_assignment PIN_AP115 -to "usb31_phy_refclk_p_clk(n)"
 set_instance_assignment -name IO_STANDARD "CURRENT MODE LOGIC (CML)" -to "usb31_phy_refclk_p_clk(n)"
 set_location_assignment PIN_Y117 -to "emif_hps_emif_ref_clk_0_clk(n)"
+
+set_location_assignment PIN_B122 -to emif_hps_emif_mem_0_mem_dqs_t[0]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[0]
+set_location_assignment PIN_AG90 -to emif_hps_emif_mem_0_mem_dqs_t[1]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[1]
+set_location_assignment PIN_K95 -to emif_hps_emif_mem_0_mem_dqs_t[2]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[2]
+set_location_assignment PIN_F95 -to emif_hps_emif_mem_0_mem_dqs_t[3]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[3]
+set_location_assignment PIN_A101 -to emif_hps_emif_mem_0_mem_dqs_t[4]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_t[4]
+set_location_assignment PIN_A125 -to emif_hps_emif_mem_0_mem_dqs_c[0]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[0]
+set_location_assignment PIN_AG93 -to emif_hps_emif_mem_0_mem_dqs_c[1]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[1]
+set_location_assignment PIN_M95 -to emif_hps_emif_mem_0_mem_dqs_c[2]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[2]
+set_location_assignment PIN_D95 -to emif_hps_emif_mem_0_mem_dqs_c[3]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[3]
+set_location_assignment PIN_B101 -to emif_hps_emif_mem_0_mem_dqs_c[4]
+set_instance_assignment -name IO_STANDARD "DIFFERENTIAL 1.2-V POD" -to emif_hps_emif_mem_0_mem_dqs_c[4]
+set_location_assignment PIN_B128 -to emif_hps_emif_mem_0_mem_dq[0]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[0]
+set_location_assignment PIN_B116 -to emif_hps_emif_mem_0_mem_dq[1]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[1]
+set_location_assignment PIN_A128 -to emif_hps_emif_mem_0_mem_dq[2]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[2]
+set_location_assignment PIN_A116 -to emif_hps_emif_mem_0_mem_dq[3]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[3]
+set_location_assignment PIN_A130 -to emif_hps_emif_mem_0_mem_dq[4]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[4]
+set_location_assignment PIN_B113 -to emif_hps_emif_mem_0_mem_dq[5]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[5]
+set_location_assignment PIN_B130 -to emif_hps_emif_mem_0_mem_dq[6]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[6]
+set_location_assignment PIN_A113 -to emif_hps_emif_mem_0_mem_dq[7]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[7]
+set_location_assignment PIN_AC100 -to emif_hps_emif_mem_0_mem_dq[8]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[8]
+set_location_assignment PIN_Y84 -to emif_hps_emif_mem_0_mem_dq[9]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[9]
+set_location_assignment PIN_Y95 -to emif_hps_emif_mem_0_mem_dq[10]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[10]
+set_location_assignment PIN_AC96 -to emif_hps_emif_mem_0_mem_dq[11]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[11]
+set_location_assignment PIN_AG100 -to emif_hps_emif_mem_0_mem_dq[12]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[12]
+set_location_assignment PIN_Y87 -to emif_hps_emif_mem_0_mem_dq[13]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[13]
+set_location_assignment PIN_Y98 -to emif_hps_emif_mem_0_mem_dq[14]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[14]
+set_location_assignment PIN_AG104 -to emif_hps_emif_mem_0_mem_dq[15]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[15]
+set_location_assignment PIN_T98 -to emif_hps_emif_mem_0_mem_dq[16]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[16]
+set_location_assignment PIN_M84 -to emif_hps_emif_mem_0_mem_dq[17]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[17]
+set_location_assignment PIN_P95 -to emif_hps_emif_mem_0_mem_dq[18]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[18]
+set_location_assignment PIN_T84 -to emif_hps_emif_mem_0_mem_dq[19]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[19]
+set_location_assignment PIN_V98 -to emif_hps_emif_mem_0_mem_dq[20]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[20]
+set_location_assignment PIN_P84 -to emif_hps_emif_mem_0_mem_dq[21]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[21]
+set_location_assignment PIN_T95 -to emif_hps_emif_mem_0_mem_dq[22]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[22]
+set_location_assignment PIN_K84 -to emif_hps_emif_mem_0_mem_dq[23]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[23]
+set_location_assignment PIN_K98 -to emif_hps_emif_mem_0_mem_dq[24]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[24]
+set_location_assignment PIN_K87 -to emif_hps_emif_mem_0_mem_dq[25]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[25]
+set_location_assignment PIN_H98 -to emif_hps_emif_mem_0_mem_dq[26]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[26]
+set_location_assignment PIN_M87 -to emif_hps_emif_mem_0_mem_dq[27]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[27]
+set_location_assignment PIN_M98 -to emif_hps_emif_mem_0_mem_dq[28]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[28]
+set_location_assignment PIN_D84 -to emif_hps_emif_mem_0_mem_dq[29]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[29]
+set_location_assignment PIN_F98 -to emif_hps_emif_mem_0_mem_dq[30]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[30]
+set_location_assignment PIN_F84 -to emif_hps_emif_mem_0_mem_dq[31]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[31]
+set_location_assignment PIN_B106 -to emif_hps_emif_mem_0_mem_dq[32]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[32]
+set_location_assignment PIN_A91 -to emif_hps_emif_mem_0_mem_dq[33]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[33]
+set_location_assignment PIN_A106 -to emif_hps_emif_mem_0_mem_dq[34]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[34]
+set_location_assignment PIN_A94 -to emif_hps_emif_mem_0_mem_dq[35]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[35]
+set_location_assignment PIN_A110 -to emif_hps_emif_mem_0_mem_dq[36]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[36]
+set_location_assignment PIN_B91 -to emif_hps_emif_mem_0_mem_dq[37]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[37]
+set_location_assignment PIN_B103 -to emif_hps_emif_mem_0_mem_dq[38]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[38]
+set_location_assignment PIN_B88 -to emif_hps_emif_mem_0_mem_dq[39]
+set_instance_assignment -name IO_STANDARD "1.2-V POD" -to emif_hps_emif_mem_0_mem_dq[39]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_led_pio[0]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_led_pio[1]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_led_pio[2]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_led_pio[3]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to usb31_io_usb_ctrl
+
+set_global_assignment -name BOARD default
 set_global_assignment -name VERILOG_FILE legacy_baseline_top.v
 set_global_assignment -name VERILOG_FILE custom_ip/debounce/debounce.v
 set_global_assignment -name VERILOG_FILE custom_ip/reset_sync/altera_reset_synchronizer.v
 set_global_assignment -name SDC_FILE legacy_baseline.sdc
-set_global_assignment -name IP_FILE hps_subsys/ip/hps_subsys/agilex_hps.ip
-set_global_assignment -name IP_FILE hps_subsys/ip/hps_subsys/f2sdram_adapter.ip
-set_global_assignment -name IP_FILE hps_subsys/ip/qsys_top/emif_io96b_hps.ip
-set_global_assignment -name QSYS_FILE hps_subsys/hps_subsys.qsys
-set_global_assignment -name IP_FILE jtag_subsys/ip/jtag_subsys/jtag_clk.ip
-set_global_assignment -name IP_FILE jtag_subsys/ip/jtag_subsys/jtag_rst_in.ip
-set_global_assignment -name IP_FILE jtag_subsys/ip/jtag_subsys/hps_f2sdram.ip
-set_global_assignment -name IP_FILE jtag_subsys/ip/jtag_subsys/fpga_m.ip
-set_global_assignment -name IP_FILE jtag_subsys/ip/jtag_subsys/hps_m.ip
-set_global_assignment -name QSYS_FILE jtag_subsys/jtag_subsys.qsys
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/periph_clk.ip
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/periph_rst_in.ip
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/sysid.ip
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/button_pio.ip
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/dipsw_pio.ip
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/led_pio.ip
-set_global_assignment -name IP_FILE peripheral_subsys/ip/peripheral_subsys/pb_cpu_0.ip
-set_global_assignment -name QSYS_FILE peripheral_subsys/peripheral_subsys.qsys
+set_global_assignment -name IP_FILE ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name IP_FILE ip/hps_subsys/f2sdram_adapter.ip
+set_global_assignment -name IP_FILE ip/hps_subsys/emif_io96b_hps.ip
+set_global_assignment -name QSYS_FILE hps_subsys.qsys
+set_global_assignment -name IP_FILE ip/jtag_subsys/jtag_clk.ip
+set_global_assignment -name IP_FILE ip/jtag_subsys/jtag_rst_in.ip
+set_global_assignment -name IP_FILE ip/jtag_subsys/hps_f2sdram.ip
+set_global_assignment -name IP_FILE ip/jtag_subsys/fpga_m.ip
+set_global_assignment -name IP_FILE ip/jtag_subsys/hps_m.ip
+set_global_assignment -name QSYS_FILE jtag_subsys.qsys
+set_global_assignment -name IP_FILE ip/peripheral_subsys/periph_clk.ip
+set_global_assignment -name IP_FILE ip/peripheral_subsys/periph_rst_in.ip
+set_global_assignment -name IP_FILE ip/peripheral_subsys/sysid.ip
+set_global_assignment -name IP_FILE ip/peripheral_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ip/peripheral_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ip/peripheral_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ip/peripheral_subsys/pb_cpu_0.ip
+set_global_assignment -name QSYS_FILE peripheral_subsys.qsys
 set_global_assignment -name IP_FILE ip/qsys_top/clk_100.ip
 set_global_assignment -name IP_FILE ip/qsys_top/rst_in.ip
 set_global_assignment -name IP_FILE ip/qsys_top/user_rst_clkgate_0.ip

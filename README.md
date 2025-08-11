@@ -1,4 +1,4 @@
-# Golden Hardware Reference Design (GHRD) for Agilex 5 FPGA E-Series
+# Agilex 5 E-Series Golden Hardware Reference Design (GHRD)
 
 This repository contains Golden Hardware Reference Design (GHRD) for Agilex 5 E-Series System On Chip (SoC) FPGA.
 The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
@@ -16,7 +16,7 @@ This is applicable to all designs.
   - HPS Peripheral and I/O. eg, NAND, SD/MMC, EMAC, USB, SPI, I2C, UART, and GPIO. (depends on the daughter card).
   - HPS Clock and Reset
   - HPS FPGA Bridge and Interrupt
-- HPS EMIF configuration
+- HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
 - System integration with FPGA IPs
   - Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs.
   - Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
@@ -32,7 +32,7 @@ This is only applicable if the feature is enabled.
 3. modify and compile the [designs](#designs) with Quartus Prime.
 
 ## Dependency
-* Altera Quartus Prime 25.1
+* Altera Quartus Prime 25.1.1
 * Supported Board
   - Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
   ![Agilex 5 E-Series Premium Development Kit](images/agilex5-premium-devkit-es.png)
@@ -40,19 +40,19 @@ This is only applicable if the feature is enabled.
   ![Agilex 5 E-Series Modular Development Kit](images/agilex5-modular-devkit-es.png)
 
 ## Tested Platform for the GHRD Build Flow
-* SUSE Linux Enterprise Server 12 SP5
+* SUSE Linux Enterprise Server 15 SP4
 
 ## Setup
 
 Several tools are required to be in the path.
 
-* Altera Quartus Prime 25.1
+* Altera Quartus Prime 25.1.1
 * Python 3.11.5 (only required when using command line to build)
 
 ### Example Setup for Altera Quartus Prime tools
 This is recommended, when using command line to build.
 ```bash
-export QUARTUS_ROOTDIR=~/intelFPGA_pro/25.1/quartus
+export QUARTUS_ROOTDIR=~/intelFPGA_pro/25.1.1/quartus
 ```
 Note: Adapt the path above to where Quartus Prime is installed.
 
@@ -61,6 +61,10 @@ export PATH="$QUARTUS_ROOTDIR/bin:$QUARTUS_ROOTDIR/../qsys/bin:$QUARTUS_ROOTDIR/
 ```
 
 ## Quick start
+
+### Notes
+- Command line and Quartus GUI should not be used intertwined.
+- Mixing both might not generate some fileset correctly and fail the build.
 
 ### using command line
 Copy and run the desired make command from [designs](#designs) in the root directory.
@@ -100,12 +104,6 @@ make a5ed065es-premium-devkit-debug2-legacy-baseline-legacy_baseline-all
   Legacy baseline GHRD for the A5ED065 ES Premium Devkit with HPS NAND Board (This board also offers eMMC).
 ```bash
 make a5ed065es-premium-devkit-emmc-legacy-baseline-legacy_baseline-all
-```
-
-* [a5ed065es-premium-devkit-nand/legacy-baseline](a5ed065es-premium-devkit-nand/legacy-baseline/README.md) :
-  Legacy baseline GHRD for the A5ED065 ES Premium Devkit with HPS NAND Board.
-```bash
-make a5ed065es-premium-devkit-nand-legacy-baseline-legacy_baseline-all
 ```
 
 ### Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065BB32AES1

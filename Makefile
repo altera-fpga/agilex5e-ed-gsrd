@@ -128,7 +128,6 @@ endef
 # Create rules for subdirs
 TARGET_SUBDIR := \
 	a5ed065es-premium-devkit-oobe \
-	a5ed065es-premium-devkit-nand \
 	a5ed065es-premium-devkit-emmc \
 	a5ed065es-premium-devkit-debug2 \
 	a5ed065es-modular-devkit-som
@@ -175,6 +174,7 @@ venv-freeze:
 prepare-tools : venv
 
 # Include not_shipped Makefile if present
+# Should be included before Toplevel Targets to get all not_shipped dependency targets.
 -include not_shipped/Makefile.mk
 
 ###############################################################################
@@ -205,7 +205,7 @@ sw-build: $(ALL_SW_BUILD_TARGETS)
 
 # Run all tests
 .PHONY: test
-test : build
+test : $(ALL_TEST_TARGETS)
 
 .PHONY: install-sof
 install-sof: $(ALL_INSTALL_SOF_TARGETS)
@@ -220,6 +220,8 @@ all: $(ALL_TARGET_ALL_NAMES)
 help:
 	$(info GHRD Build)
 	$(info ----------------)
+	$(info    all         : Run and "all" target on each of the target designs)
+	$(info ----------------)
 	$(info    All Targets             : $(ALL_TARGET_ALL_NAMES))
 	$(info    Stem names              : $(ALL_TARGET_STEM_NAMES))
 	$(info    Pre-Prep Targets        : $(ALL_PRE_PREP_TARGETS))
@@ -227,4 +229,3 @@ help:
 	$(info    Build Targets           : $(ALL_BUILD_TARGETS))
 	$(info    Test Targets            : $(ALL_TEST_TARGETS))
 	$(info    Package Targets 	      : $(ALL_PACKAGE_DESIGN_TARGETS))
-

@@ -11,7 +11,7 @@
 // Find and print each number individually
 
 
-module ghrd_agilex5_top (
+module legacy_baseline_top (
     //Additional refclk_bti to preserve Etile XCVR
     // Clock and Reset
     input wire fpga_clk_100,
@@ -35,9 +35,9 @@ module ghrd_agilex5_top (
     input  wire         emif_hps_emif_mem_0_mem_alert_n,
     input  wire         emif_hps_emif_oct_0_oct_rzqin,
     input  wire         emif_hps_emif_ref_clk_0_clk,
-    inout  wire [  3:0] emif_hps_emif_mem_0_mem_dqs_t,
-    inout  wire [  3:0] emif_hps_emif_mem_0_mem_dqs_c,
-    inout  wire [ 31:0] emif_hps_emif_mem_0_mem_dq,
+    inout  wire [  4:0] emif_hps_emif_mem_0_mem_dqs_t,
+    inout  wire [  4:0] emif_hps_emif_mem_0_mem_dqs_c,
+    inout  wire [ 39:0] emif_hps_emif_mem_0_mem_dq,
     input  wire         hps_jtag_tck,
     input  wire         hps_jtag_tms,
     output wire         hps_jtag_tdo,
@@ -104,7 +104,7 @@ module ghrd_agilex5_top (
     wire ninit_done;
     wire fpga_reset_n_debounced_wire;
     reg fpga_reset_n_debounced;
-    wire system_reset;
+    wire system_reset_n;
 
     wire [1:0] usb31_io_usb_ctrl_int;
     assign usb31_io_usb_ctrl = usb31_io_usb_ctrl_int[1];
@@ -113,13 +113,13 @@ module ghrd_agilex5_top (
 
     assign combined_reset_n = fpga_reset_n & ~h2f_reset & ~ninit_done;
 
-    altera_reset_synchronizer #(
-        .ASYNC_RESET(1),
-        .DEPTH      (2)
-    ) sys_rst_inst (
-        .reset_in (~combined_reset_n),
-        .clk      (system_clk_100),
-        .reset_out(system_reset)
+    altera_std_synchronizer #(
+        .depth(3)
+    ) fpga_reset_n_sync (
+        .clk    (system_clk_100),
+        .reset_n(combined_reset_n),
+        .din    (1'b1),
+        .dout   (system_reset_n)
     );
     assign system_clk_100 = fpga_clk_100;
 
@@ -232,7 +232,7 @@ module ghrd_agilex5_top (
 
         .h2f_reset_reset(h2f_reset),
 
-        .reset_reset_n(combined_reset_n)
+        .reset_reset_n(system_reset_n)
     );
 
 
@@ -241,7 +241,7 @@ module ghrd_agilex5_top (
     // Debounce logic to clean out glitches within 1ms
     debounce debounce_inst (
         .clk     (system_clk_100),
-        .reset_n (~system_reset),
+        .reset_n (system_reset_n),
         .data_in (fpga_button_pio),
         .data_out(fpga_debounced_buttons)
     );
@@ -249,8 +249,8 @@ module ghrd_agilex5_top (
         defparam debounce_inst.TIMEOUT = 10000;  // at 100Mhz this is a debounce time of 1ms
     defparam debounce_inst.TIMEOUT_WIDTH = 32;  // ceil(log2(TIMEOUT))
 
-    always @(posedge system_clk_100 or posedge system_reset) begin
-        if (system_reset) heartbeat_count <= 23'd0;
+    always @(posedge system_clk_100 or negedge system_reset_n) begin
+        if (!system_reset_n) heartbeat_count <= 23'd0;
         else heartbeat_count <= heartbeat_count + 23'd1;
     end
 
