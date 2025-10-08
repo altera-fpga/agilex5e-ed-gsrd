@@ -1,0 +1,1423 @@
+<?xml version="1.0" ?>
+<!--Your use of Intel Corporation's design tools, logic functions 
+and other software and tools, and any partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Intel Program License 
+Subscription Agreement, the Intel Quartus Prime License Agreement,
+the Intel FPGA IP License Agreement, or other applicable license
+agreement, including, without limitation, that your use is for
+the sole purpose of programming logic devices manufactured by
+Intel and sold by Intel or its authorized distributors.  Please
+refer to the applicable agreement for further details, at
+https://fpgasoftware.intel.com/eula.-->
+<ipxact:design xmlns:altera="http://www.altera.com/XMLSchema/IPXact2014/extensions" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
+  <ipxact:vendor>Altera Corporation</ipxact:vendor>
+  <ipxact:library>hps_subsys</ipxact:library>
+  <ipxact:name>hps_subsys</ipxact:name>
+  <ipxact:version>1.0</ipxact:version>
+  <ipxact:componentInstances></ipxact:componentInstances>
+  <ipxact:vendorExtensions>
+    <altera:catalog_card_info>
+      <altera:name>$${FILENAME}</altera:name>
+      <altera:displayName>$${FILENAME}</altera:displayName>
+      <altera:version>1.0</altera:version>
+      <altera:description></altera:description>
+      <altera:tags></altera:tags>
+      <altera:categories>Systems</altera:categories>
+      <altera:tool>QsysPro</altera:tool>
+    </altera:catalog_card_info>
+    <altera:altera_system_parameters>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="board" type="string">
+          <ipxact:name>board</ipxact:name>
+          <ipxact:displayName>Board</ipxact:displayName>
+          <ipxact:value>default</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="bonusData" type="string">
+          <ipxact:name>bonusData</ipxact:name>
+          <ipxact:displayName>bonusData</ipxact:displayName>
+          <ipxact:value>bonusData 
+{
+   element u_clocks_and_resets
+   {
+      datum _sortIndex
+      {
+         value = "0";
+         type = "int";
+      }
+   }
+   element u_gts_reset_sequencer
+   {
+      datum _sortIndex
+      {
+         value = "1";
+         type = "int";
+      }
+   }
+   element u_hps_comp
+   {
+      datum _sortIndex
+      {
+         value = "2";
+         type = "int";
+      }
+   }
+}
+</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="cpuInfo" type="string">
+          <ipxact:name>cpuInfo</ipxact:name>
+          <ipxact:displayName>cpuInfo</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="designId" type="string">
+          <ipxact:name>designId</ipxact:name>
+          <ipxact:displayName>designId</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="device" type="string">
+          <ipxact:name>device</ipxact:name>
+          <ipxact:displayName>Device</ipxact:displayName>
+          <ipxact:value>A5ED065BB32AE6SR0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="deviceFamily" type="string">
+          <ipxact:name>deviceFamily</ipxact:name>
+          <ipxact:displayName>Device family</ipxact:displayName>
+          <ipxact:value>Agilex 5</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="deviceSpeedGrade" type="string">
+          <ipxact:name>deviceSpeedGrade</ipxact:name>
+          <ipxact:displayName>Device Speed Grade</ipxact:displayName>
+          <ipxact:value>6</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="dflBitArray" type="string">
+          <ipxact:name>dflBitArray</ipxact:name>
+          <ipxact:displayName>dflBitArray</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="fabricMode" type="string">
+          <ipxact:name>fabricMode</ipxact:name>
+          <ipxact:displayName>fabricMode</ipxact:displayName>
+          <ipxact:value>QSYS</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="generateLegacySim" type="bit">
+          <ipxact:name>generateLegacySim</ipxact:name>
+          <ipxact:displayName>generateLegacySim</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="generationId" type="int">
+          <ipxact:name>generationId</ipxact:name>
+          <ipxact:displayName>Generation Id</ipxact:displayName>
+          <ipxact:value>0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="globalResetBus" type="bit">
+          <ipxact:name>globalResetBus</ipxact:name>
+          <ipxact:displayName>Global reset</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="hdlLanguage" type="string">
+          <ipxact:name>hdlLanguage</ipxact:name>
+          <ipxact:displayName>hdlLanguage</ipxact:displayName>
+          <ipxact:value>VERILOG</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="hideFromIPCatalog" type="bit">
+          <ipxact:name>hideFromIPCatalog</ipxact:name>
+          <ipxact:displayName>Hide from IP Catalog</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="lockedInterfaceDefinition" type="string">
+          <ipxact:name>lockedInterfaceDefinition</ipxact:name>
+          <ipxact:displayName>lockedInterfaceDefinition</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="sopcBorderPoints" type="bit">
+          <ipxact:name>sopcBorderPoints</ipxact:name>
+          <ipxact:displayName>Use SOPC Builder port naming</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="systemHash" type="longint">
+          <ipxact:name>systemHash</ipxact:name>
+          <ipxact:displayName>systemHash</ipxact:displayName>
+          <ipxact:value>0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="systemInfos" type="string">
+          <ipxact:name>systemInfos</ipxact:name>
+          <ipxact:displayName>systemInfos</ipxact:displayName>
+          <ipxact:value>&lt;systemInfosDefinition&gt;
+    &lt;connPtSystemInfos&gt;
+        &lt;entry&gt;
+            &lt;key&gt;emif_hps_emif_ref_clk_0&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;emif_hps_emif_ref_clk_0&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;f2h_irq0_in&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;f2h_irq0_in&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;INTERRUPTS_USED&lt;/key&gt;
+                        &lt;value&gt;1&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;f2h_irq1_in&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;f2h_irq1_in&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;INTERRUPTS_USED&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;f2sdram&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;f2sdram&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CPU_INFO_ID&lt;/key&gt;
+                        &lt;value&gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
+                        &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='u_hps_comp.f2sdram' start='0x0' end='0x10000000000' datawidth='256' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
+                        &lt;value&gt;40&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;MAX_SLAVE_DATA_WIDTH&lt;/key&gt;
+                        &lt;value&gt;256&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/consumedSystemInfos&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;f2sdram_clk&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;f2sdram_clk&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;fpga2hps&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;fpga2hps&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CPU_INFO_ID&lt;/key&gt;
+                        &lt;value&gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;fpga2hps_clk&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;fpga2hps_clk&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;hps2fpga&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;hps2fpga&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
+                        &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='parent/u_core_subsys.u_core_onchip_memory.axi_s1' start='0x0' end='0x40000' datawidth='128' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
+                        &lt;value&gt;18&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;hps2fpga_clk&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;hps2fpga_clk&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;lwhps2fpga&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;lwhps2fpga&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
+                        &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='parent/u_hps_subsys.u_hps_comp.u_agilex_hps.usb31_phy_reconfig_slave' start='0x0' end='0x200000' datawidth='32' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
+                        &lt;value&gt;24&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;lwhps2fpga_clk&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;lwhps2fpga_clk&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;system_clock&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;system_clock&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos/&gt;
+                &lt;consumedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;0&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/consumedSystemInfos&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;usb31_phy_pma_cpu_clk&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;usb31_phy_pma_cpu_clk&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;usb31_phy_reconfig_clk&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;usb31_phy_reconfig_clk&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;10&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;usb31_phy_reconfig_slave&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;usb31_phy_reconfig_slave&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CPU_INFO_ID&lt;/key&gt;
+                        &lt;value&gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
+                        &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='u_hps_comp.usb31_phy_reconfig_slave' start='0x0' end='0x200000' datawidth='32' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
+                        &lt;value&gt;21&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;MAX_SLAVE_DATA_WIDTH&lt;/key&gt;
+                        &lt;value&gt;32&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/consumedSystemInfos&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;usb31_phy_refclk_n&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;usb31_phy_refclk_n&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;usb31_phy_refclk_p&lt;/key&gt;
+            &lt;value&gt;
+                &lt;connectionPointName&gt;usb31_phy_refclk_p&lt;/connectionPointName&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;RESET_DOMAIN&lt;/key&gt;
+                        &lt;value&gt;-1&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
+                &lt;consumedSystemInfos/&gt;
+            &lt;/value&gt;
+        &lt;/entry&gt;
+    &lt;/connPtSystemInfos&gt;
+&lt;/systemInfosDefinition&gt;</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="systemScripts" type="string">
+          <ipxact:name>systemScripts</ipxact:name>
+          <ipxact:displayName>systemScripts</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="testBenchDutName" type="string">
+          <ipxact:name>testBenchDutName</ipxact:name>
+          <ipxact:displayName>Use Test Bench Naming Pattern</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="timeStamp" type="longint">
+          <ipxact:name>timeStamp</ipxact:name>
+          <ipxact:displayName>timeStamp</ipxact:displayName>
+          <ipxact:value>0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="useTestBenchNamingPattern" type="bit">
+          <ipxact:name>useTestBenchNamingPattern</ipxact:name>
+          <ipxact:displayName>Use Test Bench Naming Pattern</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </altera:altera_system_parameters>
+    <altera:instance_parameters></altera:instance_parameters>
+    <altera:instance_script></altera:instance_script>
+    <altera:modules>
+      <altera:module altera:enabled="true" altera:auto_export="false">
+        <altera:entity_info>
+          <ipxact:vendor>Altera Corporation</ipxact:vendor>
+          <ipxact:library>u_clocks_and_resets</ipxact:library>
+          <ipxact:name>altera_generic_component</ipxact:name>
+          <ipxact:version>1.0</ipxact:version>
+        </altera:entity_info>
+        <altera:altera_module_parameters>
+          <ipxact:parameters>
+            <ipxact:parameter parameterId="bspCpu" type="bit">
+              <ipxact:name>bspCpu</ipxact:name>
+              <ipxact:displayName>BSP CPU</ipxact:displayName>
+              <ipxact:value>false</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="componentDefinition" type="string">
+              <ipxact:name>componentDefinition</ipxact:name>
+              <ipxact:displayName>Component definition</ipxact:displayName>
+              <ipxact:value>&lt;componentDefinition&gt;
+    &lt;boundary&gt;
+        &lt;interfaces&gt;
+            &lt;interface&gt;
+                &lt;name&gt;fpga_clk_100&lt;/name&gt;
+                &lt;type&gt;clock&lt;/type&gt;
+                &lt;isStart&gt;false&lt;/isStart&gt;
+                &lt;ports&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;fpga_clk_100&lt;/name&gt;
+                        &lt;role&gt;clk&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                &lt;/ports&gt;
+                &lt;assignments&gt;
+                    &lt;assignmentValueMap/&gt;
+                &lt;/assignments&gt;
+                &lt;parameters&gt;
+                    &lt;parameterValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;clockRate&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;externallyDriven&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;ptfSchematicName&lt;/key&gt;
+                        &lt;/entry&gt;
+                    &lt;/parameterValueMap&gt;
+                &lt;/parameters&gt;
+            &lt;/interface&gt;
+            &lt;interface&gt;
+                &lt;name&gt;fpga_reset_n&lt;/name&gt;
+                &lt;type&gt;reset&lt;/type&gt;
+                &lt;isStart&gt;false&lt;/isStart&gt;
+                &lt;ports&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;fpga_reset_n&lt;/name&gt;
+                        &lt;role&gt;reset_n&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                &lt;/ports&gt;
+                &lt;assignments&gt;
+                    &lt;assignmentValueMap/&gt;
+                &lt;/assignments&gt;
+                &lt;parameters&gt;
+                    &lt;parameterValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedClock&lt;/key&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;synchronousEdges&lt;/key&gt;
+                            &lt;value&gt;NONE&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/parameterValueMap&gt;
+                &lt;/parameters&gt;
+            &lt;/interface&gt;
+            &lt;interface&gt;
+                &lt;name&gt;h2f_reset_in&lt;/name&gt;
+                &lt;type&gt;reset&lt;/type&gt;
+                &lt;isStart&gt;false&lt;/isStart&gt;
+                &lt;ports&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;h2f_reset&lt;/name&gt;
+                        &lt;role&gt;reset&lt;/role&gt;
+                        &lt;direction&gt;Input&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                &lt;/ports&gt;
+                &lt;assignments&gt;
+                    &lt;assignmentValueMap/&gt;
+                &lt;/assignments&gt;
+                &lt;parameters&gt;
+                    &lt;parameterValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedClock&lt;/key&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;synchronousEdges&lt;/key&gt;
+                            &lt;value&gt;NONE&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/parameterValueMap&gt;
+                &lt;/parameters&gt;
+            &lt;/interface&gt;
+            &lt;interface&gt;
+                &lt;name&gt;system_clock&lt;/name&gt;
+                &lt;type&gt;clock&lt;/type&gt;
+                &lt;isStart&gt;true&lt;/isStart&gt;
+                &lt;ports&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;sys_clk_100&lt;/name&gt;
+                        &lt;role&gt;clk&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                &lt;/ports&gt;
+                &lt;assignments&gt;
+                    &lt;assignmentValueMap/&gt;
+                &lt;/assignments&gt;
+                &lt;parameters&gt;
+                    &lt;parameterValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedDirectClock&lt;/key&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;clockRate&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;clockRateKnown&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;externallyDriven&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;ptfSchematicName&lt;/key&gt;
+                        &lt;/entry&gt;
+                    &lt;/parameterValueMap&gt;
+                &lt;/parameters&gt;
+            &lt;/interface&gt;
+            &lt;interface&gt;
+                &lt;name&gt;system_reset_n&lt;/name&gt;
+                &lt;type&gt;reset&lt;/type&gt;
+                &lt;isStart&gt;true&lt;/isStart&gt;
+                &lt;ports&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;sys_clk_100_reset_n&lt;/name&gt;
+                        &lt;role&gt;reset_n&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                &lt;/ports&gt;
+                &lt;assignments&gt;
+                    &lt;assignmentValueMap/&gt;
+                &lt;/assignments&gt;
+                &lt;parameters&gt;
+                    &lt;parameterValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedClock&lt;/key&gt;
+                            &lt;value&gt;system_clock&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedDirectReset&lt;/key&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedResetSinks&lt;/key&gt;
+                            &lt;value&gt;h2f_reset_in&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;synchronousEdges&lt;/key&gt;
+                            &lt;value&gt;DEASSERT&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/parameterValueMap&gt;
+                &lt;/parameters&gt;
+            &lt;/interface&gt;
+        &lt;/interfaces&gt;
+    &lt;/boundary&gt;
+    &lt;originalModuleInfo&gt;
+        &lt;className&gt;u_clocks_and_resets&lt;/className&gt;
+        &lt;version&gt;1.0&lt;/version&gt;
+        &lt;displayName&gt;clocks_and_resets_0&lt;/displayName&gt;
+    &lt;/originalModuleInfo&gt;
+    &lt;systemInfoParameterDescriptors&gt;
+        &lt;descriptors/&gt;
+    &lt;/systemInfoParameterDescriptors&gt;
+    &lt;systemInfos&gt;
+        &lt;connPtSystemInfos&gt;
+            &lt;entry&gt;
+                &lt;key&gt;system_clock&lt;/key&gt;
+                &lt;value&gt;
+                    &lt;connectionPointName&gt;system_clock&lt;/connectionPointName&gt;
+                    &lt;suppliedSystemInfos&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;CLOCK_RATE&lt;/key&gt;
+                            &lt;value&gt;0&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/suppliedSystemInfos&gt;
+                    &lt;consumedSystemInfos/&gt;
+                &lt;/value&gt;
+            &lt;/entry&gt;
+        &lt;/connPtSystemInfos&gt;
+    &lt;/systemInfos&gt;
+&lt;/componentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuHashInfo" type="string">
+              <ipxact:name>cpuHashInfo</ipxact:name>
+              <ipxact:displayName>CPU Hash Info</ipxact:displayName>
+              <ipxact:value>&lt;cpuHashInfoDefinition&gt;
+    &lt;cpuHashInfoMap&gt;
+        &lt;entry&gt;
+            &lt;key&gt;u_core_subsys.ace5lite_cache_coherency_translator_m_ace5lite&lt;/key&gt;
+            &lt;value&gt;0:&lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;u_hps_subsys.hps2fpga&lt;/key&gt;
+            &lt;value&gt;0:&lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;u_core_subsys.f2sdram_adapter_axi4_man&lt;/key&gt;
+            &lt;value&gt;0:&lt;/value&gt;
+        &lt;/entry&gt;
+        &lt;entry&gt;
+            &lt;key&gt;u_hps_subsys.lwhps2fpga&lt;/key&gt;
+            &lt;value&gt;0:&lt;/value&gt;
+        &lt;/entry&gt;
+    &lt;/cpuHashInfoMap&gt;
+&lt;/cpuHashInfoDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuInfo" type="string">
+              <ipxact:name>cpuInfo</ipxact:name>
+              <ipxact:displayName>Cpu Info</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="defaultBoundary" type="string">
+              <ipxact:name>defaultBoundary</ipxact:name>
+              <ipxact:displayName>Default boundary</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="generationInfoDefinition" type="string">
+              <ipxact:name>generationInfoDefinition</ipxact:name>
+              <ipxact:displayName>Generation Behavior</ipxact:displayName>
+              <ipxact:value>&lt;generationInfoDefinition&gt;
+    &lt;hdlLibraryName&gt;clocks_and_resets&lt;/hdlLibraryName&gt;
+    &lt;fileSets&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;QUARTUS_SYNTH&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;clocks_and_resets&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;QUARTUS_SYNTH&lt;/fileSetKind&gt;
+            &lt;fileSetFiles&gt;
+                &lt;fileSetFile&gt;
+                    &lt;fileSource&gt;src/clocks_and_resets.sv&lt;/fileSource&gt;
+                    &lt;fileOutput&gt;clocks_and_resets.sv&lt;/fileOutput&gt;
+                    &lt;fileKind&gt;SYSTEM_VERILOG&lt;/fileKind&gt;
+                    &lt;fileAttributes&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;TOP_LEVEL_FILE&lt;/key&gt;
+                            &lt;value&gt;true&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/fileAttributes&gt;
+                &lt;/fileSetFile&gt;
+            &lt;/fileSetFiles&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;SIM_VERILOG&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;clocks_and_resets&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;SIM_VERILOG&lt;/fileSetKind&gt;
+            &lt;fileSetFiles&gt;
+                &lt;fileSetFile&gt;
+                    &lt;fileSource&gt;src/clocks_and_resets.sv&lt;/fileSource&gt;
+                    &lt;fileOutput&gt;clocks_and_resets.sv&lt;/fileOutput&gt;
+                    &lt;fileKind&gt;SYSTEM_VERILOG&lt;/fileKind&gt;
+                    &lt;fileAttributes&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;TOP_LEVEL_FILE&lt;/key&gt;
+                            &lt;value&gt;true&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/fileAttributes&gt;
+                &lt;/fileSetFile&gt;
+            &lt;/fileSetFiles&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;SIM_VHDL&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;clocks_and_resets&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;SIM_VHDL&lt;/fileSetKind&gt;
+            &lt;fileSetFiles&gt;
+                &lt;fileSetFile&gt;
+                    &lt;fileSource&gt;src/clocks_and_resets.sv&lt;/fileSource&gt;
+                    &lt;fileOutput&gt;clocks_and_resets.sv&lt;/fileOutput&gt;
+                    &lt;fileKind&gt;SYSTEM_VERILOG&lt;/fileKind&gt;
+                    &lt;fileAttributes&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;TOP_LEVEL_FILE&lt;/key&gt;
+                            &lt;value&gt;true&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/fileAttributes&gt;
+                &lt;/fileSetFile&gt;
+            &lt;/fileSetFiles&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;CDC&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;clocks_and_resets&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;CDC&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;CDC_VHDL&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;clocks_and_resets&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;CDC_VHDL&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+    &lt;/fileSets&gt;
+&lt;/generationInfoDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="hdlParameters" type="string">
+              <ipxact:name>hdlParameters</ipxact:name>
+              <ipxact:displayName>HDL Parameters</ipxact:displayName>
+              <ipxact:value>&lt;hdlParameterDescriptorDefinitionList/&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="hlsFile" type="string">
+              <ipxact:name>hlsFile</ipxact:name>
+              <ipxact:displayName>HLS file</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="liveModuleName" type="string">
+              <ipxact:name>liveModuleName</ipxact:name>
+              <ipxact:displayName>Live Module Name</ipxact:displayName>
+              <ipxact:value>clocks_and_resets</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="logicalView" type="string">
+              <ipxact:name>logicalView</ipxact:name>
+              <ipxact:displayName>Logical view</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="moduleAssignmentDefinition" type="string">
+              <ipxact:name>moduleAssignmentDefinition</ipxact:name>
+              <ipxact:displayName>Module Assignments</ipxact:displayName>
+              <ipxact:value>&lt;assignmentDefinition&gt;
+    &lt;assignmentValueMap/&gt;
+&lt;/assignmentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="svInterfaceDefinition" type="string">
+              <ipxact:name>svInterfaceDefinition</ipxact:name>
+              <ipxact:displayName>System Verilog Interface definition</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="transformParameters" type="string">
+              <ipxact:name>transformParameters</ipxact:name>
+              <ipxact:displayName>Transform Parameters</ipxact:displayName>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
+            </ipxact:parameter>
+          </ipxact:parameters>
+        </altera:altera_module_parameters>
+        <altera:altera_ecc_parameter_mappings altera:parentModule=""></altera:altera_ecc_parameter_mappings>
+      </altera:module>
+      <altera:module altera:enabled="true" altera:auto_export="false">
+        <altera:entity_info>
+          <ipxact:vendor>Altera Corporation</ipxact:vendor>
+          <ipxact:library>u_gts_reset_sequencer</ipxact:library>
+          <ipxact:name>altera_generic_component</ipxact:name>
+          <ipxact:version>1.0</ipxact:version>
+        </altera:entity_info>
+        <altera:altera_module_parameters>
+          <ipxact:parameters>
+            <ipxact:parameter parameterId="bspCpu" type="bit">
+              <ipxact:name>bspCpu</ipxact:name>
+              <ipxact:displayName>BSP CPU</ipxact:displayName>
+              <ipxact:value>false</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="componentDefinition" type="string">
+              <ipxact:name>componentDefinition</ipxact:name>
+              <ipxact:displayName>Component definition</ipxact:displayName>
+              <ipxact:value>&lt;componentDefinition&gt;
+    &lt;boundary&gt;
+        &lt;interfaces&gt;
+            &lt;interface&gt;
+                &lt;name&gt;o_pma_cu_clk&lt;/name&gt;
+                &lt;type&gt;conduit&lt;/type&gt;
+                &lt;isStart&gt;false&lt;/isStart&gt;
+                &lt;ports&gt;
+                    &lt;port&gt;
+                        &lt;name&gt;o_pma_cu_clk&lt;/name&gt;
+                        &lt;role&gt;clk&lt;/role&gt;
+                        &lt;direction&gt;Output&lt;/direction&gt;
+                        &lt;width&gt;1&lt;/width&gt;
+                        &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                        &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                        &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                    &lt;/port&gt;
+                &lt;/ports&gt;
+                &lt;assignments&gt;
+                    &lt;assignmentValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;ui.blockdiagram.direction&lt;/key&gt;
+                            &lt;value&gt;output&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/assignmentValueMap&gt;
+                &lt;/assignments&gt;
+                &lt;parameters&gt;
+                    &lt;parameterValueMap&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedClock&lt;/key&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;associatedReset&lt;/key&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;prSafe&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                    &lt;/parameterValueMap&gt;
+                &lt;/parameters&gt;
+            &lt;/interface&gt;
+        &lt;/interfaces&gt;
+    &lt;/boundary&gt;
+    &lt;originalModuleInfo&gt;
+        &lt;className&gt;intel_srcss_gts&lt;/className&gt;
+        &lt;version&gt;5.0.0&lt;/version&gt;
+        &lt;displayName&gt;GTS Reset Sequencer IP&lt;/displayName&gt;
+    &lt;/originalModuleInfo&gt;
+    &lt;systemInfoParameterDescriptors&gt;
+        &lt;descriptors&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device&lt;/parameterName&gt;
+                &lt;parameterType&gt;java.lang.String&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device_die_revisions&lt;/parameterName&gt;
+                &lt;parameterType&gt;[Ljava.lang.String;&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE_DIE_REVISIONS&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device_family&lt;/parameterName&gt;
+                &lt;parameterType&gt;java.lang.String&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE_FAMILY&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;Unknown&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;device_group&lt;/parameterName&gt;
+                &lt;parameterType&gt;[Ljava.lang.String;&lt;/parameterType&gt;
+                &lt;systemInfoArgs&gt;DEVICE_GROUP&lt;/systemInfoArgs&gt;
+                &lt;systemInfotype&gt;DEVICE_INFO&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+        &lt;/descriptors&gt;
+    &lt;/systemInfoParameterDescriptors&gt;
+    &lt;systemInfos&gt;
+        &lt;connPtSystemInfos/&gt;
+    &lt;/systemInfos&gt;
+&lt;/componentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuHashInfo" type="string">
+              <ipxact:name>cpuHashInfo</ipxact:name>
+              <ipxact:displayName>CPU Hash Info</ipxact:displayName>
+              <ipxact:value>&lt;cpuHashInfoDefinition&gt;
+    &lt;cpuHashInfoMap/&gt;
+&lt;/cpuHashInfoDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuInfo" type="string">
+              <ipxact:name>cpuInfo</ipxact:name>
+              <ipxact:displayName>Cpu Info</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="defaultBoundary" type="string">
+              <ipxact:name>defaultBoundary</ipxact:name>
+              <ipxact:displayName>Default boundary</ipxact:displayName>
+              <ipxact:value>&lt;boundaryDefinition&gt;
+    &lt;interfaces&gt;
+        &lt;interface&gt;
+            &lt;name&gt;o_pma_cu_clk&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;o_pma_cu_clk&lt;/name&gt;
+                    &lt;role&gt;clk&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ui.blockdiagram.direction&lt;/key&gt;
+                        &lt;value&gt;output&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/assignmentValueMap&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+    &lt;/interfaces&gt;
+&lt;/boundaryDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="generationInfoDefinition" type="string">
+              <ipxact:name>generationInfoDefinition</ipxact:name>
+              <ipxact:displayName>Generation Behavior</ipxact:displayName>
+              <ipxact:value>&lt;generationInfoDefinition&gt;
+    &lt;hdlLibraryName&gt;gts_inst&lt;/hdlLibraryName&gt;
+    &lt;fileSets&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;gts_inst&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;gts_inst&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;QUARTUS_SYNTH&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;gts_inst&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;gts_inst&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;SIM_VERILOG&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;gts_inst&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;gts_inst&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;SIM_VHDL&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;gts_inst&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;gts_inst&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;CDC&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+        &lt;fileSet&gt;
+            &lt;fileSetName&gt;gts_inst&lt;/fileSetName&gt;
+            &lt;fileSetFixedName&gt;gts_inst&lt;/fileSetFixedName&gt;
+            &lt;fileSetKind&gt;CDC_VHDL&lt;/fileSetKind&gt;
+            &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
+        &lt;/fileSet&gt;
+    &lt;/fileSets&gt;
+&lt;/generationInfoDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="hdlParameters" type="string">
+              <ipxact:name>hdlParameters</ipxact:name>
+              <ipxact:displayName>HDL Parameters</ipxact:displayName>
+              <ipxact:value>&lt;hdlParameterDescriptorDefinitionList/&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="hlsFile" type="string">
+              <ipxact:name>hlsFile</ipxact:name>
+              <ipxact:displayName>HLS file</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="liveModuleName" type="string">
+              <ipxact:name>liveModuleName</ipxact:name>
+              <ipxact:displayName>Live Module Name</ipxact:displayName>
+              <ipxact:value>intel_srcss_gts_inst</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="logicalView" type="string">
+              <ipxact:name>logicalView</ipxact:name>
+              <ipxact:displayName>Logical view</ipxact:displayName>
+              <ipxact:value>ip/hps_subsys/gts_inst.ip</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="moduleAssignmentDefinition" type="string">
+              <ipxact:name>moduleAssignmentDefinition</ipxact:name>
+              <ipxact:displayName>Module Assignments</ipxact:displayName>
+              <ipxact:value>&lt;assignmentDefinition&gt;
+    &lt;assignmentValueMap/&gt;
+&lt;/assignmentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="svInterfaceDefinition" type="string">
+              <ipxact:name>svInterfaceDefinition</ipxact:name>
+              <ipxact:displayName>System Verilog Interface definition</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="transformParameters" type="string">
+              <ipxact:name>transformParameters</ipxact:name>
+              <ipxact:displayName>Transform Parameters</ipxact:displayName>
+              <ipxact:value>&lt;transformParameterDescriptorDefinitionList/&gt;</ipxact:value>
+            </ipxact:parameter>
+          </ipxact:parameters>
+        </altera:altera_module_parameters>
+        <altera:altera_ecc_parameter_mappings altera:parentModule=""></altera:altera_ecc_parameter_mappings>
+      </altera:module>
+      <altera:module altera:enabled="true" altera:auto_export="false">
+        <altera:entity_info>
+          <ipxact:vendor>Altera Corporation</ipxact:vendor>
+          <ipxact:library>u_hps_comp</ipxact:library>
+          <ipxact:name>hps_comp</ipxact:name>
+          <ipxact:version>1.0</ipxact:version>
+        </altera:entity_info>
+        <altera:altera_module_parameters>
+          <ipxact:parameters>
+            <ipxact:parameter parameterId="AUTO_BOARD" type="string">
+              <ipxact:name>AUTO_BOARD</ipxact:name>
+              <ipxact:displayName>Auto BOARD</ipxact:displayName>
+              <ipxact:value>default</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_DEVICE" type="string">
+              <ipxact:name>AUTO_DEVICE</ipxact:name>
+              <ipxact:displayName>Auto DEVICE</ipxact:displayName>
+              <ipxact:value>A5ED065BB32AE6SR0</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_DEVICE_FAMILY" type="string">
+              <ipxact:name>AUTO_DEVICE_FAMILY</ipxact:name>
+              <ipxact:displayName>Auto DEVICE_FAMILY</ipxact:displayName>
+              <ipxact:value>Agilex 5</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_DEVICE_SPEEDGRADE" type="string">
+              <ipxact:name>AUTO_DEVICE_SPEEDGRADE</ipxact:name>
+              <ipxact:displayName>Auto DEVICE_SPEEDGRADE</ipxact:displayName>
+              <ipxact:value>6</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_EMIF_HPS_EMIF_REF_CLK_0_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_EMIF_HPS_EMIF_REF_CLK_0_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_EMIF_HPS_EMIF_REF_CLK_0_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_EMIF_HPS_EMIF_REF_CLK_0_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_EMIF_HPS_EMIF_REF_CLK_0_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_EMIF_HPS_EMIF_REF_CLK_0_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_F2H_IRQ0_IN_INTERRUPTS_USED" type="string">
+              <ipxact:name>AUTO_F2H_IRQ0_IN_INTERRUPTS_USED</ipxact:name>
+              <ipxact:displayName>Auto INTERRUPTS_USED</ipxact:displayName>
+              <ipxact:value>1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_F2H_IRQ1_IN_INTERRUPTS_USED" type="string">
+              <ipxact:name>AUTO_F2H_IRQ1_IN_INTERRUPTS_USED</ipxact:name>
+              <ipxact:displayName>Auto INTERRUPTS_USED</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_F2SDRAM_CLK_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_F2SDRAM_CLK_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>2</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_F2SDRAM_CLK_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_F2SDRAM_CLK_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_F2SDRAM_CLK_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_F2SDRAM_CLK_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>2</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_F2SDRAM_CPU_INFO_ID" type="string">
+              <ipxact:name>AUTO_F2SDRAM_CPU_INFO_ID</ipxact:name>
+              <ipxact:displayName>Auto CPU_INFO_ID</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_FPGA2HPS_CLK_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_FPGA2HPS_CLK_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>4</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_FPGA2HPS_CLK_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_FPGA2HPS_CLK_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_FPGA2HPS_CLK_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_FPGA2HPS_CLK_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>4</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_FPGA2HPS_CPU_INFO_ID" type="string">
+              <ipxact:name>AUTO_FPGA2HPS_CPU_INFO_ID</ipxact:name>
+              <ipxact:displayName>Auto CPU_INFO_ID</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_GENERATION_ID" type="longint">
+              <ipxact:name>AUTO_GENERATION_ID</ipxact:name>
+              <ipxact:displayName>Auto GENERATION_ID</ipxact:displayName>
+              <ipxact:value>0</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_HPS2FPGA_ADDRESS_MAP" type="string">
+              <ipxact:name>AUTO_HPS2FPGA_ADDRESS_MAP</ipxact:name>
+              <ipxact:displayName>Auto ADDRESS_MAP</ipxact:displayName>
+              <ipxact:value>&lt;address-map&gt;&lt;slave name='parent/u_core_subsys.u_core_onchip_memory.axi_s1' start='0x0' end='0x40000' datawidth='128' /&gt;&lt;/address-map&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_HPS2FPGA_ADDRESS_WIDTH" type="string">
+              <ipxact:name>AUTO_HPS2FPGA_ADDRESS_WIDTH</ipxact:name>
+              <ipxact:displayName>Auto ADDRESS_WIDTH</ipxact:displayName>
+              <ipxact:value>5</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_HPS2FPGA_CLK_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_HPS2FPGA_CLK_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>10</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_HPS2FPGA_CLK_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_HPS2FPGA_CLK_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_HPS2FPGA_CLK_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_HPS2FPGA_CLK_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>10</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_LWHPS2FPGA_ADDRESS_MAP" type="string">
+              <ipxact:name>AUTO_LWHPS2FPGA_ADDRESS_MAP</ipxact:name>
+              <ipxact:displayName>Auto ADDRESS_MAP</ipxact:displayName>
+              <ipxact:value>&lt;address-map&gt;&lt;slave name='parent/u_hps_subsys.u_hps_comp.u_agilex_hps.usb31_phy_reconfig_slave' start='0x0' end='0x200000' datawidth='32' /&gt;&lt;/address-map&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_LWHPS2FPGA_ADDRESS_WIDTH" type="string">
+              <ipxact:name>AUTO_LWHPS2FPGA_ADDRESS_WIDTH</ipxact:name>
+              <ipxact:displayName>Auto ADDRESS_WIDTH</ipxact:displayName>
+              <ipxact:value>5</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_LWHPS2FPGA_CLK_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_LWHPS2FPGA_CLK_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>12</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_LWHPS2FPGA_CLK_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_LWHPS2FPGA_CLK_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_LWHPS2FPGA_CLK_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_LWHPS2FPGA_CLK_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>12</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_UNIQUE_ID" type="string">
+              <ipxact:name>AUTO_UNIQUE_ID</ipxact:name>
+              <ipxact:displayName>Auto UNIQUE_ID</ipxact:displayName>
+              <ipxact:value>hps_subsys_u_hps_comp</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_PMA_CPU_CLK_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_PMA_CPU_CLK_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>16</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_PMA_CPU_CLK_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_PMA_CPU_CLK_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_PMA_CPU_CLK_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_PMA_CPU_CLK_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>16</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_RECONFIG_CLK_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_RECONFIG_CLK_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>17</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_RECONFIG_CLK_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_RECONFIG_CLK_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_RECONFIG_CLK_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_RECONFIG_CLK_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>17</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_RECONFIG_SLAVE_CPU_INFO_ID" type="string">
+              <ipxact:name>AUTO_USB31_PHY_RECONFIG_SLAVE_CPU_INFO_ID</ipxact:name>
+              <ipxact:displayName>Auto CPU_INFO_ID</ipxact:displayName>
+              <ipxact:value></ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_REFCLK_N_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_REFCLK_N_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>19</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_REFCLK_N_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_REFCLK_N_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_REFCLK_N_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_REFCLK_N_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>19</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_REFCLK_P_CLOCK_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_REFCLK_P_CLOCK_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_DOMAIN</ipxact:displayName>
+              <ipxact:value>20</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_REFCLK_P_CLOCK_RATE" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_REFCLK_P_CLOCK_RATE</ipxact:name>
+              <ipxact:displayName>Auto CLOCK_RATE</ipxact:displayName>
+              <ipxact:value>-1</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="AUTO_USB31_PHY_REFCLK_P_RESET_DOMAIN" type="longint">
+              <ipxact:name>AUTO_USB31_PHY_REFCLK_P_RESET_DOMAIN</ipxact:name>
+              <ipxact:displayName>Auto RESET_DOMAIN</ipxact:displayName>
+              <ipxact:value>20</ipxact:value>
+            </ipxact:parameter>
+          </ipxact:parameters>
+        </altera:altera_module_parameters>
+        <altera:altera_ecc_parameter_mappings altera:parentModule=""></altera:altera_ecc_parameter_mappings>
+      </altera:module>
+    </altera:modules>
+    <altera:connections></altera:connections>
+    <altera:interconnect_requirements></altera:interconnect_requirements>
+    <altera:wire_level_connections></altera:wire_level_connections>
+    <altera:hdl_parameters></altera:hdl_parameters>
+    <altera:hdl_parameter_mappings></altera:hdl_parameter_mappings>
+    <altera:preserved_ports_for_debug></altera:preserved_ports_for_debug>
+    <altera:altera_group_hierarchy_contents></altera:altera_group_hierarchy_contents>
+    <altera:altera_interface_boundary>
+      <altera:interface_mapping altera:name="emif_hps_emif_mem_0" altera:internal="u_hps_comp.emif_hps_emif_mem_0" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="emif_hps_emif_mem_ck_0" altera:internal="u_hps_comp.emif_hps_emif_mem_ck_0" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="emif_hps_emif_mem_reset_n" altera:internal="u_hps_comp.emif_hps_emif_mem_reset_n" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="emif_hps_emif_oct_0" altera:internal="u_hps_comp.emif_hps_emif_oct_0" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="emif_hps_emif_ref_clk_0" altera:internal="u_hps_comp.emif_hps_emif_ref_clk_0" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="f2h_irq0_in" altera:internal="u_hps_comp.f2h_irq0_in" altera:type="interrupt" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="f2h_irq1_in" altera:internal="u_hps_comp.f2h_irq1_in" altera:type="interrupt" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="f2sdram" altera:internal="u_hps_comp.f2sdram" altera:type="axi4" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="f2sdram_clk" altera:internal="u_hps_comp.f2sdram_clk" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="f2sdram_rst" altera:internal="u_hps_comp.f2sdram_rst" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="fpga2hps" altera:internal="u_hps_comp.fpga2hps" altera:type="ace5lite" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="fpga2hps_clk" altera:internal="u_hps_comp.fpga2hps_clk" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="fpga2hps_rst" altera:internal="u_hps_comp.fpga2hps_rst" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="fpga_clk_100" altera:internal="u_clocks_and_resets.fpga_clk_100" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="fpga_reset_n" altera:internal="u_clocks_and_resets.fpga_reset_n" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="h2f_reset" altera:internal="u_hps_comp.h2f_reset" altera:type="reset" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="h2f_reset_in" altera:internal="u_clocks_and_resets.h2f_reset_in" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="h2f_warm_reset_handshake" altera:internal="u_hps_comp.h2f_warm_reset_handshake" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="hps2fpga" altera:internal="u_hps_comp.hps2fpga" altera:type="axi4" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="hps2fpga_clk" altera:internal="u_hps_comp.hps2fpga_clk" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="hps2fpga_rst" altera:internal="u_hps_comp.hps2fpga_rst" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="hps_io" altera:internal="u_hps_comp.hps_io" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="i_refclk_bus_out" altera:internal="u_gts_reset_sequencer.i_refclk_bus_out"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="lwhps2fpga" altera:internal="u_hps_comp.lwhps2fpga" altera:type="axi4" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="lwhps2fpga_clk" altera:internal="u_hps_comp.lwhps2fpga_clk" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="lwhps2fpga_rst" altera:internal="u_hps_comp.lwhps2fpga_rst" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="o_pma_cu_clk" altera:internal="u_gts_reset_sequencer.o_pma_cu_clk" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="refclk_fail_stat" altera:internal="u_gts_reset_sequencer.o_shoreline_refclk_fail_stat"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="system_clock" altera:internal="u_clocks_and_resets.system_clock" altera:type="clock" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="system_reset_n" altera:internal="u_clocks_and_resets.system_reset_n" altera:type="reset" altera:dir="start"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_io" altera:internal="u_hps_comp.usb31_io" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_pma_cpu_clk" altera:internal="u_hps_comp.usb31_phy_pma_cpu_clk" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_reconfig_clk" altera:internal="u_hps_comp.usb31_phy_reconfig_clk" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_reconfig_rst" altera:internal="u_hps_comp.usb31_phy_reconfig_rst" altera:type="reset" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_reconfig_slave" altera:internal="u_hps_comp.usb31_phy_reconfig_slave" altera:type="avalon" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_refclk_n" altera:internal="u_hps_comp.usb31_phy_refclk_n" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_refclk_p" altera:internal="u_hps_comp.usb31_phy_refclk_p" altera:type="clock" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_rx_serial_n" altera:internal="u_hps_comp.usb31_phy_rx_serial_n" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_rx_serial_p" altera:internal="u_hps_comp.usb31_phy_rx_serial_p" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_tx_serial_n" altera:internal="u_hps_comp.usb31_phy_tx_serial_n" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+      <altera:interface_mapping altera:name="usb31_phy_tx_serial_p" altera:internal="u_hps_comp.usb31_phy_tx_serial_p" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
+    </altera:altera_interface_boundary>
+    <ipxact:components>
+      <ipxact:component>
+        <ipxact:vendor>Intel Corporation</ipxact:vendor>
+        <ipxact:library>addressMap</ipxact:library>
+        <ipxact:name>addressMap</ipxact:name>
+        <ipxact:version>1.0</ipxact:version>
+        <ipxact:busInterfaces>
+          <ipxact:busInterface>
+            <ipxact:name>u_hps_comp.hps2fpga</ipxact:name>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
+            <ipxact:master></ipxact:master>
+          </ipxact:busInterface>
+          <ipxact:busInterface>
+            <ipxact:name>u_hps_comp.lwhps2fpga</ipxact:name>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
+            <ipxact:master></ipxact:master>
+          </ipxact:busInterface>
+        </ipxact:busInterfaces>
+        <ipxact:addressSpaces></ipxact:addressSpaces>
+        <ipxact:memoryMaps></ipxact:memoryMaps>
+      </ipxact:component>
+    </ipxact:components>
+    <altera:altera_has_warnings>false</altera:altera_has_warnings>
+    <altera:altera_has_errors>false</altera:altera_has_errors>
+  </ipxact:vendorExtensions>
+</ipxact:design>

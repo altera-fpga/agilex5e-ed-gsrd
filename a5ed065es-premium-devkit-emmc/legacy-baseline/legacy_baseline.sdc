@@ -13,7 +13,6 @@ set_time_format -unit ns -decimal_places 3
 
 # 100MHz board input clock, 133.3333MHz for EMIF refclk
 create_clock -name MAIN_CLOCK -period 10 [get_ports fpga_clk_100]
-create_clock -name EMIF_REF_CLOCK -period 100MHz [get_ports emif_hps_emif_ref_clk_0_clk] 
 
 set_false_path -no_synchronizer -from [get_registers {fpga_reset_n_sync|dreg[1]}] -to [get_registers {*|altera_reset_synchronizer_int_chain[1]}]
 set_false_path -to [get_registers *fpga_reset_n_sync*]

@@ -22,19 +22,27 @@
 # Date created = 15:43:58  March 05, 2025
 #
 # -------------------------------------------------------------------------- #
-set_global_assignment -name TOP_LEVEL_ENTITY legacy_baseline_top
-set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
-set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
-set_global_assignment -name LAST_QUARTUS_VERSION "25.1.1 Pro Edition"
+
+# Quartus version assignments
+set_global_assignment -name LAST_QUARTUS_VERSION "25.3.0 Pro Edition"
+
+
+# Device properties
 set_global_assignment -name FAMILY "Agilex 5"
 set_global_assignment -name DEVICE A5ED065BB32AE6SR0
+
+
+# Toplevel and toplevel RTL
+set_global_assignment -name TOP_LEVEL_ENTITY legacy_baseline_top
+
 
 # Flow assignments
 # Put all reports into the output_files directory
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 # Set the defaulr parallelizaiton to 4
 set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
-# Define the board as default (None)
+# Define the board as default
+set_global_assignment -name BOARD default
 # Convert timing failures to errors
 set_global_assignment -name PROMOTE_WARNING_TO_ERROR 332148
 # Include custom IP in IP search path
@@ -50,6 +58,8 @@ set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE 20%
 # Promote pins without location assignments to errors
 set_global_assignment -name PROMOTE_WARNING_TO_ERROR 12677
 
+
+# Configuration Assignments
 set_global_assignment -name HPS_DAP_NO_CERTIFICATE on
 set_global_assignment -name QSPI_OWNERSHIP HPS
 set_global_assignment -name ENABLE_INTERMEDIATE_SNAPSHOTS ON
@@ -75,6 +85,27 @@ set_global_assignment -name PWRMGT_SLAVE_DEVICE7_ADDRESS 00
 set_global_assignment -name PWRMGT_TRANSLATED_VOLTAGE_VALUE_UNIT VOLTS
 set_global_assignment -name STRATIX_JTAG_USER_CODE 4
 set_global_assignment -name USE_CHECKSUM_AS_USERCODE OFF
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+
+
+# Pin location and IO standard assignments
+# Clocks, resets, GPIO
+set_location_assignment PIN_BK31 -to fpga_clk_100
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_clk_100
+set_location_assignment PIN_BU28 -to fpga_reset_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n
+set_location_assignment PIN_CF12 -to fpga_led_pio
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_led_pio
+set_location_assignment PIN_BU22 -to fpga_dipsw_pio[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[0]
+set_location_assignment PIN_CH12 -to fpga_dipsw_pio[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[1]
+set_location_assignment PIN_BW19 -to fpga_button_pio
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio
+
 set_location_assignment PIN_BU31 -to usb31_io_vbus_det
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_vbus_det
 set_location_assignment PIN_BP22 -to usb31_io_flt_bar
@@ -93,109 +124,96 @@ set_location_assignment PIN_AN129 -to usb31_phy_tx_serial_p_o_tx_serial_p
 set_instance_assignment -name IO_STANDARD "HIGH SPEED DIFFERENTIAL I/O" -to usb31_phy_tx_serial_p_o_tx_serial_p
 set_location_assignment PIN_AN126 -to usb31_phy_tx_serial_n_o_tx_serial_n
 set_instance_assignment -name IO_STANDARD "HIGH SPEED DIFFERENTIAL I/O" -to usb31_phy_tx_serial_n_o_tx_serial_n
-set_location_assignment PIN_BK31 -to fpga_clk_100
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_clk_100
-set_location_assignment PIN_BU28 -to fpga_reset_n
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n
-set_location_assignment PIN_CF12 -to fpga_led_pio
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_led_pio
-set_location_assignment PIN_BU22 -to fpga_dipsw_pio[0]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[0]
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[0]
-set_location_assignment PIN_CH12 -to fpga_dipsw_pio[1]
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[1]
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[1]
-set_location_assignment PIN_BW19 -to fpga_button_pio
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio
+
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_osc_clk -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_jtag_tck -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_jtag_tms -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_jtag_tdo -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_jtag_tdi -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_jtag_tdo
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_jtag_tck
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_jtag_tms
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_jtag_tdi
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tck
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tms
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tdi
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_CLK -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_STP -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DIR -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_NXT -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_STP
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_CLK
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DIR
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_NXT
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_CLK
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DIR
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_NXT
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA0 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA0
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA0
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA0
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA1 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA1
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA1
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA1
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA2 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA2
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA2
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA2
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA3 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA3
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA3
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA3
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA4 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA4
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA4
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA4
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA5 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA5
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA5
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA5
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA6 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA6
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA6
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA6
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_usb1_DATA7 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA7
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_usb1_DATA7
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA7
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_TX_CLK -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_TX_CTL -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_RX_CLK -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_RX_CTL -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_TX_CLK
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TX_CTL
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_RX_CLK
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_RX_CTL
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RX_CLK
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RX_CTL
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_RXD0 -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_TXD0 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD0
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_RXD0
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD0
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_RXD1 -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_TXD1 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD1
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_RXD1
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD1
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_RXD2 -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_TXD2 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD2
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_RXD2
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD2
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_RXD3 -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_TXD3 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD3
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_RXD3
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD3
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_MDIO -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_MDC -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_MDIO
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_MDC
 set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_emac2_MDIO
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_emac2_MDIO
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_MDIO
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_uart0_TX -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_uart0_RX -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_uart0_TX
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_uart0_RX
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_uart0_RX
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i2c_emac1_SDA -entity legacy_baseline_top
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i2c_emac1_SCL -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_i2c_emac1_SDA
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_i2c_emac1_SCL
 set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_i2c_emac1_SDA
 set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_i2c_emac1_SCL
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_i2c_emac1_SDA
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_i2c_emac1_SCL
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_i2c_emac1_SDA
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_i2c_emac1_SCL
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_gpio0_io0 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio0_io0
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_gpio0_io0
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_gpio0_io0
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_gpio0_io10 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio0_io10
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to hps_gpio0_io10
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_gpio0_io10
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_gpio1_io3 -entity legacy_baseline_top
 set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio1_io3
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_gpio1_io4 -entity legacy_baseline_top
@@ -387,21 +405,20 @@ set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRAT
 set_instance_assignment -name SLEW_RATE 2 -to hps_i2c_emac1_SCL
 set_instance_assignment -name SLEW_RATE 2 -to hps_i2c_emac1_SDA
 
-set_global_assignment -name BOARD default
-set_global_assignment -name VERILOG_FILE legacy_baseline_top.v
-set_global_assignment -name VERILOG_FILE custom_ip/debounce/debounce.v
-set_global_assignment -name VERILOG_FILE custom_ip/reset_sync/altera_reset_synchronizer.v
-set_global_assignment -name SDC_FILE legacy_baseline.sdc
+
+# Variant IP source files
 set_global_assignment -name IP_FILE ip/hps_subsys/agilex_hps.ip
 set_global_assignment -name IP_FILE ip/hps_subsys/f2sdram_adapter.ip
 set_global_assignment -name IP_FILE ip/hps_subsys/emif_io96b_hps.ip
 set_global_assignment -name QSYS_FILE hps_subsys.qsys
+
 set_global_assignment -name IP_FILE ip/jtag_subsys/jtag_clk.ip
 set_global_assignment -name IP_FILE ip/jtag_subsys/jtag_rst_in.ip
 set_global_assignment -name IP_FILE ip/jtag_subsys/hps_f2sdram.ip
 set_global_assignment -name IP_FILE ip/jtag_subsys/fpga_m.ip
 set_global_assignment -name IP_FILE ip/jtag_subsys/hps_m.ip
 set_global_assignment -name QSYS_FILE jtag_subsys.qsys
+
 set_global_assignment -name IP_FILE ip/peripheral_subsys/periph_clk.ip
 set_global_assignment -name IP_FILE ip/peripheral_subsys/periph_rst_in.ip
 set_global_assignment -name IP_FILE ip/peripheral_subsys/sysid.ip
@@ -410,6 +427,7 @@ set_global_assignment -name IP_FILE ip/peripheral_subsys/dipsw_pio.ip
 set_global_assignment -name IP_FILE ip/peripheral_subsys/led_pio.ip
 set_global_assignment -name IP_FILE ip/peripheral_subsys/pb_cpu_0.ip
 set_global_assignment -name QSYS_FILE peripheral_subsys.qsys
+
 set_global_assignment -name IP_FILE ip/qsys_top/clk_100.ip
 set_global_assignment -name IP_FILE ip/qsys_top/rst_in.ip
 set_global_assignment -name IP_FILE ip/qsys_top/user_rst_clkgate_0.ip
@@ -418,3 +436,16 @@ set_global_assignment -name IP_FILE ip/qsys_top/gts_inst.ip
 set_global_assignment -name IP_FILE ip/qsys_top/altera_ace5lite_cache_coherency_translator_0.ip
 set_global_assignment -name IP_FILE ip/qsys_top/ext_hps_f2sdram_master.ip
 set_global_assignment -name QSYS_FILE qsys_top.qsys
+
+
+# Variant RTL source files
+set_global_assignment -name VERILOG_FILE legacy_baseline_top.v
+set_global_assignment -name VERILOG_FILE custom_ip/debounce/debounce.v
+set_global_assignment -name VERILOG_FILE custom_ip/reset_sync/altera_reset_synchronizer.v
+
+
+# SDC files
+set_global_assignment -name SDC_FILE legacy_baseline.sdc
+
+
+# Design Assistant files

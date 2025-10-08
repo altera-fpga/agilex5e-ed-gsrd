@@ -1,10 +1,10 @@
-# a5ed065es-premium-devkit-oobe-legacy-tsn-cfg2
+# HPS Time-Sensitive Network (RGMII from HVIO) System Example Design with HPS Expansion Board for Agilex 5 FPGA E-Series 065B Premium Development Kit
 
 Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO) Golden Hardware Reference Design (GHRD) for Agilex 5 FPGA E-Series 065B Premium Development Kit with Out of Box Experience (OOBE) daughter card, which is also known as HPS Enablement Expansion Board.
 
 ## Description
 
-Agilex 5 GHRD is a reference design for Intel Agilex 5 System On Chip (SoC) FPGA.
+Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
 The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
 Refer to the [Agilex 5 E-Series Premium Development Kit GSRD](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/) for information about GSRD.
@@ -43,14 +43,20 @@ The dts can be set with "dr_mode".
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.1.1
+- **Quartus Version**: 25.3
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
-- **Category**: Golden Hardware Reference Design (GHRD)
+- **Category**: HPS
 - **Source**: Quartus Prime Pro
 - **URL**: https://www.github.com/altera-fpga/agilex5e-ed-gsrd
 - **Design Package**: a5ed065es-premium-devkit-oobe-legacy-tsn-cfg2.zip
-- **Documentations**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/
+
+## Documentations
+
+- **Title**: HPS GSRD User Guide for the Agilex 5 E-Series Premium Development Kit
+**URL**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/
+- **Title**: GHRD README for the Agilex 5 E-Series Premium Development Kit
+**URL**: https://github.com/altera-fpga/agilex5e-ed-gsrd/blob/main/a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2/README.md
 
 ## GHRD Overview
 ![GHRD_overview](/images/agilex5_ghrd_overview.svg)

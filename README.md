@@ -32,7 +32,7 @@ This is only applicable if the feature is enabled.
 3. modify and compile the [designs](#designs) with Quartus Prime.
 
 ## Dependency
-* Altera Quartus Prime 25.1.1
+* Altera Quartus Prime 25.3
 * Supported Board
   - Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
   ![Agilex 5 E-Series Premium Development Kit](images/agilex5-premium-devkit-es.png)
@@ -42,17 +42,18 @@ This is only applicable if the feature is enabled.
 ## Tested Platform for the GHRD Build Flow
 * SUSE Linux Enterprise Server 15 SP4
 
+
 ## Setup
 
 Several tools are required to be in the path.
 
-* Altera Quartus Prime 25.1.1
+* Altera Quartus Prime 25.3
 * Python 3.11.5 (only required when using command line to build)
 
 ### Example Setup for Altera Quartus Prime tools
 This is recommended, when using command line to build.
 ```bash
-export QUARTUS_ROOTDIR=~/intelFPGA_pro/25.1.1/quartus
+export QUARTUS_ROOTDIR=~/intelFPGA_pro/25.3/quartus
 ```
 Note: Adapt the path above to where Quartus Prime is installed.
 
@@ -81,29 +82,35 @@ After build, the design files (zip, sof and rbf) can be found in install/designs
 ### Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 Refer to the individual readme for details of the design.
 
+* [a5ed065es-premium-devkit-oobe/baseline](a5ed065es-premium-devkit-oobe/baseline/README.md) :
+  Baseline GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
+```bash
+make a5ed065es-premium-devkit-oobe-baseline-all
+```
+
 * [a5ed065es-premium-devkit-oobe/legacy-baseline](a5ed065es-premium-devkit-oobe/legacy-baseline/README.md) :
   Legacy baseline GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
 ```bash
-make a5ed065es-premium-devkit-oobe-legacy-baseline-legacy_baseline-all
+make a5ed065es-premium-devkit-oobe-legacy-baseline-all
 ```
 
 * [a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2](a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2/README.md) :
   Legacy TSN-CFG2 GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
   This design enables RGMII from FPGA HVIO for TSN PHY configuration 2.
 ```bash
-make a5ed065es-premium-devkit-oobe-legacy-tsn-cfg2-legacy_tsn_cfg2-all
+make a5ed065es-premium-devkit-oobe-legacy-tsn-cfg2-all
 ```
 
 * [a5ed065es-premium-devkit-debug2/legacy-baseline](a5ed065es-premium-devkit-debug2/legacy-baseline/README.md) :
   Legacy baseline GHRD for the A5ED065 ES Premium Devkit with HPS Test Board.
 ```bash
-make a5ed065es-premium-devkit-debug2-legacy-baseline-legacy_baseline-all
+make a5ed065es-premium-devkit-debug2-legacy-baseline-all
 ```
 
 * [a5ed065es-premium-devkit-emmc/legacy-baseline](a5ed065es-premium-devkit-emmc/legacy-baseline/README.md) :
   Legacy baseline GHRD for the A5ED065 ES Premium Devkit with HPS NAND Board (This board also offers eMMC).
 ```bash
-make a5ed065es-premium-devkit-emmc-legacy-baseline-legacy_baseline-all
+make a5ed065es-premium-devkit-emmc-legacy-baseline-all
 ```
 
 ### Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065BB32AES1
@@ -111,16 +118,26 @@ make a5ed065es-premium-devkit-emmc-legacy-baseline-legacy_baseline-all
 * [a5ed065es-modular-devkit-som/legacy-baseline](a5ed065es-modular-devkit-som/legacy-baseline/README.md) :
   Legacy baseline GHRD for the A5ED065 ES Modular Devkit.
 ```bash
-make a5ed065es-premium-devkit-som-legacy-baseline-legacy_baseline-all
+make a5ed065es-modular-devkit-som-legacy-baseline-all
+```
+
+### Agilex 5 FPGA E-Series 013B Development Kit DK-A5E013BM16AEA
+
+* [a5ed013-devkit-oobe/legacy-baseline](a5ed013-devkit-oobe/legacy-baseline/README.md) :
+  Legacy baseline GHRD for the A5ED013 Development Kit.
+```bash
+make a5ed013-devkit-oobe-legacy-baseline-all
 ```
 
 ## Install location:
-After build, the design files (zip, sof and rbf) can be found in install/designs folder.
-These files are also uploaded as github release assets.
-- \<design_name>**.zip**
-  - This is the archeived project files of the individual GHRD.
-- \<design_name>**.sof**
-  - Compiled bitstream. Can be programm on board.
-- \<design_name>**hps_debug.sof**
-  - This bitstream is injected with hps wipe program. This creates a wait loop to boot with arm debugger.
-  Refer [readme](a5ed065es-premium-devkit-oobe/legacy-baseline/software/hps_debug/README.md)
+After build, the generated design files will be organized as follows:
+- zip file: Located in the designs folder.
+  - \<design_name>**.zip**
+  - This is the archived project files of the individual GHRD.
+  - These files are also uploaded as github release assets.
+- sof and software files: Located in the binaries folder.
+  - \<design_name>**.sof**
+    - Compiled bitstream. Can be programm on board.
+  - \<design_name>**hps_debug.sof**
+    - This bitstream is injected with hps wipe program. This creates a wait loop to boot with arm debugger.
+    - Refer [readme](a5ed065es-premium-devkit-oobe/baseline/software/hps_debug/README.md)

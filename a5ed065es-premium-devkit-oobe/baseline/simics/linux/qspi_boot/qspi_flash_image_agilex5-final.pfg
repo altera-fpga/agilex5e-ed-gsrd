@@ -1,0 +1,44 @@
+<pfg version="1">
+    <settings custom_db_dir="./" mode="ASX4"/>
+    <output_files>
+        <output_file name="flash_image" directory="." type="JIC">
+            <file_options/>
+            <secondary_file type="MAP" name="flash_image_jic">
+                <file_options/>
+            </secondary_file>
+            <secondary_file type="SEC_RPD" name="flash_image_jic">
+                <file_options bitswap="1"/>
+            </secondary_file>
+            <flash_device_id>Flash_Device_1</flash_device_id>
+        </output_file>
+    </output_files>
+    <bitstreams>
+        <bitstream id="Bitstream_1">
+            <path hps_path="./u-boot-spl-dtb.hex">./agilex5_factory.sof</path>
+        </bitstream>
+    </bitstreams>
+    <raw_files>
+        <raw_file bitswap="1" type="RBF" id="Raw_File_1">u-boot-itb.bin</raw_file>
+        <raw_file bitswap="1" type="RBF" id="Raw_File_2">hps.bin</raw_file>
+    </raw_files>
+    <flash_devices>
+        <flash_device type="MT25QU02G" id="Flash_Device_1">
+            <partition reserved="1" fixed_s_addr="1" s_addr="0x00000000" e_addr="0x001FFFFF" fixed_e_addr="1" id="BOOT_INFO" size="0"/>
+            <partition reserved="0" fixed_s_addr="0" s_addr="0x00200000" e_addr="0x0030FFFF" fixed_e_addr="0" id="P1" size="0"/>
+            <partition reserved="0" fixed_s_addr="0" s_addr="0x04000000" e_addr="auto" fixed_e_addr="0" id="U-Boot" size="0"/>
+            <partition reserved="0" fixed_e_addr="1" e_addr="0xFFFFFFF" id="HPS" s_addr="0x4200000"/>
+        </flash_device>
+        <flash_loader>AGFB014R24B2E2V</flash_loader>
+    </flash_devices>
+    <assignments>
+        <assignment page="0" partition_id="P1">
+            <bitstream_id>Bitstream_1</bitstream_id>
+        </assignment>
+        <assignment page="0" partition_id="U-Boot">
+            <raw_file_id>Raw_File_1</raw_file_id>
+        </assignment>
+        <assignment page="0" partition_id="HPS">
+            <raw_file_id>Raw_File_2</raw_file_id>
+        </assignment>
+    </assignments>
+</pfg>
