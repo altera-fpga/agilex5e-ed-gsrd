@@ -1,0 +1,55 @@
+header:
+  version: 17
+
+repos:
+  poky:
+    url: https://github.com/yoctoproject/poky
+    branch: walnascar
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    branch: walnascar
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+  meta-altera-fpga:
+    url: https://github.com/altera-fpga/meta-altera-fpga.git
+    branch: walnascar
+    layers:
+      meta-altera-bsp:
+      meta-altera-platform:
+  meta-custom:
+    path: meta-custom
+
+local_conf_header:
+  # RBF should be placed in meta-custom/recipes-fpga/fpga-bitstream/files/top.core.rbf
+  yocto-linux: |
+    MACHINE = "agilex5e"
+    PREFERRED_PROVIDER_virtual/kernel = "linux-socfpga-lts"
+    PREFERRED_VERSION_linux-socfpga-lts = "6.12%"
+    KBRANCH = "socfpga-6.12.33-lts"
+    LINUX_SRCREV = "3234b1ed89566a5e8b6c22c68bdfd36347174267"
+    PREFERRED_PROVIDER_virtual/bootloader = "u-boot-socfpga"
+    PREFERRED_VERSION_u-boot-socfpga = "v2025.07%"
+    UBOOT_BRANCH = "socfpga_v2025.07"
+    UBOOT_SRCREV = "e5f40a8ed1ec65f20c4e2491bfe8e738efce6d94"
+    PREFERRED_VERSION_arm-trusted-firmware = "v2.13%"
+    ATF_BRANCH = "socfpga_v2.13.0"
+    ATF_SRCREV = "116f2f97fa533e3540be97a2d9ec828f2a2b68aa"
+    FPGA_ENABLE_CORE_PGM ?= "1"
+    FPGA_RBF_FILE ?= "baseline_hps_debug.core.rbf"
+    CUSTOM_UBOOT_DEVICE_TREE = "0"
+    CUSTOM_LINUX_DEVICE_TREE = "0"
+    DISTRO_FEATURES:append = " systemd usrmerge"
+    VIRTUAL-RUNTIME_init_manager = "systemd"
+    KERNEL_MODULE_PROBECONF = "cfg80211"
+    module_conf_cfg80211 = "blacklist cfg80211"
+    PARALLEL_MAKE = "-j 8"
+    BB_NUMBER_THREADS = "8"
+  boot-source: |
+    SSBL_BOOT_SOURCE ?= "mmc0"
+    KERNEL_BOOTARGS_SD_MMC ?= ""

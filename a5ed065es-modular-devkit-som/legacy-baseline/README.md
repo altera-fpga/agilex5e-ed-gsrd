@@ -1,10 +1,10 @@
-# a5ed065es-modular-devkit-som-legacy-baseline
+# HPS Baseline System Example Design for Modular Development Kit for Agilex 5 FPGA E-Series 065B Modular Development Kit
 
 Baseline Golden Hardware Reference Design (GHRD) for Agilex 5 FPGA E-Series 065B Modular Development Kit.
 
 ## Description
 
-Agilex 5 GHRD is a reference design for Intel Agilex 5 System On Chip (SoC) FPGA.
+Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
 The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
 Refer to the [Agilex 5 E-Series Modular Development Kit GSRD](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/) for information about GSRD.
@@ -27,14 +27,20 @@ This reference design demonstrates the following system integration between Hard
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.1.1
+- **Quartus Version**: 25.3
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
-- **Category**: Golden Hardware Reference Design (GHRD)
+- **Category**: HPS
 - **Source**: Quartus Prime Pro
 - **URL**: https://www.github.com/altera-fpga/agilex5e-ed-gsrd
 - **Design Package**: a5ed065es-modular-devkit-som-legacy-baseline.zip
-- **Documentations**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/
+
+## Documentations
+
+- **Title**: HPS GSRD User Guide for the Agilex 5 E-Series Modular Development Kit
+**URL**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/
+- **Title**: GHRD README for the Agilex 5 E-Series Modular Development Kit
+**URL**: https://github.com/altera-fpga/agilex5e-ed-gsrd/blob/main/a5ed065es-modular-devkit-som/legacy-baseline/README.md
 
 ## GHRD Overview
 ![GHRD_overview](/images/agilex5_ghrd_overview.svg)

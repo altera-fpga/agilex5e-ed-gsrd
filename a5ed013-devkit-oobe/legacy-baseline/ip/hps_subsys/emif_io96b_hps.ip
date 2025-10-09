@@ -1,0 +1,3670 @@
+<?xml version="1.0" ?>
+<!--Your use of Intel Corporation's design tools, logic functions 
+and other software and tools, and any partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Intel Program License 
+Subscription Agreement, the Intel Quartus Prime License Agreement,
+the Intel FPGA IP License Agreement, or other applicable license
+agreement, including, without limitation, that your use is for
+the sole purpose of programming logic devices manufactured by
+Intel and sold by Intel or its authorized distributors.  Please
+refer to the applicable agreement for further details, at
+https://fpgasoftware.intel.com/eula.-->
+<ipxact:component xmlns:altera="http://www.altera.com/XMLSchema/IPXact2014/extensions" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
+  <ipxact:vendor>Altera Corporation</ipxact:vendor>
+  <ipxact:library>emif_io96b_hps</ipxact:library>
+  <ipxact:name>emif_io96b_hps</ipxact:name>
+  <ipxact:version>4.1.0</ipxact:version>
+  <ipxact:busInterfaces>
+    <ipxact:busInterface>
+      <ipxact:name>io96b0_to_hps</ipxact:name>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
+      <ipxact:abstractionTypes>
+        <ipxact:abstractionType>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
+          <ipxact:portMaps>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_clk</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_clock</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_reset_n</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_reset_n</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_awaddr</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_awaddr</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_awvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_awvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_awready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_awready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_araddr</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_araddr</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_arvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_arvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_arready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_arready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_wdata</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_wdata</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_wvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_wvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_wready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_wready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_rresp</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_rresp</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_rdata</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_rdata</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_rvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_rvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_rready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_rready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_bresp</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_bresp</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_bvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_bvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_bready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_bready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_awprot</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_awprot</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_arprot</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_arprot</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>ch0_axil_wstrb</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_noc_axi4lite_wstrb</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awaddr</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awaddr</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awburst</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awburst</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awlen</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awlen</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awlock</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awlock</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awqos</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awqos</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awsize</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awsize</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awuser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awuser</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awprot</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awprot</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_awready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_awready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_araddr</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_araddr</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arburst</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arburst</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arlen</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arlen</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arlock</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arlock</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arqos</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arqos</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arsize</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arsize</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_aruser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_aruser</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arprot</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arprot</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_arready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_arready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_wdata</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_wdata</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_wstrb</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_wstrb</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_wlast</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_wlast</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_wvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_wvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_wready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_wready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_bready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_bready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_bid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_bid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_bresp</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_bresp</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_bvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_bvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_rready</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_rready</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_rdata</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_rdata</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_rid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_rid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_rlast</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_rlast</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_rresp</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_rresp</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_rvalid</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_rvalid</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_clk</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>noc_aclk_0</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_reset_n</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>noc_rst_n_0</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_wuser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_wuser</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>axi4_ch0_ruser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>s0_axi4_ruser</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+          </ipxact:portMaps>
+        </ipxact:abstractionType>
+      </ipxact:abstractionTypes>
+      <ipxact:slave></ipxact:slave>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="associatedClock" type="string">
+          <ipxact:name>associatedClock</ipxact:name>
+          <ipxact:displayName>associatedClock</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="associatedReset" type="string">
+          <ipxact:name>associatedReset</ipxact:name>
+          <ipxact:displayName>associatedReset</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="prSafe" type="bit">
+          <ipxact:name>prSafe</ipxact:name>
+          <ipxact:displayName>Partial Reconfiguration Safe</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </ipxact:busInterface>
+    <ipxact:busInterface>
+      <ipxact:name>mem_0</ipxact:name>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
+      <ipxact:abstractionTypes>
+        <ipxact:abstractionType>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
+          <ipxact:portMaps>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_cs</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_cs</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_ca</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_ca</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_cke</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_cke</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_dq</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_dq</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_dqs_t</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_dqs_t</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_dqs_c</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_dqs_c</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_dmi</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_dmi</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+          </ipxact:portMaps>
+        </ipxact:abstractionType>
+      </ipxact:abstractionTypes>
+      <ipxact:slave></ipxact:slave>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="associatedClock" type="string">
+          <ipxact:name>associatedClock</ipxact:name>
+          <ipxact:displayName>associatedClock</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="associatedReset" type="string">
+          <ipxact:name>associatedReset</ipxact:name>
+          <ipxact:displayName>associatedReset</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="prSafe" type="bit">
+          <ipxact:name>prSafe</ipxact:name>
+          <ipxact:displayName>Partial Reconfiguration Safe</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </ipxact:busInterface>
+    <ipxact:busInterface>
+      <ipxact:name>mem_ck_0</ipxact:name>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
+      <ipxact:abstractionTypes>
+        <ipxact:abstractionType>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
+          <ipxact:portMaps>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_ck_t</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_ck_t</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_ck_c</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_ck_c</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+          </ipxact:portMaps>
+        </ipxact:abstractionType>
+      </ipxact:abstractionTypes>
+      <ipxact:slave></ipxact:slave>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="associatedClock" type="string">
+          <ipxact:name>associatedClock</ipxact:name>
+          <ipxact:displayName>associatedClock</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="associatedReset" type="string">
+          <ipxact:name>associatedReset</ipxact:name>
+          <ipxact:displayName>associatedReset</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="prSafe" type="bit">
+          <ipxact:name>prSafe</ipxact:name>
+          <ipxact:displayName>Partial Reconfiguration Safe</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </ipxact:busInterface>
+    <ipxact:busInterface>
+      <ipxact:name>mem_reset_n</ipxact:name>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
+      <ipxact:abstractionTypes>
+        <ipxact:abstractionType>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
+          <ipxact:portMaps>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>mem_reset_n</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>mem_0_reset_n</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+          </ipxact:portMaps>
+        </ipxact:abstractionType>
+      </ipxact:abstractionTypes>
+      <ipxact:slave></ipxact:slave>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="associatedClock" type="string">
+          <ipxact:name>associatedClock</ipxact:name>
+          <ipxact:displayName>associatedClock</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="associatedReset" type="string">
+          <ipxact:name>associatedReset</ipxact:name>
+          <ipxact:displayName>associatedReset</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="prSafe" type="bit">
+          <ipxact:name>prSafe</ipxact:name>
+          <ipxact:displayName>Partial Reconfiguration Safe</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </ipxact:busInterface>
+    <ipxact:busInterface>
+      <ipxact:name>oct_0</ipxact:name>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
+      <ipxact:abstractionTypes>
+        <ipxact:abstractionType>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
+          <ipxact:portMaps>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>oct_rzqin</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>oct_rzqin_0</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+          </ipxact:portMaps>
+        </ipxact:abstractionType>
+      </ipxact:abstractionTypes>
+      <ipxact:slave></ipxact:slave>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="associatedClock" type="string">
+          <ipxact:name>associatedClock</ipxact:name>
+          <ipxact:displayName>associatedClock</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="associatedReset" type="string">
+          <ipxact:name>associatedReset</ipxact:name>
+          <ipxact:displayName>associatedReset</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="prSafe" type="bit">
+          <ipxact:name>prSafe</ipxact:name>
+          <ipxact:displayName>Partial Reconfiguration Safe</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </ipxact:busInterface>
+    <ipxact:busInterface>
+      <ipxact:name>ref_clk</ipxact:name>
+      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.3"></ipxact:busType>
+      <ipxact:abstractionTypes>
+        <ipxact:abstractionType>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.3"></ipxact:abstractionRef>
+          <ipxact:portMaps>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>clk</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>ref_clk</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+          </ipxact:portMaps>
+        </ipxact:abstractionType>
+      </ipxact:abstractionTypes>
+      <ipxact:slave></ipxact:slave>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="clockRate" type="longint">
+          <ipxact:name>clockRate</ipxact:name>
+          <ipxact:displayName>Clock rate</ipxact:displayName>
+          <ipxact:value>0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="externallyDriven" type="bit">
+          <ipxact:name>externallyDriven</ipxact:name>
+          <ipxact:displayName>Externally driven</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="ptfSchematicName" type="string">
+          <ipxact:name>ptfSchematicName</ipxact:name>
+          <ipxact:displayName>PTF schematic name</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </ipxact:busInterface>
+  </ipxact:busInterfaces>
+  <ipxact:model>
+    <ipxact:views>
+      <ipxact:view>
+        <ipxact:name>QUARTUS_SYNTH</ipxact:name>
+        <ipxact:envIdentifier>:quartus.altera.com:</ipxact:envIdentifier>
+        <ipxact:componentInstantiationRef>QUARTUS_SYNTH</ipxact:componentInstantiationRef>
+      </ipxact:view>
+    </ipxact:views>
+    <ipxact:instantiations>
+      <ipxact:componentInstantiation>
+        <ipxact:name>QUARTUS_SYNTH</ipxact:name>
+        <ipxact:moduleName>emif_io96b_hps</ipxact:moduleName>
+        <ipxact:fileSetRef>
+          <ipxact:localName>QUARTUS_SYNTH</ipxact:localName>
+        </ipxact:fileSetRef>
+        <ipxact:parameters></ipxact:parameters>
+      </ipxact:componentInstantiation>
+    </ipxact:instantiations>
+    <ipxact:ports>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_clock</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_reset_n</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_awaddr</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>26</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_awvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_awready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_araddr</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>26</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_arvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_arready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_wdata</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>31</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_wvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_wready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_rresp</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_rdata</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>31</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_rvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_rready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_bresp</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_bvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_bready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_awprot</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_arprot</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_noc_axi4lite_wstrb</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awaddr</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>39</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awburst</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>6</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awlen</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>7</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awlock</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awqos</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awsize</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awuser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>13</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awprot</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_awready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_araddr</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>39</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arburst</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>6</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arlen</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>7</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arlock</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arqos</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arsize</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_aruser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>13</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arprot</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_arready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_wdata</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>255</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_wstrb</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>31</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_wlast</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_wvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_wready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_bready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_bid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>6</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_bresp</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_bvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_rready</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_rdata</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>255</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_rid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>6</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_rlast</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_rresp</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_rvalid</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>noc_aclk_0</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>noc_rst_n_0</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_wuser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>31</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>s0_axi4_ruser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>31</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_cs</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_ca</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>5</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_cke</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_dq</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>inout</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>31</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_dqs_t</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>inout</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_dqs_c</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>inout</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_dmi</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>inout</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_ck_t</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_ck_c</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>mem_0_reset_n</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>oct_rzqin_0</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>ref_clk</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors></ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+    </ipxact:ports>
+  </ipxact:model>
+  <ipxact:vendorExtensions>
+    <altera:entity_info>
+      <ipxact:vendor>Altera Corporation</ipxact:vendor>
+      <ipxact:library>emif_io96b_hps</ipxact:library>
+      <ipxact:name>emif_io96b_hps</ipxact:name>
+      <ipxact:version>4.1.0</ipxact:version>
+    </altera:entity_info>
+    <altera:altera_module_parameters>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="SYSINFO_BOARD" type="string">
+          <ipxact:name>SYSINFO_BOARD</ipxact:name>
+          <ipxact:displayName>SYSINFO_BOARD</ipxact:displayName>
+          <ipxact:value>default</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_BOARD_TRAIT" type="string">
+          <ipxact:name>SYSINFO_BOARD_TRAIT</ipxact:name>
+          <ipxact:displayName>SYSINFO_BOARD_TRAIT</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE" type="string">
+          <ipxact:name>SYSINFO_DEVICE</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE</ipxact:displayName>
+          <ipxact:value>A5ED013BM16AE4SCS</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_FAMILY" type="string">
+          <ipxact:name>SYSINFO_DEVICE_FAMILY</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_FAMILY</ipxact:displayName>
+          <ipxact:value>Agilex 5</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_SPEEDGRADE" type="string">
+          <ipxact:name>SYSINFO_DEVICE_SPEEDGRADE</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_SPEEDGRADE</ipxact:displayName>
+          <ipxact:value>4</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_DIE_REVISIONS" type="string">
+          <ipxact:name>SYSINFO_DEVICE_DIE_REVISIONS</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_DIE_REVISIONS</ipxact:displayName>
+          <ipxact:value>MAIN_SM4_REVB</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_TEMPERATURE_GRADE" type="string">
+          <ipxact:name>SYSINFO_DEVICE_TEMPERATURE_GRADE</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_TEMPERATURE_GRADE</ipxact:displayName>
+          <ipxact:value>EXTENDED</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_POWER_MODEL" type="string">
+          <ipxact:name>SYSINFO_DEVICE_POWER_MODEL</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_POWER_MODEL</ipxact:displayName>
+          <ipxact:value>STANDARD_POWER_FIXED</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_SUPPORTS_VID" type="string">
+          <ipxact:name>SYSINFO_SUPPORTS_VID</ipxact:name>
+          <ipxact:displayName>SYSINFO_SUPPORTS_VID</ipxact:displayName>
+          <ipxact:value>0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_IOBANK_REVISION" type="string">
+          <ipxact:name>SYSINFO_DEVICE_IOBANK_REVISION</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_IOBANK_REVISION</ipxact:displayName>
+          <ipxact:value>IO96B_REVB1</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_GROUP" type="string">
+          <ipxact:name>SYSINFO_DEVICE_GROUP</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_GROUP</ipxact:displayName>
+          <ipxact:value>B</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="SYSINFO_DEVICE_BASE_DIE" type="string">
+          <ipxact:name>SYSINFO_DEVICE_BASE_DIE</ipxact:name>
+          <ipxact:displayName>SYSINFO_DEVICE_BASE_DIE</ipxact:displayName>
+          <ipxact:value>SM4REVB</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="EMIF_PROTOCOL" type="string">
+          <ipxact:name>EMIF_PROTOCOL</ipxact:name>
+          <ipxact:displayName>Technology Generation</ipxact:displayName>
+          <ipxact:value>LPDDR4</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="EMIF_TOPOLOGY" type="string">
+          <ipxact:name>EMIF_TOPOLOGY</ipxact:name>
+          <ipxact:displayName>HPS-EMIF configuration</ipxact:displayName>
+          <ipxact:value>1x32</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="EMIF_RZQ_SHARING" type="bit">
+          <ipxact:name>EMIF_RZQ_SHARING</ipxact:name>
+          <ipxact:displayName>Enable RZQ Sharing</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="EMIF_REF_CLK_SHARING" type="bit">
+          <ipxact:name>EMIF_REF_CLK_SHARING</ipxact:name>
+          <ipxact:displayName>Enable Reference Clock Sharing</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="EMIF_SHOW_INTERNAL_SETTINGS" type="bit">
+          <ipxact:name>EMIF_SHOW_INTERNAL_SETTINGS</ipxact:name>
+          <ipxact:displayName>EMIF_SHOW_INTERNAL_SETTINGS</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </altera:altera_module_parameters>
+    <altera:altera_system_parameters>
+      <ipxact:parameters>
+        <ipxact:parameter parameterId="board" type="string">
+          <ipxact:name>board</ipxact:name>
+          <ipxact:displayName>Board</ipxact:displayName>
+          <ipxact:value>default</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="device" type="string">
+          <ipxact:name>device</ipxact:name>
+          <ipxact:displayName>Device</ipxact:displayName>
+          <ipxact:value>A5ED013BM16AE4SCS</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="deviceFamily" type="string">
+          <ipxact:name>deviceFamily</ipxact:name>
+          <ipxact:displayName>Device family</ipxact:displayName>
+          <ipxact:value>Agilex 5</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="deviceSpeedGrade" type="string">
+          <ipxact:name>deviceSpeedGrade</ipxact:name>
+          <ipxact:displayName>Device Speed Grade</ipxact:displayName>
+          <ipxact:value>5</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="generationId" type="int">
+          <ipxact:name>generationId</ipxact:name>
+          <ipxact:displayName>Generation Id</ipxact:displayName>
+          <ipxact:value>0</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="bonusData" type="string">
+          <ipxact:name>bonusData</ipxact:name>
+          <ipxact:displayName>bonusData</ipxact:displayName>
+          <ipxact:value>bonusData 
+{
+   element $system
+   {
+      datum _originalDeviceFamily
+      {
+         value = "Agilex 5";
+         type = "String";
+      }
+   }
+   element emif_io96b_hps
+   {
+      datum _originalVersion
+      {
+         value = "4.0.0";
+         type = "String";
+      }
+   }
+}
+</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="hideFromIPCatalog" type="bit">
+          <ipxact:name>hideFromIPCatalog</ipxact:name>
+          <ipxact:displayName>Hide from IP Catalog</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="lockedInterfaceDefinition" type="string">
+          <ipxact:name>lockedInterfaceDefinition</ipxact:name>
+          <ipxact:displayName>lockedInterfaceDefinition</ipxact:displayName>
+          <ipxact:value>&lt;boundaryDefinition&gt;
+    &lt;interfaces&gt;
+        &lt;interface&gt;
+            &lt;name&gt;io96b0_to_hps&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_clock&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_clk&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_reset_n&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_reset_n&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_awaddr&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_awaddr&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;27&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_awvalid&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_awvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_awready&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_awready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_araddr&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_araddr&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;27&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_arvalid&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_arvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_arready&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_arready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_wdata&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_wdata&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_wvalid&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_wvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_wready&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_wready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_rresp&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_rresp&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_rdata&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_rdata&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_rvalid&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_rvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_rready&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_rready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_bresp&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_bresp&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_bvalid&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_bvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_bready&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_bready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_awprot&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_awprot&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_arprot&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_arprot&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_noc_axi4lite_wstrb&lt;/name&gt;
+                    &lt;role&gt;ch0_axil_wstrb&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awaddr&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awaddr&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;40&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awburst&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awburst&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;7&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awlen&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awlen&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awlock&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awlock&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awqos&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awqos&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awsize&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awsize&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awvalid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awuser&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awuser&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;14&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awprot&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awprot&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_awready&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_awready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_araddr&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_araddr&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;40&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arburst&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arburst&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;7&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arlen&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arlen&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arlock&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arlock&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arqos&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arqos&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arsize&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arsize&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arvalid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_aruser&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_aruser&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;14&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arprot&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arprot&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_arready&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_arready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_wdata&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_wdata&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;256&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_wstrb&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_wstrb&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_wlast&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_wlast&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_wvalid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_wvalid&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_wready&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_wready&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_bready&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_bready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_bid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_bid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;7&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_bresp&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_bresp&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_bvalid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_bvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_rready&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_rready&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_rdata&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_rdata&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;256&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_rid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_rid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;7&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_rlast&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_rlast&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_rresp&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_rresp&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_rvalid&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_rvalid&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;noc_aclk_0&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_clk&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;noc_rst_n_0&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_reset_n&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_wuser&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_wuser&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;s0_axi4_ruser&lt;/name&gt;
+                    &lt;role&gt;axi4_ch0_ruser&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap/&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;mem_0&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_cs&lt;/name&gt;
+                    &lt;role&gt;mem_cs&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_ca&lt;/name&gt;
+                    &lt;role&gt;mem_ca&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;6&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_cke&lt;/name&gt;
+                    &lt;role&gt;mem_cke&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_dq&lt;/name&gt;
+                    &lt;role&gt;mem_dq&lt;/role&gt;
+                    &lt;direction&gt;Bidir&lt;/direction&gt;
+                    &lt;width&gt;32&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_dqs_t&lt;/name&gt;
+                    &lt;role&gt;mem_dqs_t&lt;/role&gt;
+                    &lt;direction&gt;Bidir&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_dqs_c&lt;/name&gt;
+                    &lt;role&gt;mem_dqs_c&lt;/role&gt;
+                    &lt;direction&gt;Bidir&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_dmi&lt;/name&gt;
+                    &lt;role&gt;mem_dmi&lt;/role&gt;
+                    &lt;direction&gt;Bidir&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap/&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;mem_ck_0&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_ck_t&lt;/name&gt;
+                    &lt;role&gt;mem_ck_t&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_ck_c&lt;/name&gt;
+                    &lt;role&gt;mem_ck_c&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap/&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;mem_reset_n&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;mem_0_reset_n&lt;/name&gt;
+                    &lt;role&gt;mem_reset_n&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap/&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;oct_0&lt;/name&gt;
+            &lt;type&gt;conduit&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;oct_rzqin_0&lt;/name&gt;
+                    &lt;role&gt;oct_rzqin&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap/&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedClock&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;associatedReset&lt;/key&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;prSafe&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+        &lt;interface&gt;
+            &lt;name&gt;ref_clk&lt;/name&gt;
+            &lt;type&gt;clock&lt;/type&gt;
+            &lt;isStart&gt;false&lt;/isStart&gt;
+            &lt;ports&gt;
+                &lt;port&gt;
+                    &lt;name&gt;ref_clk&lt;/name&gt;
+                    &lt;role&gt;clk&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;1&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+            &lt;/ports&gt;
+            &lt;assignments&gt;
+                &lt;assignmentValueMap/&gt;
+            &lt;/assignments&gt;
+            &lt;parameters&gt;
+                &lt;parameterValueMap&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;clockRate&lt;/key&gt;
+                        &lt;value&gt;0&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;externallyDriven&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;ptfSchematicName&lt;/key&gt;
+                    &lt;/entry&gt;
+                &lt;/parameterValueMap&gt;
+            &lt;/parameters&gt;
+        &lt;/interface&gt;
+    &lt;/interfaces&gt;
+&lt;/boundaryDefinition&gt;</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="systemInfos" type="string">
+          <ipxact:name>systemInfos</ipxact:name>
+          <ipxact:displayName>systemInfos</ipxact:displayName>
+          <ipxact:value>&lt;systemInfosDefinition&gt;
+    &lt;connPtSystemInfos/&gt;
+&lt;/systemInfosDefinition&gt;</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="dflBitArray" type="string">
+          <ipxact:name>dflBitArray</ipxact:name>
+          <ipxact:displayName>dflBitArray</ipxact:displayName>
+          <ipxact:value></ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="cpuInfo" type="string">
+          <ipxact:name>cpuInfo</ipxact:name>
+          <ipxact:displayName>cpuInfo</ipxact:displayName>
+          <ipxact:value>&lt;cpuInfoDefinition&gt;
+    &lt;version&gt;1&lt;/version&gt;
+    &lt;cpuGroups/&gt;
+    &lt;exportedModules/&gt;
+    &lt;systemInformation&gt;
+        &lt;name&gt;emif_io96b_hps&lt;/name&gt;
+        &lt;deviceFamily&gt;Agilex 5&lt;/deviceFamily&gt;
+        &lt;generateLegacySim&gt;false&lt;/generateLegacySim&gt;
+    &lt;/systemInformation&gt;
+&lt;/cpuInfoDefinition&gt;</ipxact:value>
+        </ipxact:parameter>
+      </ipxact:parameters>
+    </altera:altera_system_parameters>
+    <altera:altera_interface_boundary>
+      <altera:interface_mapping altera:name="io96b0_to_hps" altera:internal="emif_io96b_hps.io96b0_to_hps" altera:type="conduit" altera:dir="end">
+        <altera:port_mapping altera:name="noc_aclk_0" altera:internal="noc_aclk_0"></altera:port_mapping>
+        <altera:port_mapping altera:name="noc_rst_n_0" altera:internal="noc_rst_n_0"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_araddr" altera:internal="s0_axi4_araddr"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arburst" altera:internal="s0_axi4_arburst"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arid" altera:internal="s0_axi4_arid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arlen" altera:internal="s0_axi4_arlen"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arlock" altera:internal="s0_axi4_arlock"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arprot" altera:internal="s0_axi4_arprot"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arqos" altera:internal="s0_axi4_arqos"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arready" altera:internal="s0_axi4_arready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arsize" altera:internal="s0_axi4_arsize"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_aruser" altera:internal="s0_axi4_aruser"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_arvalid" altera:internal="s0_axi4_arvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awaddr" altera:internal="s0_axi4_awaddr"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awburst" altera:internal="s0_axi4_awburst"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awid" altera:internal="s0_axi4_awid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awlen" altera:internal="s0_axi4_awlen"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awlock" altera:internal="s0_axi4_awlock"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awprot" altera:internal="s0_axi4_awprot"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awqos" altera:internal="s0_axi4_awqos"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awready" altera:internal="s0_axi4_awready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awsize" altera:internal="s0_axi4_awsize"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awuser" altera:internal="s0_axi4_awuser"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_awvalid" altera:internal="s0_axi4_awvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_bid" altera:internal="s0_axi4_bid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_bready" altera:internal="s0_axi4_bready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_bresp" altera:internal="s0_axi4_bresp"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_bvalid" altera:internal="s0_axi4_bvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_rdata" altera:internal="s0_axi4_rdata"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_rid" altera:internal="s0_axi4_rid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_rlast" altera:internal="s0_axi4_rlast"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_rready" altera:internal="s0_axi4_rready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_rresp" altera:internal="s0_axi4_rresp"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_ruser" altera:internal="s0_axi4_ruser"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_rvalid" altera:internal="s0_axi4_rvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_wdata" altera:internal="s0_axi4_wdata"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_wlast" altera:internal="s0_axi4_wlast"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_wready" altera:internal="s0_axi4_wready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_wstrb" altera:internal="s0_axi4_wstrb"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_wuser" altera:internal="s0_axi4_wuser"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_axi4_wvalid" altera:internal="s0_axi4_wvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_araddr" altera:internal="s0_noc_axi4lite_araddr"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_arprot" altera:internal="s0_noc_axi4lite_arprot"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_arready" altera:internal="s0_noc_axi4lite_arready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_arvalid" altera:internal="s0_noc_axi4lite_arvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_awaddr" altera:internal="s0_noc_axi4lite_awaddr"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_awprot" altera:internal="s0_noc_axi4lite_awprot"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_awready" altera:internal="s0_noc_axi4lite_awready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_awvalid" altera:internal="s0_noc_axi4lite_awvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_bready" altera:internal="s0_noc_axi4lite_bready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_bresp" altera:internal="s0_noc_axi4lite_bresp"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_bvalid" altera:internal="s0_noc_axi4lite_bvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_clock" altera:internal="s0_noc_axi4lite_clock"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_rdata" altera:internal="s0_noc_axi4lite_rdata"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_reset_n" altera:internal="s0_noc_axi4lite_reset_n"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_rready" altera:internal="s0_noc_axi4lite_rready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_rresp" altera:internal="s0_noc_axi4lite_rresp"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_rvalid" altera:internal="s0_noc_axi4lite_rvalid"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_wdata" altera:internal="s0_noc_axi4lite_wdata"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_wready" altera:internal="s0_noc_axi4lite_wready"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_wstrb" altera:internal="s0_noc_axi4lite_wstrb"></altera:port_mapping>
+        <altera:port_mapping altera:name="s0_noc_axi4lite_wvalid" altera:internal="s0_noc_axi4lite_wvalid"></altera:port_mapping>
+      </altera:interface_mapping>
+      <altera:interface_mapping altera:name="mem_0" altera:internal="emif_io96b_hps.mem_0" altera:type="conduit" altera:dir="end">
+        <altera:port_mapping altera:name="mem_0_ca" altera:internal="mem_0_ca"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_cke" altera:internal="mem_0_cke"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_cs" altera:internal="mem_0_cs"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_dmi" altera:internal="mem_0_dmi"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_dq" altera:internal="mem_0_dq"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_dqs_c" altera:internal="mem_0_dqs_c"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_dqs_t" altera:internal="mem_0_dqs_t"></altera:port_mapping>
+      </altera:interface_mapping>
+      <altera:interface_mapping altera:name="mem_ck_0" altera:internal="emif_io96b_hps.mem_ck_0" altera:type="conduit" altera:dir="end">
+        <altera:port_mapping altera:name="mem_0_ck_c" altera:internal="mem_0_ck_c"></altera:port_mapping>
+        <altera:port_mapping altera:name="mem_0_ck_t" altera:internal="mem_0_ck_t"></altera:port_mapping>
+      </altera:interface_mapping>
+      <altera:interface_mapping altera:name="mem_reset_n" altera:internal="emif_io96b_hps.mem_reset_n" altera:type="conduit" altera:dir="end">
+        <altera:port_mapping altera:name="mem_0_reset_n" altera:internal="mem_0_reset_n"></altera:port_mapping>
+      </altera:interface_mapping>
+      <altera:interface_mapping altera:name="oct_0" altera:internal="emif_io96b_hps.oct_0" altera:type="conduit" altera:dir="end">
+        <altera:port_mapping altera:name="oct_rzqin_0" altera:internal="oct_rzqin_0"></altera:port_mapping>
+      </altera:interface_mapping>
+      <altera:interface_mapping altera:name="ref_clk" altera:internal="emif_io96b_hps.ref_clk" altera:type="clock" altera:dir="end">
+        <altera:port_mapping altera:name="ref_clk" altera:internal="ref_clk"></altera:port_mapping>
+      </altera:interface_mapping>
+    </altera:altera_interface_boundary>
+    <altera:altera_packaged_subsystems altera:version="1.1">
+      <altera:altera_internal_packaged_subsystem altera:name="emif_io96b_hps">
+        <altera:sub_modules>
+          <altera:sub_module altera:name="emif_0_lpddr4">
+            <ipxact:parameters>
+              <ipxact:parameter parameterId="MEM_DIE_DENSITY_GBITS" type="int">
+                <ipxact:name>MEM_DIE_DENSITY_GBITS</ipxact:name>
+                <ipxact:displayName>Die Density</ipxact:displayName>
+                <ipxact:value>8</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_MINNUMREFSREQ" type="real">
+                <ipxact:name>MEM_MINNUMREFSREQ</ipxact:name>
+                <ipxact:displayName>Min Number of Refs Reqd</ipxact:displayName>
+                <ipxact:value>8192.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TREFI_NS" type="real">
+                <ipxact:name>MEM_TREFI_NS</ipxact:name>
+                <ipxact:displayName>tREFI</ipxact:displayName>
+                <ipxact:value>3904.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_R2W_SAMECS_CYC" type="int">
+                <ipxact:name>TURNAROUND_R2W_SAMECS_CYC</ipxact:name>
+                <ipxact:displayName>Additional read-to-write turnaround time (same rank)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_CHANNEL_CS_WIDTH" type="string">
+                <ipxact:name>MEM_CHANNEL_CS_WIDTH</ipxact:name>
+                <ipxact:displayName>CS Width</ipxact:displayName>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_S_CK_OUTPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_S_CK_OUTPUT_OHM</ipxact:name>
+                <ipxact:displayName>Phy CK Drive Strength</ipxact:displayName>
+                <ipxact:value>SERIES_40_OHM_CAL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="INSTANCE_ID" type="int">
+                <ipxact:name>INSTANCE_ID</ipxact:name>
+                <ipxact:displayName>Instance ID</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCKEHCMD_NS" type="real">
+                <ipxact:name>MEM_TCKEHCMD_NS</ipxact:name>
+                <ipxact:displayName>tCKEHCMD</ipxact:displayName>
+                <ipxact:value>7.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRPPB_NS" type="real">
+                <ipxact:name>MEM_TRPPB_NS</ipxact:name>
+                <ipxact:displayName>tRPpb</ipxact:displayName>
+                <ipxact:value>18.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_S_DQ_OUTPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_S_DQ_OUTPUT_OHM</ipxact:name>
+                <ipxact:displayName>Phy DQ Drive Strength</ipxact:displayName>
+                <ipxact:value>SERIES_40_OHM_CAL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_DQ_VREF" type="real">
+                <ipxact:name>PHY_TERM_X_DQ_VREF</ipxact:name>
+                <ipxact:displayName>Phy DQ Initial Vrefin</ipxact:displayName>
+                <ipxact:value>17.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRCD_NS" type="real">
+                <ipxact:name>MEM_TRCD_NS</ipxact:name>
+                <ipxact:displayName>tRCD</ipxact:displayName>
+                <ipxact:value>18.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_DQ_X_IDLE" type="string">
+                <ipxact:name>MEM_ODT_DQ_X_IDLE</ipxact:name>
+                <ipxact:displayName>Mem DQ Idle Termination</ipxact:displayName>
+                <ipxact:value>off</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRC_NS" type="real">
+                <ipxact:name>MEM_TRC_NS</ipxact:name>
+                <ipxact:displayName>tRC</ipxact:displayName>
+                <ipxact:value>63.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_OPERATING_FREQ_MHZ" type="string">
+                <ipxact:name>MEM_OPERATING_FREQ_MHZ</ipxact:name>
+                <ipxact:displayName>Memory Operating Frequency</ipxact:displayName>
+                <ipxact:value>1333.333</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_AC_PLACEMENT" type="string">
+                <ipxact:name>PHY_AC_PLACEMENT</ipxact:name>
+                <ipxact:displayName>AC Placement</ipxact:displayName>
+                <ipxact:value>BOT</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_AUTO_PRECHARGE_EN" type="bit">
+                <ipxact:name>CTRL_AUTO_PRECHARGE_EN</ipxact:name>
+                <ipxact:displayName>Force Auto-Precharge</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_REFCLK_FREQ_MHZ_AUTOSET_EN" type="bit">
+                <ipxact:name>PHY_REFCLK_FREQ_MHZ_AUTOSET_EN</ipxact:name>
+                <ipxact:displayName>Auto-set PLL Reference Clock Frequency</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_DQ_VREF" type="string">
+                <ipxact:name>MEM_DQ_VREF</ipxact:name>
+                <ipxact:displayName>MEM_DQ_VREF</ipxact:displayName>
+                <ipxact:value>20</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCMDCKE_NS" type="real">
+                <ipxact:name>MEM_TCMDCKE_NS</ipxact:name>
+                <ipxact:displayName>tCMDCKE</ipxact:displayName>
+                <ipxact:value>2.25</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="EX_DESIGN_PMON_CH2_EN" type="bit">
+                <ipxact:name>EX_DESIGN_PMON_CH2_EN</ipxact:name>
+                <ipxact:displayName>Enable Performance Monitor for Channel 2</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_NUM_CHANNELS" type="int">
+                <ipxact:name>MEM_NUM_CHANNELS</ipxact:name>
+                <ipxact:displayName>Number of Channels</ipxact:displayName>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TXSR_NS" type="real">
+                <ipxact:name>MEM_TXSR_NS</ipxact:name>
+                <ipxact:displayName>tXSR</ipxact:displayName>
+                <ipxact:value>287.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_W2W_SAMECS_CYC" type="int">
+                <ipxact:name>TURNAROUND_W2W_SAMECS_CYC</ipxact:name>
+                <ipxact:displayName>Additional write-to-write turnaround time (same rank)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="EX_DESIGN_PMON_INTERNAL_JAMB_EN" type="bit">
+                <ipxact:name>EX_DESIGN_PMON_INTERNAL_JAMB_EN</ipxact:name>
+                <ipxact:displayName>EX_DESIGN_PMON_INTERNAL_JAMB_EN</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_GPIO_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_GPIO_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_GPIO_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>LVCMOS</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRAS_NS" type="real">
+                <ipxact:name>MEM_TRAS_NS</ipxact:name>
+                <ipxact:displayName>tRAS</ipxact:displayName>
+                <ipxact:value>42.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="ADV_CAL_ENABLE_REQ" type="bit">
+                <ipxact:name>ADV_CAL_ENABLE_REQ</ipxact:name>
+                <ipxact:displayName>Enable REQ Calibration</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="ADV_CAL_ENABLE_MARGIN" type="bit">
+                <ipxact:name>ADV_CAL_ENABLE_MARGIN</ipxact:name>
+                <ipxact:displayName>Enable Margining during Calibration</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_PER_BANK_REF_EN" type="int">
+                <ipxact:name>MEM_PER_BANK_REF_EN</ipxact:name>
+                <ipxact:displayName>MEM_PER_BANK_REF_EN</ipxact:displayName>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_CWL_CYC" type="int">
+                <ipxact:name>MEM_CWL_CYC</ipxact:name>
+                <ipxact:displayName>Write Latency</ipxact:displayName>
+                <ipxact:value>22</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="JEDEC_OVERRIDE_TABLE_PARAM_NAME" type="string">
+                <ipxact:name>JEDEC_OVERRIDE_TABLE_PARAM_NAME</ipxact:name>
+                <ipxact:displayName>JEDEC Parameter</ipxact:displayName>
+                <ipxact:value></ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_RD_PREAMBLE_CYC" type="int">
+                <ipxact:name>MEM_RD_PREAMBLE_CYC</ipxact:name>
+                <ipxact:displayName>MEM_RD_PREAMBLE_CYC</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRFCAB_NS" type="real">
+                <ipxact:name>MEM_TRFCAB_NS</ipxact:name>
+                <ipxact:displayName>tRFCab</ipxact:displayName>
+                <ipxact:value>280.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TSR_NS" type="real">
+                <ipxact:name>MEM_TSR_NS</ipxact:name>
+                <ipxact:displayName>tSR</ipxact:displayName>
+                <ipxact:value>15.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_WR_DBI_EN" type="bit">
+                <ipxact:name>CTRL_WR_DBI_EN</ipxact:name>
+                <ipxact:displayName>Use WDBI</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TPPD_CYC" type="real">
+                <ipxact:name>MEM_TPPD_CYC</ipxact:name>
+                <ipxact:displayName>MEM_TPPD_CYC</ipxact:displayName>
+                <ipxact:value>4.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_CA_VREF" type="string">
+                <ipxact:name>MEM_CA_VREF</ipxact:name>
+                <ipxact:displayName>MEM_CA_VREF</ipxact:displayName>
+                <ipxact:value>13</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_DQS_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_DQS_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_DQS_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>DF_LVSTL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TWR_NS" type="real">
+                <ipxact:name>MEM_TWR_NS</ipxact:name>
+                <ipxact:displayName>tWR</ipxact:displayName>
+                <ipxact:value>18.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TESCKE_NS" type="real">
+                <ipxact:name>MEM_TESCKE_NS</ipxact:name>
+                <ipxact:displayName>tESCKE</ipxact:displayName>
+                <ipxact:value>2.25</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TXP_NS" type="real">
+                <ipxact:name>MEM_TXP_NS</ipxact:name>
+                <ipxact:displayName>tXP</ipxact:displayName>
+                <ipxact:value>7.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_DM_EN" type="bit">
+                <ipxact:name>CTRL_DM_EN</ipxact:name>
+                <ipxact:displayName>Use Data Masking</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="ANALOG_PARAM_DERIVATION_PARAM_NAME" type="string">
+                <ipxact:name>ANALOG_PARAM_DERIVATION_PARAM_NAME</ipxact:name>
+                <ipxact:displayName>Analog Parameter</ipxact:displayName>
+                <ipxact:value></ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_SCRAMBLER_EN" type="bit">
+                <ipxact:name>CTRL_SCRAMBLER_EN</ipxact:name>
+                <ipxact:displayName>CTRL_SCRAMBLER_EN</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TECH_IS_X" type="bit">
+                <ipxact:name>MEM_TECH_IS_X</ipxact:name>
+                <ipxact:displayName>Use LPDDR4X</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_CA_X_CA_ENABLE" type="string">
+                <ipxact:name>MEM_ODT_CA_X_CA_ENABLE</ipxact:name>
+                <ipxact:displayName>Mem CA Termination Enable</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TDQSCK_MAX_NS" type="real">
+                <ipxact:name>MEM_TDQSCK_MAX_NS</ipxact:name>
+                <ipxact:displayName>tDQSCK_MAX</ipxact:displayName>
+                <ipxact:value>3.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TWTR_NS" type="real">
+                <ipxact:name>MEM_TWTR_NS</ipxact:name>
+                <ipxact:displayName>tWTR</ipxact:displayName>
+                <ipxact:value>10.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="DIAG_HMC_ADDR_SWAP_EN" type="bit">
+                <ipxact:name>DIAG_HMC_ADDR_SWAP_EN</ipxact:name>
+                <ipxact:displayName>Enable Row/CS Swap</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRRD_NS" type="real">
+                <ipxact:name>MEM_TRRD_NS</ipxact:name>
+                <ipxact:displayName>tRRD</ipxact:displayName>
+                <ipxact:value>10.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCSCKEH_NS" type="real">
+                <ipxact:name>MEM_TCSCKEH_NS</ipxact:name>
+                <ipxact:displayName>tCSCKEH</ipxact:displayName>
+                <ipxact:value>1.75</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCKCKEH_NS" type="real">
+                <ipxact:name>MEM_TCKCKEH_NS</ipxact:name>
+                <ipxact:displayName>tCKCKEH</ipxact:displayName>
+                <ipxact:value>2.25</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_VREF_CA_X_CA_RANGE" type="int">
+                <ipxact:name>MEM_VREF_CA_X_CA_RANGE</ipxact:name>
+                <ipxact:displayName>Mem VrefCA Range</ipxact:displayName>
+                <ipxact:value>2</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_VREF_CA_X_CA_VALUE" type="real">
+                <ipxact:name>MEM_VREF_CA_X_CA_VALUE</ipxact:name>
+                <ipxact:displayName>Mem VrefCA Value</ipxact:displayName>
+                <ipxact:value>27.2</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCKELCMD_NS" type="real">
+                <ipxact:name>MEM_TCKELCMD_NS</ipxact:name>
+                <ipxact:displayName>tCKELCMD</ipxact:displayName>
+                <ipxact:value>5.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_W2W_DIFFCS_CYC" type="int">
+                <ipxact:name>TURNAROUND_W2W_DIFFCS_CYC</ipxact:name>
+                <ipxact:displayName>Additional write-to-write turnaround time (different ranks)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_CA_X_CA_COMM" type="string">
+                <ipxact:name>MEM_ODT_CA_X_CA_COMM</ipxact:name>
+                <ipxact:displayName>Mem CA Common Termination</ipxact:displayName>
+                <ipxact:value>3</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TMRR_NS" type="real">
+                <ipxact:name>MEM_TMRR_NS</ipxact:name>
+                <ipxact:displayName>tMRR</ipxact:displayName>
+                <ipxact:value>6.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_ECC_INLINE_EN" type="bit">
+                <ipxact:name>CTRL_ECC_INLINE_EN</ipxact:name>
+                <ipxact:displayName>Use In-Line ECC</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="EX_DESIGN_PMON_CH1_EN" type="bit">
+                <ipxact:name>EX_DESIGN_PMON_CH1_EN</ipxact:name>
+                <ipxact:displayName>Enable Performance Monitor for Channel 1</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCKELCK_NS" type="real">
+                <ipxact:name>MEM_TCKELCK_NS</ipxact:name>
+                <ipxact:displayName>tCKELCK</ipxact:displayName>
+                <ipxact:value>5.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_S_AC_OUTPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_S_AC_OUTPUT_OHM</ipxact:name>
+                <ipxact:displayName>Phy AC Drive Strength</ipxact:displayName>
+                <ipxact:value>SERIES_40_OHM_CAL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCCD_NS" type="real">
+                <ipxact:name>MEM_TCCD_NS</ipxact:name>
+                <ipxact:displayName>tCCD</ipxact:displayName>
+                <ipxact:value>6.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_DQ_SLEW_RATE" type="string">
+                <ipxact:name>PHY_TERM_X_DQ_SLEW_RATE</ipxact:name>
+                <ipxact:displayName>Phy DQ Slew Rate</ipxact:displayName>
+                <ipxact:value>FASTEST</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="DIAG_FORCE_SLIM_EN" type="bit">
+                <ipxact:name>DIAG_FORCE_SLIM_EN</ipxact:name>
+                <ipxact:displayName>DIAG_FORCE_SLIM_EN</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TDQSCK_MIN_NS" type="real">
+                <ipxact:name>MEM_TDQSCK_MIN_NS</ipxact:name>
+                <ipxact:displayName>tDQSCK_MIN</ipxact:displayName>
+                <ipxact:value>1.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_W2R_SAMECS_CYC" type="int">
+                <ipxact:name>TURNAROUND_W2R_SAMECS_CYC</ipxact:name>
+                <ipxact:displayName>Additional write-to-read turnaround time (same rank)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_RD_DBI_EN" type="bit">
+                <ipxact:name>CTRL_RD_DBI_EN</ipxact:name>
+                <ipxact:displayName>Use RDBI</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_REFCLK_ADVANCED_SELECT_EN" type="bit">
+                <ipxact:name>PHY_REFCLK_ADVANCED_SELECT_EN</ipxact:name>
+                <ipxact:displayName>Enable Advanced List of PLL Reference Clock Frequencies</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_R2R_DIFFCS_CYC" type="int">
+                <ipxact:name>TURNAROUND_R2R_DIFFCS_CYC</ipxact:name>
+                <ipxact:displayName>Additional read-to-read turnaround time (different ranks)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_R2R_SAMECS_CYC" type="int">
+                <ipxact:name>TURNAROUND_R2R_SAMECS_CYC</ipxact:name>
+                <ipxact:displayName>Additional read-to-read turnaround time (same rank)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_VREF_DQ_X_VALUE" type="real">
+                <ipxact:name>MEM_VREF_DQ_X_VALUE</ipxact:name>
+                <ipxact:displayName>Mem VrefDQ Value</ipxact:displayName>
+                <ipxact:value>18.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_AC_OUTPUT_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_AC_OUTPUT_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_AC_OUTPUT_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>LVSTL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_S_CS_OUTPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_S_CS_OUTPUT_OHM</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_R_S_CS_OUTPUT_OHM</ipxact:displayName>
+                <ipxact:value>SERIES_40_OHM_CAL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_DQ_X_RON" type="string">
+                <ipxact:name>MEM_ODT_DQ_X_RON</ipxact:name>
+                <ipxact:displayName>Mem DQ Drive Strength</ipxact:displayName>
+                <ipxact:value>6</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_VREF_DQ_X_RANGE" type="int">
+                <ipxact:name>MEM_VREF_DQ_X_RANGE</ipxact:name>
+                <ipxact:displayName>Mem VrefDQ Range</ipxact:displayName>
+                <ipxact:value>1</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="ADV_CAL_ENABLE_WEQ" type="bit">
+                <ipxact:name>ADV_CAL_ENABLE_WEQ</ipxact:name>
+                <ipxact:displayName>Enable WEQ Calibration</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_T_DQ_INPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_T_DQ_INPUT_OHM</ipxact:name>
+                <ipxact:displayName>Phy DQ Input Termination</ipxact:displayName>
+                <ipxact:value>RT_50_OHM_CAL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_CA_X_CK_ENABLE" type="string">
+                <ipxact:name>MEM_ODT_CA_X_CK_ENABLE</ipxact:name>
+                <ipxact:displayName>Mem CK Termination Enable</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TMRD_NS" type="real">
+                <ipxact:name>MEM_TMRD_NS</ipxact:name>
+                <ipxact:displayName>tMRD</ipxact:displayName>
+                <ipxact:value>14.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TFAW_NS" type="real">
+                <ipxact:name>MEM_TFAW_NS</ipxact:name>
+                <ipxact:displayName>tFAW</ipxact:displayName>
+                <ipxact:value>40.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TZQCKE_NS" type="real">
+                <ipxact:name>MEM_TZQCKE_NS</ipxact:name>
+                <ipxact:displayName>tZQCKE</ipxact:displayName>
+                <ipxact:value>2.25</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TMRW_NS" type="real">
+                <ipxact:name>MEM_TMRW_NS</ipxact:name>
+                <ipxact:displayName>tMRW</ipxact:displayName>
+                <ipxact:value>10.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_RD_POSTAMBLE_CYC" type="int">
+                <ipxact:name>MEM_RD_POSTAMBLE_CYC</ipxact:name>
+                <ipxact:displayName>Read Postamble Cycles</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_OPERATING_FREQ_MHZ_AUTOSET_EN" type="bit">
+                <ipxact:name>MEM_OPERATING_FREQ_MHZ_AUTOSET_EN</ipxact:name>
+                <ipxact:displayName>Auto-set Memory Operating Frequency</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="DIAG_EXTRA_PARAMETERS" type="string">
+                <ipxact:name>DIAG_EXTRA_PARAMETERS</ipxact:name>
+                <ipxact:displayName>Extra Diagnostic Parameters</ipxact:displayName>
+                <ipxact:value></ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCSCKE_NS" type="real">
+                <ipxact:name>MEM_TCSCKE_NS</ipxact:name>
+                <ipxact:displayName>tCSCKE</ipxact:displayName>
+                <ipxact:value>1.75</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_DQ_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_DQ_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_DQ_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>LVSTL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRTP_NS" type="real">
+                <ipxact:name>MEM_TRTP_NS</ipxact:name>
+                <ipxact:displayName>tRTP</ipxact:displayName>
+                <ipxact:value>7.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_W2R_DIFFCS_CYC" type="int">
+                <ipxact:name>TURNAROUND_W2R_DIFFCS_CYC</ipxact:name>
+                <ipxact:displayName>Additional write-to-read turnaround time (different ranks)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_PERFORMANCE_PROFILE" type="string">
+                <ipxact:name>CTRL_PERFORMANCE_PROFILE</ipxact:name>
+                <ipxact:displayName>Controller Performance Profile</ipxact:displayName>
+                <ipxact:value>SEQ</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="EX_DESIGN_PMON_CH3_EN" type="bit">
+                <ipxact:name>EX_DESIGN_PMON_CH3_EN</ipxact:name>
+                <ipxact:displayName>Enable Performance Monitor for Channel 3</ipxact:displayName>
+                <ipxact:value>false</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_DQ_X_TGT_WR" type="string">
+                <ipxact:name>MEM_ODT_DQ_X_TGT_WR</ipxact:name>
+                <ipxact:displayName>Mem Target Write Termination</ipxact:displayName>
+                <ipxact:value>5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_REFCLK_FREQ_MHZ" type="string">
+                <ipxact:name>PHY_REFCLK_FREQ_MHZ</ipxact:name>
+                <ipxact:displayName>Reference Clock Frequency</ipxact:displayName>
+                <ipxact:value>166.6666</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_CL_CYC" type="int">
+                <ipxact:name>MEM_CL_CYC</ipxact:name>
+                <ipxact:displayName>Read Latency</ipxact:displayName>
+                <ipxact:value>24</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TREFW_NS" type="real">
+                <ipxact:name>MEM_TREFW_NS</ipxact:name>
+                <ipxact:displayName>tREFW</ipxact:displayName>
+                <ipxact:value>3.2E7</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CTRL_ECC_AUTOCORRECT_EN" type="bit">
+                <ipxact:name>CTRL_ECC_AUTOCORRECT_EN</ipxact:name>
+                <ipxact:displayName>Use ECC Autocorrection</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCKE_NS" type="real">
+                <ipxact:name>MEM_TCKE_NS</ipxact:name>
+                <ipxact:displayName>tCKE</ipxact:displayName>
+                <ipxact:value>7.5</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_WR_POSTAMBLE_CYC" type="int">
+                <ipxact:name>MEM_WR_POSTAMBLE_CYC</ipxact:name>
+                <ipxact:displayName>Write Postamble Cycles</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_CK_OUTPUT_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_CK_OUTPUT_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_CK_OUTPUT_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>DF_LVSTL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TZQCAL_NS" type="real">
+                <ipxact:name>MEM_TZQCAL_NS</ipxact:name>
+                <ipxact:displayName>tZQCAL</ipxact:displayName>
+                <ipxact:value>1000.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_ODT_CA_X_CS_ENABLE" type="string">
+                <ipxact:name>MEM_ODT_CA_X_CS_ENABLE</ipxact:name>
+                <ipxact:displayName>Mem CS Termination Enable</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TMRWCKEL_NS" type="real">
+                <ipxact:name>MEM_TMRWCKEL_NS</ipxact:name>
+                <ipxact:displayName>tMRWCKEL</ipxact:displayName>
+                <ipxact:value>14.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_WLS" type="real">
+                <ipxact:name>MEM_WLS</ipxact:name>
+                <ipxact:displayName>MEM_WLS</ipxact:displayName>
+                <ipxact:value>1.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_SWIZZLE_MAP" type="string">
+                <ipxact:name>PHY_SWIZZLE_MAP</ipxact:name>
+                <ipxact:displayName>Pin Swizzle Map</ipxact:displayName>
+                <ipxact:value>BYTE_SWIZZLE_CH0=3 2 X X X X 1 0;PIN_SWIZZLE_CH0_DQS0=1 0 3 2 4 7 6 5;PIN_SWIZZLE_CH0_DQS1=9 15 14 13 8 11 10 12;PIN_SWIZZLE_CH0_DQS2=19 18 20 21 16 23 22 17;PIN_SWIZZLE_CH0_DQS3=26 27 24 25 30 31 28 29;</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRFCPB_NS" type="real">
+                <ipxact:name>MEM_TRFCPB_NS</ipxact:name>
+                <ipxact:displayName>tRFCpb</ipxact:displayName>
+                <ipxact:value>140.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_CS_OUTPUT_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_CS_OUTPUT_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_CS_OUTPUT_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>LVSTL</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_REFCLK_IO_STD_TYPE" type="string">
+                <ipxact:name>PHY_TERM_X_REFCLK_IO_STD_TYPE</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_REFCLK_IO_STD_TYPE</ipxact:displayName>
+                <ipxact:value>TRUE_DIFF</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_T_REFCLK_INPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_T_REFCLK_INPUT_OHM</ipxact:name>
+                <ipxact:displayName>Phy PLL Reference Clock Input Termination</ipxact:displayName>
+                <ipxact:value>RT_DIFF</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TCKCKEL_NS" type="real">
+                <ipxact:name>MEM_TCKCKEL_NS</ipxact:name>
+                <ipxact:displayName>tCKCKEL</ipxact:displayName>
+                <ipxact:value>5.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="IS_HPS" type="bit">
+                <ipxact:name>IS_HPS</ipxact:name>
+                <ipxact:displayName>IS_HPS</ipxact:displayName>
+                <ipxact:value>true</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="TURNAROUND_R2W_DIFFCS_CYC" type="int">
+                <ipxact:name>TURNAROUND_R2W_DIFFCS_CYC</ipxact:name>
+                <ipxact:displayName>Additional read-to-write turnaround time (different ranks)</ipxact:displayName>
+                <ipxact:value>0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TRPAB_NS" type="real">
+                <ipxact:name>MEM_TRPAB_NS</ipxact:name>
+                <ipxact:displayName>tRPab</ipxact:displayName>
+                <ipxact:value>21.0</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PHY_TERM_X_R_T_GPIO_INPUT_OHM" type="string">
+                <ipxact:name>PHY_TERM_X_R_T_GPIO_INPUT_OHM</ipxact:name>
+                <ipxact:displayName>PHY_TERM_X_R_T_GPIO_INPUT_OHM</ipxact:displayName>
+                <ipxact:value>RT_OFF</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="MEM_TZQLAT_NS" type="real">
+                <ipxact:name>MEM_TZQLAT_NS</ipxact:name>
+                <ipxact:displayName>tZQLAT</ipxact:displayName>
+                <ipxact:value>30.0</ipxact:value>
+              </ipxact:parameter>
+            </ipxact:parameters>
+          </altera:sub_module>
+          <altera:sub_module altera:name="refclk_bridge">
+            <ipxact:parameters>
+              <ipxact:parameter parameterId="INTERFACES" type="string">
+                <ipxact:name>INTERFACES</ipxact:name>
+                <ipxact:displayName>INTERFACES</ipxact:displayName>
+                <ipxact:value>refclk_in        clock    sink,refclk_out       clock    source,refclk_in_gpio   conduit  end,refclk_out_gpio  conduit  start</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CONNECTIONS" type="string">
+                <ipxact:name>CONNECTIONS</ipxact:name>
+                <ipxact:displayName>CONNECTIONS</ipxact:displayName>
+                <ipxact:value>refclk_in        refclk_in_gpio,refclk_out_gpio  refclk_out</ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="CUSTOM_ELABORATION_COMMANDS" type="string">
+                <ipxact:name>CUSTOM_ELABORATION_COMMANDS</ipxact:name>
+                <ipxact:displayName>CUSTOM_ELABORATION_COMMANDS</ipxact:displayName>
+                <ipxact:value></ipxact:value>
+              </ipxact:parameter>
+              <ipxact:parameter parameterId="PORTS" type="string">
+                <ipxact:name>PORTS</ipxact:name>
+                <ipxact:displayName>PORTS</ipxact:displayName>
+                <ipxact:value>refclk_in        refclk_in         clk      input    1,refclk_out       refclk_out        clk      output   1,refclk_in_gpio   refclk_in_gpio    export   output   1,refclk_out_gpio  refclk_out_gpio   export   input    1</ipxact:value>
+              </ipxact:parameter>
+            </ipxact:parameters>
+          </altera:sub_module>
+        </altera:sub_modules>
+      </altera:altera_internal_packaged_subsystem>
+    </altera:altera_packaged_subsystems>
+    <altera:altera_has_warnings>false</altera:altera_has_warnings>
+    <altera:altera_has_errors>false</altera:altera_has_errors>
+  </ipxact:vendorExtensions>
+</ipxact:component>

@@ -657,6 +657,10 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;value&gt;hps2fpga_axi_reset&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
+                            &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
                             &lt;key&gt;trustzoneAware&lt;/key&gt;
                             &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
@@ -1140,6 +1144,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;entry&gt;
                             &lt;key&gt;associatedReset&lt;/key&gt;
                             &lt;value&gt;lwhps2fpga_axi_reset&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;trustzoneAware&lt;/key&gt;
@@ -2296,6 +2304,10 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;value&gt;f2sdram_axi_reset&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
+                            &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
                             &lt;key&gt;trustzoneAware&lt;/key&gt;
                             &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
@@ -3051,6 +3063,10 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;value&gt;false&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
+                            &lt;key&gt;isTranslator&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
                             &lt;key&gt;atomicTransactions&lt;/key&gt;
                             &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
@@ -3651,8 +3667,8 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;/boundary&gt;
     &lt;originalModuleInfo&gt;
         &lt;className&gt;intel_agilex_5_soc&lt;/className&gt;
-        &lt;version&gt;9.0.0&lt;/version&gt;
-        &lt;displayName&gt;Hard Processor System FPGA IP&lt;/displayName&gt;
+        &lt;version&gt;11.1.0&lt;/version&gt;
+        &lt;displayName&gt;Hard Processor System IP&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
         &lt;descriptors&gt;
@@ -3715,6 +3731,13 @@ https://fpgasoftware.intel.com/eula.-->
         &lt;/connPtSystemInfos&gt;
     &lt;/systemInfos&gt;
 &lt;/componentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuHashInfo" type="string">
+              <ipxact:name>cpuHashInfo</ipxact:name>
+              <ipxact:displayName>CPU Hash Info</ipxact:displayName>
+              <ipxact:value>&lt;cpuHashInfoDefinition&gt;
+    &lt;cpuHashInfoMap/&gt;
+&lt;/cpuHashInfoDefinition&gt;</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="cpuInfo" type="string">
               <ipxact:name>cpuInfo</ipxact:name>
@@ -4160,6 +4183,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;entry&gt;
                         &lt;key&gt;associatedReset&lt;/key&gt;
                         &lt;value&gt;hps2fpga_axi_reset&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;trustzoneAware&lt;/key&gt;
@@ -4645,6 +4672,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;entry&gt;
                         &lt;key&gt;associatedReset&lt;/key&gt;
                         &lt;value&gt;lwhps2fpga_axi_reset&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;trustzoneAware&lt;/key&gt;
@@ -5801,6 +5832,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;value&gt;f2sdram_axi_reset&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
+                        &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
                         &lt;key&gt;trustzoneAware&lt;/key&gt;
                         &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
@@ -6556,6 +6591,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
+                        &lt;key&gt;isTranslator&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
                         &lt;key&gt;atomicTransactions&lt;/key&gt;
                         &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
@@ -7166,30 +7205,35 @@ https://fpgasoftware.intel.com/eula.-->
             &lt;fileSetFixedName&gt;agilex_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;QUARTUS_SYNTH&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;SIM_VERILOG&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;agilex_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;SIM_VERILOG&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;SIM_VHDL&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;agilex_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;SIM_VHDL&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;CDC&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;agilex_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;CDC&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;CDC_VHDL&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;agilex_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;CDC_VHDL&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
     &lt;/fileSets&gt;
 &lt;/generationInfoDefinition&gt;</ipxact:value>
@@ -7242,6 +7286,7 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
+        <altera:altera_ecc_parameter_mappings altera:parentModule=""></altera:altera_ecc_parameter_mappings>
       </altera:module>
       <altera:module altera:enabled="true" altera:auto_export="false">
         <altera:entity_info>
@@ -8123,7 +8168,7 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;/boundary&gt;
     &lt;originalModuleInfo&gt;
         &lt;className&gt;emif_io96b_hps&lt;/className&gt;
-        &lt;version&gt;4.0.0&lt;/version&gt;
+        &lt;version&gt;4.1.0&lt;/version&gt;
         &lt;displayName&gt;External Memory Interfaces for HPS IP&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
@@ -8212,6 +8257,13 @@ https://fpgasoftware.intel.com/eula.-->
         &lt;connPtSystemInfos/&gt;
     &lt;/systemInfos&gt;
 &lt;/componentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuHashInfo" type="string">
+              <ipxact:name>cpuHashInfo</ipxact:name>
+              <ipxact:displayName>CPU Hash Info</ipxact:displayName>
+              <ipxact:value>&lt;cpuHashInfoDefinition&gt;
+    &lt;cpuHashInfoMap/&gt;
+&lt;/cpuHashInfoDefinition&gt;</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="cpuInfo" type="string">
               <ipxact:name>cpuInfo</ipxact:name>
@@ -9102,30 +9154,35 @@ https://fpgasoftware.intel.com/eula.-->
             &lt;fileSetFixedName&gt;emif_io96b_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;QUARTUS_SYNTH&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;SIM_VERILOG&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;emif_io96b_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;SIM_VERILOG&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;SIM_VHDL&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;emif_io96b_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;SIM_VHDL&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;CDC&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;emif_io96b_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;CDC&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;CDC_VHDL&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;emif_io96b_hps&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;CDC_VHDL&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
     &lt;/fileSets&gt;
 &lt;/generationInfoDefinition&gt;</ipxact:value>
@@ -9167,6 +9224,7 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
+        <altera:altera_ecc_parameter_mappings altera:parentModule=""></altera:altera_ecc_parameter_mappings>
       </altera:module>
       <altera:module altera:enabled="true" altera:auto_export="false">
         <altera:entity_info>
@@ -9667,6 +9725,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;entry&gt;
                             &lt;key&gt;associatedReset&lt;/key&gt;
                             &lt;value&gt;reset&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
+                            &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
                             &lt;key&gt;trustzoneAware&lt;/key&gt;
@@ -10171,6 +10233,10 @@ https://fpgasoftware.intel.com/eula.-->
                             &lt;value&gt;reset&lt;/value&gt;
                         &lt;/entry&gt;
                         &lt;entry&gt;
+                            &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                            &lt;value&gt;false&lt;/value&gt;
+                        &lt;/entry&gt;
+                        &lt;entry&gt;
                             &lt;key&gt;trustzoneAware&lt;/key&gt;
                             &lt;value&gt;true&lt;/value&gt;
                         &lt;/entry&gt;
@@ -10319,6 +10385,13 @@ https://fpgasoftware.intel.com/eula.-->
         &lt;/connPtSystemInfos&gt;
     &lt;/systemInfos&gt;
 &lt;/componentDefinition&gt;</ipxact:value>
+            </ipxact:parameter>
+            <ipxact:parameter parameterId="cpuHashInfo" type="string">
+              <ipxact:name>cpuHashInfo</ipxact:name>
+              <ipxact:displayName>CPU Hash Info</ipxact:displayName>
+              <ipxact:value>&lt;cpuHashInfoDefinition&gt;
+    &lt;cpuHashInfoMap/&gt;
+&lt;/cpuHashInfoDefinition&gt;</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="cpuInfo" type="string">
               <ipxact:name>cpuInfo</ipxact:name>
@@ -10809,6 +10882,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;entry&gt;
                         &lt;key&gt;associatedReset&lt;/key&gt;
                         &lt;value&gt;reset&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;trustzoneAware&lt;/key&gt;
@@ -11313,6 +11390,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;value&gt;reset&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
+                        &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
                         &lt;key&gt;trustzoneAware&lt;/key&gt;
                         &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
@@ -11439,30 +11520,35 @@ https://fpgasoftware.intel.com/eula.-->
             &lt;fileSetFixedName&gt;f2sdram_adapter&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;QUARTUS_SYNTH&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;SIM_VERILOG&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;f2sdram_adapter&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;SIM_VERILOG&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;SIM_VHDL&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;f2sdram_adapter&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;SIM_VHDL&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;CDC&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;f2sdram_adapter&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;CDC&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
         &lt;fileSet&gt;
             &lt;fileSetName&gt;CDC_VHDL&lt;/fileSetName&gt;
             &lt;fileSetFixedName&gt;f2sdram_adapter&lt;/fileSetFixedName&gt;
             &lt;fileSetKind&gt;CDC_VHDL&lt;/fileSetKind&gt;
             &lt;fileSetFiles/&gt;
+            &lt;fileSetFileChangeDefs/&gt;
         &lt;/fileSet&gt;
     &lt;/fileSets&gt;
 &lt;/generationInfoDefinition&gt;</ipxact:value>
@@ -11506,10 +11592,11 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:parameter>
           </ipxact:parameters>
         </altera:altera_module_parameters>
+        <altera:altera_ecc_parameter_mappings altera:parentModule=""></altera:altera_ecc_parameter_mappings>
       </altera:module>
     </altera:modules>
     <altera:connections>
-      <altera:connection altera:kind="avalon" altera:version="25.1" altera:start="f2sdram_adapter.axi4_man" altera:end="agilex_hps.f2sdram">
+      <altera:connection altera:kind="avalon" altera:version="25.3" altera:start="f2sdram_adapter.axi4_man" altera:end="agilex_hps.f2sdram">
         <altera:connection_parameter altera:parameter_name="arbitrationPriority" altera:parameter_value="1"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="baseAddress" altera:parameter_value="0x0000"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="defaultConnection" altera:parameter_value="false"></altera:connection_parameter>
@@ -11530,7 +11617,7 @@ https://fpgasoftware.intel.com/eula.-->
         <altera:connection_parameter altera:parameter_name="qsys_mm.syncResets" altera:parameter_value="TRUE"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="qsys_mm.widthAdapterImplementation" altera:parameter_value="GENERIC_CONVERTER"></altera:connection_parameter>
       </altera:connection>
-      <altera:connection altera:kind="conduit" altera:version="25.1" altera:start="agilex_hps.io96b0_to_hps" altera:end="emif_hps.io96b0_to_hps">
+      <altera:connection altera:kind="conduit" altera:version="25.3" altera:start="agilex_hps.io96b0_to_hps" altera:end="emif_hps.io96b0_to_hps">
         <altera:connection_parameter altera:parameter_name="endPort" altera:parameter_value=""></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="endPortLSB" altera:parameter_value="0"></altera:connection_parameter>
         <altera:connection_parameter altera:parameter_name="startPort" altera:parameter_value=""></altera:connection_parameter>
@@ -11543,6 +11630,7 @@ https://fpgasoftware.intel.com/eula.-->
     <altera:hdl_parameters></altera:hdl_parameters>
     <altera:hdl_parameter_mappings></altera:hdl_parameter_mappings>
     <altera:preserved_ports_for_debug></altera:preserved_ports_for_debug>
+    <altera:altera_group_hierarchy_contents></altera:altera_group_hierarchy_contents>
     <altera:altera_interface_boundary>
       <altera:interface_mapping altera:name="emif_hps_emif_mem_0" altera:internal="emif_hps.mem_0" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
       <altera:interface_mapping altera:name="emif_hps_emif_mem_ck_0" altera:internal="emif_hps.mem_ck_0" altera:type="conduit" altera:dir="end"></altera:interface_mapping>
@@ -11578,21 +11666,21 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:busInterfaces>
           <ipxact:busInterface>
             <ipxact:name>agilex_hps.hps2fpga</ipxact:name>
-            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:busType>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
             <ipxact:master></ipxact:master>
           </ipxact:busInterface>
           <ipxact:busInterface>
             <ipxact:name>agilex_hps.lwhps2fpga</ipxact:name>
-            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:busType>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
             <ipxact:master></ipxact:master>
           </ipxact:busInterface>
           <ipxact:busInterface>
             <ipxact:name>agilex_hps.f2sdram</ipxact:name>
-            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:busType>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
           </ipxact:busInterface>
           <ipxact:busInterface>
             <ipxact:name>f2sdram_adapter.axi4_man</ipxact:name>
-            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:busType>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
             <ipxact:master>
               <ipxact:addressSpaceRef addressSpaceRef="f2sdram_adapter.axi4_man">
                 <ipxact:baseAddress>0x0000_0000</ipxact:baseAddress>

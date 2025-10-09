@@ -128,9 +128,6 @@ module legacy_baseline_top (
 
     wire [30:0] f2h_irq1_irq;
     wire o_pma_cpu_clk;
-    wire i_refclk_bus_out;
-
-    assign i_refclk_bus_out = 1'b0;
 
     assign f2h_irq1_irq = {31'b0};
 
@@ -202,7 +199,6 @@ module legacy_baseline_top (
         .usb31_phy_tx_serial_p_o_tx_serial_p  (usb31_phy_tx_serial_p_o_tx_serial_p),
         .usb31_phy_pma_cpu_clk_clk            (o_pma_cpu_clk),
         .o_pma_cu_clk_clk                     (o_pma_cpu_clk),
-        .i_refclk_bus_out_refclk_bus_out      (i_refclk_bus_out),
         .hps_io_usb1_clk                      (hps_usb1_CLK),
         .hps_io_usb1_stp                      (hps_usb1_STP),
         .hps_io_usb1_dir                      (hps_usb1_DIR),

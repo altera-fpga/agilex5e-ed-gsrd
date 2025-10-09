@@ -13,7 +13,7 @@ set_time_format -unit ns -decimal_places 3
 
 # 100MHz board input clock, 133.3333MHz for EMIF refclk
 create_clock -name MAIN_CLOCK -period 10 [get_ports fpga_clk_100]
-create_clock -name EMIF_REF_CLOCK -period 100MHz [get_ports emif_hps_emif_ref_clk_0_clk]
+
 # edge-aligned input clk. There is no Ext PHY added delay in clock path
 create_clock -name FPGA_RGMII_RXCLK -period 125MHz [get_ports fpga_rgmii_rx_clk]
 create_clock -name FPGA_RGMII_RXCLK_VIR -period 125MHz

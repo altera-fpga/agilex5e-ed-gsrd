@@ -16,14 +16,14 @@ https://fpgasoftware.intel.com/eula.-->
   <ipxact:vendor>Intel Corporation</ipxact:vendor>
   <ipxact:library>altera_ace5lite_cache_coherency_translator_0</ipxact:library>
   <ipxact:name>altera_ace5lite_cache_coherency_translator_inst</ipxact:name>
-  <ipxact:version>2.1.1</ipxact:version>
+  <ipxact:version>2.1.4</ipxact:version>
   <ipxact:busInterfaces>
     <ipxact:busInterface>
       <ipxact:name>clk</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -57,10 +57,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>reset</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="reset" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="reset" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="reset" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="reset" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -89,10 +89,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>m_ace5lite</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="ace5lite" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="ace5lite" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="ace5lite" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="ace5lite" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -144,14 +144,6 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:portMap>
             <ipxact:portMap>
               <ipxact:logicalPort>
-                <ipxact:name>arsize</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_arsize</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
                 <ipxact:name>awburst</ipxact:name>
               </ipxact:logicalPort>
               <ipxact:physicalPort>
@@ -188,6 +180,14 @@ https://fpgasoftware.intel.com/eula.-->
               </ipxact:logicalPort>
               <ipxact:physicalPort>
                 <ipxact:name>m_ace5lite_awqos</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>awregion</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_awregion</ipxact:name>
               </ipxact:physicalPort>
             </ipxact:portMap>
             <ipxact:portMap>
@@ -232,6 +232,14 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:portMap>
             <ipxact:portMap>
               <ipxact:logicalPort>
+                <ipxact:name>awuser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_awuser</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
                 <ipxact:name>awvalid</ipxact:name>
               </ipxact:logicalPort>
               <ipxact:physicalPort>
@@ -272,6 +280,14 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:portMap>
             <ipxact:portMap>
               <ipxact:logicalPort>
+                <ipxact:name>wuser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_wuser</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
                 <ipxact:name>wvalid</ipxact:name>
               </ipxact:logicalPort>
               <ipxact:physicalPort>
@@ -300,6 +316,14 @@ https://fpgasoftware.intel.com/eula.-->
               </ipxact:logicalPort>
               <ipxact:physicalPort>
                 <ipxact:name>m_ace5lite_bresp</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>buser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_buser</ipxact:name>
               </ipxact:physicalPort>
             </ipxact:portMap>
             <ipxact:portMap>
@@ -360,6 +384,14 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:portMap>
             <ipxact:portMap>
               <ipxact:logicalPort>
+                <ipxact:name>arsize</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_arsize</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
                 <ipxact:name>arburst</ipxact:name>
               </ipxact:logicalPort>
               <ipxact:physicalPort>
@@ -396,6 +428,22 @@ https://fpgasoftware.intel.com/eula.-->
               </ipxact:logicalPort>
               <ipxact:physicalPort>
                 <ipxact:name>m_ace5lite_arqos</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>arregion</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_arregion</ipxact:name>
+              </ipxact:physicalPort>
+            </ipxact:portMap>
+            <ipxact:portMap>
+              <ipxact:logicalPort>
+                <ipxact:name>aruser</ipxact:name>
+              </ipxact:logicalPort>
+              <ipxact:physicalPort>
+                <ipxact:name>m_ace5lite_aruser</ipxact:name>
               </ipxact:physicalPort>
             </ipxact:portMap>
             <ipxact:portMap>
@@ -464,54 +512,6 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:portMap>
             <ipxact:portMap>
               <ipxact:logicalPort>
-                <ipxact:name>aruser</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_aruser</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
-                <ipxact:name>awuser</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_awuser</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
-                <ipxact:name>arregion</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_arregion</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
-                <ipxact:name>awregion</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_awregion</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
-                <ipxact:name>wuser</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_wuser</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
-                <ipxact:name>buser</ipxact:name>
-              </ipxact:logicalPort>
-              <ipxact:physicalPort>
-                <ipxact:name>m_ace5lite_buser</ipxact:name>
-              </ipxact:physicalPort>
-            </ipxact:portMap>
-            <ipxact:portMap>
-              <ipxact:logicalPort>
                 <ipxact:name>ruser</ipxact:name>
               </ipxact:logicalPort>
               <ipxact:physicalPort>
@@ -526,12 +526,12 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="readIssuingCapability" type="longint">
           <ipxact:name>readIssuingCapability</ipxact:name>
           <ipxact:displayName>Read issuing capability</ipxact:displayName>
-          <ipxact:value>8</ipxact:value>
+          <ipxact:value>16</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="writeIssuingCapability" type="longint">
           <ipxact:name>writeIssuingCapability</ipxact:name>
           <ipxact:displayName>Write issuing capability</ipxact:displayName>
-          <ipxact:value>8</ipxact:value>
+          <ipxact:value>16</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="combinedIssuingCapability" type="longint">
           <ipxact:name>combinedIssuingCapability</ipxact:name>
@@ -603,6 +603,11 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>addressCheck</ipxact:displayName>
           <ipxact:value>false</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="isTranslator" type="bit">
+          <ipxact:name>isTranslator</ipxact:name>
+          <ipxact:displayName>isTranslator</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
         <ipxact:parameter parameterId="atomicTransactions" type="bit">
           <ipxact:name>atomicTransactions</ipxact:name>
           <ipxact:displayName>atomicTransactions</ipxact:displayName>
@@ -622,10 +627,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>s_axi</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="axi4" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -978,6 +983,11 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>Associated reset</ipxact:displayName>
           <ipxact:value>reset</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="optionalAssociatedReset" type="bit">
+          <ipxact:name>optionalAssociatedReset</ipxact:name>
+          <ipxact:displayName>Optional associated reset</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
         <ipxact:parameter parameterId="trustzoneAware" type="bit">
           <ipxact:name>trustzoneAware</ipxact:name>
           <ipxact:displayName>TrustZone-aware</ipxact:displayName>
@@ -1046,12 +1056,12 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="readAcceptanceCapability" type="longint">
           <ipxact:name>readAcceptanceCapability</ipxact:name>
           <ipxact:displayName>Read acceptance capability</ipxact:displayName>
-          <ipxact:value>8</ipxact:value>
+          <ipxact:value>16</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="writeAcceptanceCapability" type="longint">
           <ipxact:name>writeAcceptanceCapability</ipxact:name>
           <ipxact:displayName>Write acceptance capability</ipxact:displayName>
-          <ipxact:value>8</ipxact:value>
+          <ipxact:value>16</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="combinedAcceptanceCapability" type="longint">
           <ipxact:name>combinedAcceptanceCapability</ipxact:name>
@@ -1280,24 +1290,6 @@ https://fpgasoftware.intel.com/eula.-->
         </ipxact:wire>
       </ipxact:port>
       <ipxact:port>
-        <ipxact:name>m_ace5lite_arsize</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>out</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>2</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
         <ipxact:name>m_ace5lite_awburst</ipxact:name>
         <ipxact:wire>
           <ipxact:direction>out</ipxact:direction>
@@ -1366,6 +1358,24 @@ https://fpgasoftware.intel.com/eula.-->
       </ipxact:port>
       <ipxact:port>
         <ipxact:name>m_ace5lite_awqos</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>m_ace5lite_awregion</ipxact:name>
         <ipxact:wire>
           <ipxact:direction>out</ipxact:direction>
           <ipxact:vectors>
@@ -1463,6 +1473,24 @@ https://fpgasoftware.intel.com/eula.-->
         </ipxact:wire>
       </ipxact:port>
       <ipxact:port>
+        <ipxact:name>m_ace5lite_awuser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>7</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
         <ipxact:name>m_ace5lite_awvalid</ipxact:name>
         <ipxact:wire>
           <ipxact:direction>out</ipxact:direction>
@@ -1538,6 +1566,24 @@ https://fpgasoftware.intel.com/eula.-->
         </ipxact:wire>
       </ipxact:port>
       <ipxact:port>
+        <ipxact:name>m_ace5lite_wuser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>7</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
         <ipxact:name>m_ace5lite_wvalid</ipxact:name>
         <ipxact:wire>
           <ipxact:direction>out</ipxact:direction>
@@ -1589,6 +1635,24 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:vector>
               <ipxact:left>0</ipxact:left>
               <ipxact:right>1</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>m_ace5lite_buser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>in</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>7</ipxact:right>
             </ipxact:vector>
           </ipxact:vectors>
           <ipxact:wireTypeDefs>
@@ -1716,6 +1780,24 @@ https://fpgasoftware.intel.com/eula.-->
         </ipxact:wire>
       </ipxact:port>
       <ipxact:port>
+        <ipxact:name>m_ace5lite_arsize</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>2</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
         <ipxact:name>m_ace5lite_arburst</ipxact:name>
         <ipxact:wire>
           <ipxact:direction>out</ipxact:direction>
@@ -1790,6 +1872,42 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:vector>
               <ipxact:left>0</ipxact:left>
               <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>m_ace5lite_arregion</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>3</ipxact:right>
+            </ipxact:vector>
+          </ipxact:vectors>
+          <ipxact:wireTypeDefs>
+            <ipxact:wireTypeDef>
+              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
+              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
+            </ipxact:wireTypeDef>
+          </ipxact:wireTypeDefs>
+        </ipxact:wire>
+      </ipxact:port>
+      <ipxact:port>
+        <ipxact:name>m_ace5lite_aruser</ipxact:name>
+        <ipxact:wire>
+          <ipxact:direction>out</ipxact:direction>
+          <ipxact:vectors>
+            <ipxact:vector>
+              <ipxact:left>0</ipxact:left>
+              <ipxact:right>7</ipxact:right>
             </ipxact:vector>
           </ipxact:vectors>
           <ipxact:wireTypeDefs>
@@ -1914,114 +2032,6 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:wireTypeDefs>
             <ipxact:wireTypeDef>
               <ipxact:typeName>STD_LOGIC</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
-        <ipxact:name>m_ace5lite_aruser</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>out</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>7</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
-        <ipxact:name>m_ace5lite_awuser</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>out</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>7</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
-        <ipxact:name>m_ace5lite_arregion</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>out</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>3</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
-        <ipxact:name>m_ace5lite_awregion</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>out</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>3</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
-        <ipxact:name>m_ace5lite_wuser</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>out</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>7</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
-              <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
-            </ipxact:wireTypeDef>
-          </ipxact:wireTypeDefs>
-        </ipxact:wire>
-      </ipxact:port>
-      <ipxact:port>
-        <ipxact:name>m_ace5lite_buser</ipxact:name>
-        <ipxact:wire>
-          <ipxact:direction>in</ipxact:direction>
-          <ipxact:vectors>
-            <ipxact:vector>
-              <ipxact:left>0</ipxact:left>
-              <ipxact:right>7</ipxact:right>
-            </ipxact:vector>
-          </ipxact:vectors>
-          <ipxact:wireTypeDefs>
-            <ipxact:wireTypeDef>
-              <ipxact:typeName>STD_LOGIC_VECTOR</ipxact:typeName>
               <ipxact:viewRef>QUARTUS_SYNTH</ipxact:viewRef>
             </ipxact:wireTypeDef>
           </ipxact:wireTypeDefs>
@@ -2738,7 +2748,7 @@ https://fpgasoftware.intel.com/eula.-->
       <ipxact:vendor>Intel Corporation</ipxact:vendor>
       <ipxact:library>altera_ace5lite_cache_coherency_translator_0</ipxact:library>
       <ipxact:name>altera_ace5lite_cache_coherency_translator</ipxact:name>
-      <ipxact:version>2.1.1</ipxact:version>
+      <ipxact:version>2.1.4</ipxact:version>
     </altera:entity_info>
     <altera:altera_module_parameters>
       <ipxact:parameters>
@@ -2842,6 +2852,16 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>MMU SIGNALS</ipxact:displayName>
           <ipxact:value>0</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="ENABLE_STASH" type="int">
+          <ipxact:name>ENABLE_STASH</ipxact:name>
+          <ipxact:displayName>CACHE STASHING SIGNALS</ipxact:displayName>
+          <ipxact:value>1</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="ENABLE_ATOMICS" type="int">
+          <ipxact:name>ENABLE_ATOMICS</ipxact:name>
+          <ipxact:displayName>ATOMICS SIGNAL</ipxact:displayName>
+          <ipxact:value>1</ipxact:value>
+        </ipxact:parameter>
         <ipxact:parameter parameterId="AWMMUSECSID_OVERRIDE" type="int">
           <ipxact:name>AWMMUSECSID_OVERRIDE</ipxact:name>
           <ipxact:displayName>AWMMUSECSID_OVERRIDE</ipxact:displayName>
@@ -2943,7 +2963,7 @@ https://fpgasoftware.intel.com/eula.-->
    {
       datum _originalVersion
       {
-         value = "2.0.0";
+         value = "2.1.3";
          type = "String";
       }
       datum _sortIndex
@@ -3090,15 +3110,6 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_arsize&lt;/name&gt;
-                    &lt;role&gt;arsize&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;3&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
                     &lt;name&gt;m_ace5lite_awburst&lt;/name&gt;
                     &lt;role&gt;awburst&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
@@ -3137,6 +3148,15 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;port&gt;
                     &lt;name&gt;m_ace5lite_awqos&lt;/name&gt;
                     &lt;role&gt;awqos&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_awregion&lt;/name&gt;
+                    &lt;role&gt;awregion&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
                     &lt;lowerBound&gt;0&lt;/lowerBound&gt;
@@ -3189,6 +3209,15 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_awuser&lt;/name&gt;
+                    &lt;role&gt;awuser&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
                     &lt;name&gt;m_ace5lite_awvalid&lt;/name&gt;
                     &lt;role&gt;awvalid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
@@ -3234,6 +3263,15 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_wuser&lt;/name&gt;
+                    &lt;role&gt;wuser&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
                     &lt;name&gt;m_ace5lite_wvalid&lt;/name&gt;
                     &lt;role&gt;wvalid&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
@@ -3265,6 +3303,15 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;role&gt;bresp&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
                     &lt;width&gt;2&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_buser&lt;/name&gt;
+                    &lt;role&gt;buser&lt;/role&gt;
+                    &lt;direction&gt;Input&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
                     &lt;lowerBound&gt;0&lt;/lowerBound&gt;
                     &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
@@ -3333,6 +3380,15 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_arsize&lt;/name&gt;
+                    &lt;role&gt;arsize&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;3&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
                     &lt;name&gt;m_ace5lite_arburst&lt;/name&gt;
                     &lt;role&gt;arburst&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
@@ -3373,6 +3429,24 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;role&gt;arqos&lt;/role&gt;
                     &lt;direction&gt;Output&lt;/direction&gt;
                     &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_arregion&lt;/name&gt;
+                    &lt;role&gt;arregion&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;4&lt;/width&gt;
+                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
+                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
+                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
+                &lt;/port&gt;
+                &lt;port&gt;
+                    &lt;name&gt;m_ace5lite_aruser&lt;/name&gt;
+                    &lt;role&gt;aruser&lt;/role&gt;
+                    &lt;direction&gt;Output&lt;/direction&gt;
+                    &lt;width&gt;8&lt;/width&gt;
                     &lt;lowerBound&gt;0&lt;/lowerBound&gt;
                     &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
@@ -3450,60 +3524,6 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;terminationValue&gt;0&lt;/terminationValue&gt;
                 &lt;/port&gt;
                 &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_aruser&lt;/name&gt;
-                    &lt;role&gt;aruser&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_awuser&lt;/name&gt;
-                    &lt;role&gt;awuser&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_arregion&lt;/name&gt;
-                    &lt;role&gt;arregion&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;4&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_awregion&lt;/name&gt;
-                    &lt;role&gt;awregion&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;4&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_wuser&lt;/name&gt;
-                    &lt;role&gt;wuser&lt;/role&gt;
-                    &lt;direction&gt;Output&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
-                    &lt;name&gt;m_ace5lite_buser&lt;/name&gt;
-                    &lt;role&gt;buser&lt;/role&gt;
-                    &lt;direction&gt;Input&lt;/direction&gt;
-                    &lt;width&gt;8&lt;/width&gt;
-                    &lt;lowerBound&gt;0&lt;/lowerBound&gt;
-                    &lt;vhdlType&gt;STD_LOGIC_VECTOR&lt;/vhdlType&gt;
-                    &lt;terminationValue&gt;0&lt;/terminationValue&gt;
-                &lt;/port&gt;
-                &lt;port&gt;
                     &lt;name&gt;m_ace5lite_ruser&lt;/name&gt;
                     &lt;role&gt;ruser&lt;/role&gt;
                     &lt;direction&gt;Input&lt;/direction&gt;
@@ -3520,11 +3540,11 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;parameterValueMap&gt;
                     &lt;entry&gt;
                         &lt;key&gt;readIssuingCapability&lt;/key&gt;
-                        &lt;value&gt;8&lt;/value&gt;
+                        &lt;value&gt;16&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;writeIssuingCapability&lt;/key&gt;
-                        &lt;value&gt;8&lt;/value&gt;
+                        &lt;value&gt;16&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;combinedIssuingCapability&lt;/key&gt;
@@ -3580,6 +3600,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;addressCheck&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;isTranslator&lt;/key&gt;
                         &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
@@ -3995,6 +4019,10 @@ https://fpgasoftware.intel.com/eula.-->
                         &lt;value&gt;reset&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
+                        &lt;key&gt;optionalAssociatedReset&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
                         &lt;key&gt;trustzoneAware&lt;/key&gt;
                         &lt;value&gt;true&lt;/value&gt;
                     &lt;/entry&gt;
@@ -4048,11 +4076,11 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;readAcceptanceCapability&lt;/key&gt;
-                        &lt;value&gt;8&lt;/value&gt;
+                        &lt;value&gt;16&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;writeAcceptanceCapability&lt;/key&gt;
-                        &lt;value&gt;8&lt;/value&gt;
+                        &lt;value&gt;16&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;combinedAcceptanceCapability&lt;/key&gt;

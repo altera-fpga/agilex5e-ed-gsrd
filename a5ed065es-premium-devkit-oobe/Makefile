@@ -26,7 +26,9 @@ HOSTNAME := $(shell hostname)
 PLATFORM_NAME ?= $(lastword $(subst /, ,$(abspath $(THIS_MK_DIR))))
 
 # Set defaults
-INSTALL_ROOT ?= $(THIS_MK_DIR)
+INSTALL_ROOT_BINARIES ?= $(THIS_MK_DIR)/install/designs
+INSTALL_ROOT_DESIGNS ?= $(THIS_MK_DIR)/install/binaries
+INSTALL_ROOT_ARTIFACTS ?= $(THIS_MK_DIR)/install/artifacts
 
 ##############################################################################
 # Set default goal before any targets. The default goal here is "test"
@@ -48,61 +50,81 @@ ALL_PREP_TARGETS =
 ALL_IP_UPGRADE_TARGETS =
 ALL_PACKAGE_DESIGNS_TARGETS =
 ALL_BUILD_TARGETS =
-ALL_SW_BUILD_TARGETS =
 ALL_TEST_TARGETS =
-ALL_INSTALL_SOF_TARGETS =
+ALL_INSTALL_TARGETS =
+
+ALL_SW_TARGET_STEM_NAMES =
+ALL_SW_BUILD_TARGETS =
 
 # Define function to create targets
 define create_targets_on_subdir
-ALL_TARGET_STEM_NAMES += $(addprefix $(strip $(1))-,$(strip $(2)))
-ALL_PRE_PREP_TARGETS += $(addsuffix -pre-prep,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_PREP_TARGETS += $(addsuffix -prep,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_IP_UPGRADE_TARGETS += $(addsuffix -ip-upgrade,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_GENERATE_DESIGN_TARGETS += $(addsuffix -generate-design,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_PACKAGE_DESIGN_TARGETS += $(addsuffix -package-designs,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_BUILD_TARGETS += $(addsuffix -build,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_SW_BUILD_TARGETS += $(addsuffix -sw-build,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_TEST_TARGETS += $(addsuffix -test,$(addprefix $(strip $(1))-,$(strip $(2))))
-ALL_INSTALL_SOF_TARGETS += $(addsuffix -install-sof,$(addprefix $(strip $(1))-,$(strip $(2))))
+ALL_TARGET_STEM_NAMES += $(strip $(1))
+ALL_PRE_PREP_TARGETS += $(strip $(1))-pre-prep
+ALL_PREP_TARGETS += $(strip $(1))-prep
+ALL_IP_UPGRADE_TARGETS += $(strip $(1))-ip-upgrade
+ALL_GENERATE_DESIGN_TARGETS += $(strip $(1))-generate-design
+ALL_PACKAGE_DESIGN_TARGETS += $(strip $(1))-package-designs
+ALL_BUILD_TARGETS += $(strip $(1))-build
+ALL_TEST_TARGETS += $(strip $(1))-test
+ALL_INSTALL_TARGETS += $(strip $(1))-install
 
-$(strip $(1))-%-pre-prep :
+$(strip $(1))-pre-prep :
 	$(MAKE) --no-print-directory -C $(strip $(1)) pre-prep
 
-$(strip $(1))-%-package-design :
-	$(MAKE) --no-print-directory -C $(strip $(1)) package-design ARCHIVE_NAME=$(PLATFORM_NAME)-$(strip $(1)) INSTALL_ROOT=$(INSTALL_ROOT)
+$(strip $(1))-package-design :
+	$(MAKE) --no-print-directory -C $(strip $(1)) package-design ARCHIVE_NAME=$(PLATFORM_NAME)-$(strip $(1)) INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT_DESIGNS) INSTALL_ROOT_BINARIES=$(INSTALL_ROOT_BINARIES)/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT_ARTIFACTS)/$(strip $(1))
 
-$(strip $(1))-%-prep :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-prep
+$(strip $(1))-prep :
+	$(MAKE) --no-print-directory -C $(strip $(1)) prep
 
-$(strip $(1))-%-ip-upgrade :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-ip-upgrade
+$(strip $(1))-ip-upgrade :
+	$(MAKE) --no-print-directory -C $(strip $(1)) ip-upgrade
 
-$(strip $(1))-%-generate-design :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-generate-design
+$(strip $(1))-generate-design :
+	$(MAKE) --no-print-directory -C $(strip $(1)) generate-design
 
-$(strip $(1))-%-build :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-build
+$(strip $(1))-build :
+	$(MAKE) --no-print-directory -C $(strip $(1)) build
 
-$(strip $(1))-%-sw-build :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-sw-build
+$(strip $(1))-build-sw :
 
-$(strip $(1))-%-test :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-test
+$(strip $(1))-test :
+	$(MAKE) --no-print-directory -C $(strip $(1)) test
 
-$(strip $(1))-%-install-sof :
-	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-install-sof ARCHIVE_NAME=$(PLATFORM_NAME)-$(strip $(1)) INSTALL_ROOT=$(INSTALL_ROOT)
+$(strip $(1))-install :
+	$(MAKE) --no-print-directory -C $(strip $(1)) install ARCHIVE_NAME=$(PLATFORM_NAME)-$(strip $(1)) INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT_DESIGNS) INSTALL_ROOT_BINARIES=$(INSTALL_ROOT_BINARIES)/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT_ARTIFACTS)/$(strip $(1))
+
+$(strip $(1))-install-sw :
+
+$(strip $(1))-dev-clean :
+	$(MAKE) --no-print-directory -C $(strip $(1)) dev-clean
+
+$(strip $(1))-clean :
+	$(MAKE) --no-print-directory -C $(strip $(1)) clean
+
+$(strip $(1))-clean-sw :
+	$(MAKE) --no-print-directory -C $(strip $(1)) clean-sw
+
 endef
 
-# Create rules for legacy-baseline subdir
-TARGET_SUBDIR := legacy-baseline
-TARGET_SUBDIR_TARGETS := $(shell make  --no-print-directory -q -C $(TARGET_SUBDIR) print-targets)
-$(eval $(call create_targets_on_subdir, $(TARGET_SUBDIR), $(TARGET_SUBDIR_TARGETS)))
+# Define function to create SW targets
+define create_sw_targets_on_subdir
+ALL_SW_TARGET_STEM_NAMES += $(strip $(1))-$(strip $(2))
+ALL_SW_BUILD_TARGETS += $(strip $(1))-$(strip $(2))-build-sw
 
-# Create rules for legacy-tsn-cfg2 subdir
-TARGET_SUBDIR := legacy-tsn-cfg2
-TARGET_SUBDIR_TARGETS := $(shell make  --no-print-directory -q -C $(TARGET_SUBDIR) print-targets)
-$(eval $(call create_targets_on_subdir, $(TARGET_SUBDIR), $(TARGET_SUBDIR_TARGETS)))
+$(strip $(1))-%-build-sw :
+	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-build-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT_DESIGNS) INSTALL_ROOT_BINARIES=$(INSTALL_ROOT_BINARIES)/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT_ARTIFACTS)/$(strip $(1))
 
+$(strip $(1))-%-install-sw :
+	$(MAKE) --no-print-directory -C $(strip $(1)) $$*-install-sw ARCHIVE_NAME=$(PLATFORM_NAME)-$(strip $(1)) INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT_DESIGNS) INSTALL_ROOT_BINARIES=$(INSTALL_ROOT_BINARIES)/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT_ARTIFACTS)/$(strip $(1))
+
+$(strip $(1))-build-sw : $(strip $(1))-$(strip $(2))-build-sw
+
+$(strip $(1))-install-sw : $(strip $(1))-$(strip $(2))-install-sw
+
+endef
+
+include platform_config.mk
 
 ###############################################################################
 #                          UTILITY TARGETS
@@ -112,6 +134,9 @@ $(eval $(call create_targets_on_subdir, $(TARGET_SUBDIR), $(TARGET_SUBDIR_TARGET
 print-targets:
 	$(info $(ALL_TARGET_STEM_NAMES))
 
+.PHONY: print-sw-targets
+print-sw-targets:
+	$(info $(ALL_SW_TARGET_STEM_NAMES))
 
 ###############################################################################
 #                                HELP

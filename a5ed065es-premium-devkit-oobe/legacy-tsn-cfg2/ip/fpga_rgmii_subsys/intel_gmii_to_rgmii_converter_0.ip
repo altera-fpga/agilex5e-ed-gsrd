@@ -20,10 +20,10 @@ https://fpgasoftware.intel.com/eula.-->
   <ipxact:busInterfaces>
     <ipxact:busInterface>
       <ipxact:name>hps_gmii</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -161,10 +161,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>phy_rgmii</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -238,10 +238,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>pll_25m_clock</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -275,10 +275,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>pll_2_5m_clock</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -312,10 +312,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>locked_pll_tx</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -349,10 +349,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>peri_reset</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="reset" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="reset" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="reset" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="reset" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -381,10 +381,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>peri_clock</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>

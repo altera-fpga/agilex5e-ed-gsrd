@@ -16,14 +16,14 @@ https://fpgasoftware.intel.com/eula.-->
   <ipxact:vendor>Altera</ipxact:vendor>
   <ipxact:library>sysid</ipxact:library>
   <ipxact:name>altera_avalon_sysid_qsys_inst</ipxact:name>
-  <ipxact:version>19.1.8</ipxact:version>
+  <ipxact:version>20.0.0</ipxact:version>
   <ipxact:busInterfaces>
     <ipxact:busInterface>
       <ipxact:name>clk</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="clock" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="clock" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -57,10 +57,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>reset</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="reset" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="reset" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="reset" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="reset" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -89,10 +89,10 @@ https://fpgasoftware.intel.com/eula.-->
     </ipxact:busInterface>
     <ipxact:busInterface>
       <ipxact:name>control_slave</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="avalon" version="25.1"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="avalon" version="25.3"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="avalon" version="25.1"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="avalon" version="25.3"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -488,19 +488,29 @@ https://fpgasoftware.intel.com/eula.-->
       <ipxact:vendor>Altera</ipxact:vendor>
       <ipxact:library>sysid</ipxact:library>
       <ipxact:name>altera_avalon_sysid_qsys</ipxact:name>
-      <ipxact:version>19.1.8</ipxact:version>
+      <ipxact:version>20.0.0</ipxact:version>
     </altera:entity_info>
     <altera:altera_module_parameters>
       <ipxact:parameters>
+        <ipxact:parameter parameterId="USE_LIVE_TIMESTAMP" type="bit">
+          <ipxact:name>USE_LIVE_TIMESTAMP</ipxact:name>
+          <ipxact:displayName>Use Live Timestamp</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="USE_MANUAL_ID" type="bit">
+          <ipxact:name>USE_MANUAL_ID</ipxact:name>
+          <ipxact:displayName>Use Manual System ID</ipxact:displayName>
+          <ipxact:value>true</ipxact:value>
+        </ipxact:parameter>
         <ipxact:parameter parameterId="id" type="int">
           <ipxact:name>id</ipxact:name>
-          <ipxact:displayName>32 bit System ID</ipxact:displayName>
+          <ipxact:displayName>32-bit System ID</ipxact:displayName>
           <ipxact:value>-1395275010</ipxact:value>
         </ipxact:parameter>
-        <ipxact:parameter parameterId="TIMESTAMP" type="int">
-          <ipxact:name>TIMESTAMP</ipxact:name>
-          <ipxact:displayName>Time stamp</ipxact:displayName>
-          <ipxact:value>0</ipxact:value>
+        <ipxact:parameter parameterId="HASH_INT" type="string">
+          <ipxact:name>HASH_INT</ipxact:name>
+          <ipxact:displayName>Auto Generated HASH</ipxact:displayName>
+          <ipxact:value></ipxact:value>
         </ipxact:parameter>
       </ipxact:parameters>
     </altera:altera_module_parameters>
@@ -509,10 +519,6 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="embeddedsw.CMacro.ID" type="string">
           <ipxact:name>embeddedsw.CMacro.ID</ipxact:name>
           <ipxact:value>-1395275010</ipxact:value>
-        </ipxact:parameter>
-        <ipxact:parameter parameterId="embeddedsw.CMacro.TIMESTAMP" type="string">
-          <ipxact:name>embeddedsw.CMacro.TIMESTAMP</ipxact:name>
-          <ipxact:value>0</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="embeddedsw.dts.compatible" type="string">
           <ipxact:name>embeddedsw.dts.compatible</ipxact:name>
@@ -529,10 +535,6 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="embeddedsw.dts.params.id" type="string">
           <ipxact:name>embeddedsw.dts.params.id</ipxact:name>
           <ipxact:value>-1395275010</ipxact:value>
-        </ipxact:parameter>
-        <ipxact:parameter parameterId="embeddedsw.dts.params.timestamp" type="string">
-          <ipxact:name>embeddedsw.dts.params.timestamp</ipxact:name>
-          <ipxact:value>0</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="embeddedsw.dts.vendor" type="string">
           <ipxact:name>embeddedsw.dts.vendor</ipxact:name>
@@ -582,6 +584,11 @@ https://fpgasoftware.intel.com/eula.-->
    }
    element altera_avalon_sysid_qsys_inst
    {
+      datum _originalVersion
+      {
+         value = "19.1.8";
+         type = "String";
+      }
       datum _sortIndex
       {
          value = "0";
@@ -995,7 +1002,12 @@ https://fpgasoftware.intel.com/eula.-->
             &lt;key&gt;control_slave&lt;/key&gt;
             &lt;value&gt;
                 &lt;connectionPointName&gt;control_slave&lt;/connectionPointName&gt;
-                &lt;suppliedSystemInfos/&gt;
+                &lt;suppliedSystemInfos&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;CPU_INFO_ID&lt;/key&gt;
+                        &lt;value&gt;&lt;/value&gt;
+                    &lt;/entry&gt;
+                &lt;/suppliedSystemInfos&gt;
                 &lt;consumedSystemInfos&gt;
                     &lt;entry&gt;
                         &lt;key&gt;ADDRESS_MAP&lt;/key&gt;

@@ -17,7 +17,6 @@
 /ip/qsys_top/rst_in/
 /ip/qsys_top/altera_ace5lite_cache_coherency_translator_0/
 /ip/qsys_top/gts_inst/
-/ip/fpga_rgmii_subsys/
 /jtag_subsys/ip/jtag_subsys/hps_m/
 /ip/qsys_top/user_rst_clkgate_0/
 /jtag_subsys/ip/jtag_subsys/fpga_m/
