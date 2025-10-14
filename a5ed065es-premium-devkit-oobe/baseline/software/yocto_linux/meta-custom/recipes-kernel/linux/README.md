@@ -40,8 +40,8 @@ Follow below steps to create the patch & build Linux Kernel.
 
 ### Clone Linux Kernel repo
 ```
-$ git clone https://github.com/altera-innersource/applications.fpga.soc.linux-socfpga-dev.git
-$ cd applications.fpga.soc.linux-socfpga-dev
+$ git clone https://github.com/altera-fpga/linux-socfpga.git
+$ cd linux-socfpga
 $ git checkout <branch>
 ```
 
