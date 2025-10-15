@@ -3,7 +3,7 @@
 ## FPGA design specific custom Linux device tree
 ### a. Full custom device tree (When FPGA_ENABLE_CORE_PGM=1, CUSTOM_LINUX_DEVICE_TREE=1)
 **CUSTOM LINUX DEVICE TREE**
-- Refer to the official base device tree source https://github.com/altera-innersource/applications.fpga.soc.linux-socfpga-dev/blob/socfpga-6.12.19-lts/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk.dts and create custom device tree with same name or different name.
+- Refer to the official base device tree source https://github.com/altera-fpga/linux-socfpga.git - arch/arm64/boot/dts/intel/socfpga_agilex5_socdk.dts and create custom device tree with same name or different name.
 
 - Ensure your custom .dts includes `socfpga_agilex5.dtsi` similar to how it's done in the reference .dts.
 

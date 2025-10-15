@@ -48,8 +48,6 @@ local_conf_header:
     VIRTUAL-RUNTIME_init_manager = "systemd"
     KERNEL_MODULE_PROBECONF = "cfg80211"
     module_conf_cfg80211 = "blacklist cfg80211"
-    PARALLEL_MAKE = "-j 8"
-    BB_NUMBER_THREADS = "8"
   boot-source: |
     SSBL_BOOT_SOURCE ?= "mmc0"
     KERNEL_BOOTARGS_SD_MMC ?= ""
