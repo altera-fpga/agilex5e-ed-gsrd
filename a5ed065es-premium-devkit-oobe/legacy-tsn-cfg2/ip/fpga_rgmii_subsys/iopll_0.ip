@@ -699,6 +699,16 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>Multiply Factor (Fraction)</ipxact:displayName>
           <ipxact:value>0</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="gui_use_slvs_refclk" type="bit">
+          <ipxact:name>gui_use_slvs_refclk</ipxact:name>
+          <ipxact:displayName>Use SLVS400 for the PLL reference clock</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="gui_use_slvs_refclk1" type="bit">
+          <ipxact:name>gui_use_slvs_refclk1</ipxact:name>
+          <ipxact:displayName>Use SLVS400 for the second PLL reference clock</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
         <ipxact:parameter parameterId="gui_divide_factor_n" type="int">
           <ipxact:name>gui_divide_factor_n</ipxact:name>
           <ipxact:displayName>Divide Factor (N-Counter)</ipxact:displayName>

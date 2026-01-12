@@ -1,0 +1,37 @@
+<pfg version="1">
+    <settings custom_db_dir="./" mode="ASX4"/>
+    <output_files>
+        <output_file name="uboot" directory="." type="JIC">
+            <file_options/>
+            <secondary_file type="MAP" name="flash_image_jic">
+                <file_options/>
+            </secondary_file>
+            <flash_device_id>Flash_Device_1</flash_device_id>
+        </output_file>
+    </output_files>
+    <bitstreams>
+        <bitstream id="Bitstream_1">
+		<path hps_path="u-boot-spl-dtb.hex">ghrd.sof</path>
+	</bitstream>
+    </bitstreams>
+    <raw_files>
+		<raw_file bitswap="1" type="RBF" id="Raw_File_1">u-boot.bin</raw_file>
+    </raw_files>
+    <flash_devices>
+        <flash_loader>A5ED065BB32AE6SR0</flash_loader>
+        <flash_device type="MT25QU02G" id="Flash_Device_1">
+            <partition reserved="1" fixed_s_addr="1" s_addr="0x00000000" e_addr="0x001FFFFF" fixed_e_addr="1" id="BOOT_INFO" size="0"/>
+            <partition reserved="0" fixed_s_addr="0" s_addr="auto" e_addr="auto" fixed_e_addr="0" id="P1" size="0"/>
+            <partition reserved="0" fixed_s_addr="0" s_addr="0x04000000" e_addr="auto" fixed_e_addr="0" id="UBOOT" size="0"/>
+        </flash_device>
+    </flash_devices>
+    <assignments>
+        <assignment page="0" partition_id="P1">
+            <bitstream_id>Bitstream_1</bitstream_id>
+        </assignment>
+		<assignment page="0" partition_id="UBOOT">
+            <raw_file_id>Raw_File_1</raw_file_id>
+        </assignment>
+    </assignments>
+</pfg>
+

@@ -1133,6 +1133,11 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>Feature Type</ipxact:displayName>
           <ipxact:value>3</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="noNarrowTransfer" type="bit">
+          <ipxact:name>noNarrowTransfer</ipxact:name>
+          <ipxact:displayName>noNarrowTransfer</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
+        </ipxact:parameter>
       </ipxact:parameters>
     </ipxact:busInterface>
   </ipxact:busInterfaces>
@@ -2775,7 +2780,7 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="ARDOMAIN_OVERRIDE" type="string">
           <ipxact:name>ARDOMAIN_OVERRIDE</ipxact:name>
           <ipxact:displayName>ARDOMAIN_OVERRIDE</ipxact:displayName>
-          <ipxact:value>2</ipxact:value>
+          <ipxact:value>1</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="ARSNOOP_OVERRIDE" type="string">
           <ipxact:name>ARSNOOP_OVERRIDE</ipxact:name>
@@ -2795,7 +2800,7 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="AWDOMAIN_OVERRIDE" type="string">
           <ipxact:name>AWDOMAIN_OVERRIDE</ipxact:name>
           <ipxact:displayName>AWDOMAIN_OVERRIDE</ipxact:displayName>
-          <ipxact:value>0</ipxact:value>
+          <ipxact:value>1</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="AWSNOOP_OVERRIDE" type="string">
           <ipxact:name>AWSNOOP_OVERRIDE</ipxact:name>
@@ -2910,12 +2915,12 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="ARUSER_OVERRIDE" type="string">
           <ipxact:name>ARUSER_OVERRIDE</ipxact:name>
           <ipxact:displayName>ARUSER_OVERRIDE</ipxact:displayName>
-          <ipxact:value>12</ipxact:value>
+          <ipxact:value>4</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="AWUSER_OVERRIDE" type="string">
           <ipxact:name>AWUSER_OVERRIDE</ipxact:name>
           <ipxact:displayName>AWUSER_OVERRIDE</ipxact:displayName>
-          <ipxact:value>12</ipxact:value>
+          <ipxact:value>4</ipxact:value>
         </ipxact:parameter>
       </ipxact:parameters>
     </altera:altera_module_parameters>
@@ -4131,6 +4136,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;entry&gt;
                         &lt;key&gt;dfhFeatureType&lt;/key&gt;
                         &lt;value&gt;3&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;noNarrowTransfer&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                 &lt;/parameterValueMap&gt;
             &lt;/parameters&gt;

@@ -1,0 +1,5 @@
+$fsbl_image_filename = "u-boot-spl-dtb.bin"
+$qspi_image_filename  = "flash_image_jic.rpd"
+$hps_boot_core = 0
+$create_hps_sd_card = FALSE
+run-command-file "targets/agilex5e-universal/agilex5e-universal.simics"

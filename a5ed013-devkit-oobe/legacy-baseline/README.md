@@ -4,29 +4,30 @@ This is the baseline Golden Hardware Reference Design (GHRD) for Agilex 5 FPGA E
 
 ## Description
 
-Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
+<p>Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
-The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
+</p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
 
-The design uses HPS First configuration mode.
+</p><p>The design uses HPS First configuration mode.
 
-## Baseline feature
-This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
-- Hard Processor System (HPS) enablement and configuration
-  - Enable dual core Arm Cortex-A55 processor
-  - HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
-  - HPS Clock and Reset
-  - HPS FPGA Bridge and Interrupt
-- HPS EMIF configuration (Inline ECC for LPDDR4 is enabled by default)
-- System integration with FPGA IPs
-  - Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling PushButton and LEDs.
-  - Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
-  - 256KB of FPGA On-Chip Memory
+</p><h2>Baseline feature
+
+</h2><p>This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
+<ul><li>Hard Processor System (HPS) enablement and configuration
+<ul><li>Enable dual core Arm Cortex-A55 processor
+</li><li>HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
+</li><li>HPS Clock and Reset
+</li><li>HPS FPGA Bridge and Interrupt
+</li></ul><li>HPS EMIF configuration (Inline ECC for LPDDR4 is enabled by default)
+</li><li>System integration with FPGA IPs
+<ul><li>Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling PushButton and LEDs.
+</li><li>Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
+</li><li>256KB of FPGA On-Chip Memory</li></ul></li></ul></p>
 
 ## Project Details
 
 - **Family**: Agilex 5
-- **Quartus Version**: 25.3
+- **Quartus Version**: 25.3.1
 - **Development Kit**: Agilex 5 FPGA E-Series 013B Development Kit DK-A5E013BM16AEA
 - **Device Part**: A5ED013BM16AE4SCS
 - **Category**: HPS
@@ -40,6 +41,10 @@ This reference design demonstrates the following system integration between Hard
 **URL**: https://github.com/altera-fpga/agilex5e-ed-gsrd/blob/main/a5ed013-devkit-oobe/legacy-baseline/README.md
 
 ## GHRD Overview
+Note for *USB3.1:
+Agilex 5 Hard Processor System supports USB3.1.
+However, Agilex 5 FPGA E-Series 013B Development Kit does not have transceiver (XCVR) for USB3.1.
+Therefore, the board only supports USB 2.0 ULPI interface via USB 3.1 controller.
 ![GHRD_overview](/images/agilex5_013B_devkit.svg)
 
 ## Hard Processor System (HPS)

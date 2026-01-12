@@ -156,14 +156,17 @@ $(strip $(1))-%-install-sw :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-install-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
 endef
 
+# Dummy SW build targets
+.PHONY: dummy-build-sw
+dummy-build-sw:
+
+.PHONY: dummy-install-sw
+install-build-sw:
+
 
 # Create rules for subdirs
-TARGET_SUBDIR := \
-	a5ed065es-premium-devkit-oobe \
-	a5ed065es-premium-devkit-emmc \
-	a5ed065es-premium-devkit-debug2 \
-	a5ed065es-modular-devkit-som \
-	a5ed013-devkit-oobe
+TARGET_SUBDIR :=
+-include platform_config.mk
 
 # Create the subdir recipes by recursively calling the create_targets_on_subdir on each TARGET_SUBDIR
 define create_subdir_targets
@@ -257,6 +260,20 @@ all: $(ALL_TARGET_ALL_NAMES)
 ###############################################################################
 #                                HELP
 ###############################################################################
+.PHONY: print-env
+print-env:
+	$(MAKE) print-env-int
+
+.PHONY: print-env-int
+print-env-int:
+	$(info GHRD Build Environment)
+	$(info ----------------)
+	$(info PATH=$(PATH))
+	$(info LD_LIBRARY_PATH=$(LD_LIBRARY_PATH))
+	$(info QUARTUS_ROOTDIR=$(QUARTUS_ROOTDIR))
+	$(info Quartus Version=$(shell quartus_sh -v | grep Version))
+	$(info GCC=$(shell which gcc))
+
 .PHONY: help
 help:
 	$(info GHRD Build)
@@ -265,7 +282,7 @@ help:
 	$(info ----------------)
 	$(info    All Targets              : $(ALL_TARGET_ALL_NAMES))
 	$(info    Stem names               : $(ALL_TARGET_STEM_NAMES))
-	$(info    Package Targets 	       : $(ALL_PACKAGE_DESIGN_TARGETS))
+	$(info    Package Targets          : $(ALL_PACKAGE_DESIGN_TARGETS))
 	$(info    Build Targets            : $(ALL_BUILD_TARGETS))
 	$(info    Test Targets             : $(ALL_TEST_TARGETS))
 	$(info    Software Build Targets   : $(ALL_SW_BUILD_TARGETS))

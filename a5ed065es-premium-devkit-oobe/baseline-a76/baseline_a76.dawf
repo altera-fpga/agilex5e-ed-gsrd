@@ -1,0 +1,49 @@
+::drc::add_waiver \
+	-description {Multiple reset synchronizers are detected within the design and this means some part of the design may come out of reset at different clock cycle. This is not likely to cause any design issues since the HPS will not initiate communication with the fabric core logic immediately after reset is released.} \
+	-rule_id {RDC-50003} \
+	-query_string {"Reset Clock Domain" == 'u_baseline_top|u_shell_subsys|u_clocks_and_resets|u_sys_pll|iopll_0_outclk0' && "Reset Chain Register Heads" == 'u_baseline_top|u_shell_subsys|u_clocks_and_resets|fpga_reset_n_sync|din_s1   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|u_niosv_subsys_jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|sink_crosser|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_niosv_m|intel_niosv_m_0|dbg_mod|dtm_inst|cmd_clk_xer|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_niosv_m|intel_niosv_m_0|dbg_mod|dtm_inst|rsp_clk_xer|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|u_niosv_subsys_jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|jtag_streaming|clock_sense_reset_n_synchronizer|din_s1'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-06-24*14:53:44} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {The Nios V data manager has multiple fanouts causing long timing paths to destination nodes. This could impact the timing performance but the design is able to meet the required timing, so this warning is waived.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" == 'u_baseline_top|u_core_subsys|u_niosv_subsys|mm_interconnect_0|u_niosv_m_data_manager_agent|awaddr_q0[3]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-09-18*15:24:33} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {The Nios V data manager has multiple fanouts causing long timing paths to destination nodes. This could impact the timing performance but the design is able to meet the required timing, so this warning is waived.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" == 'u_baseline_top|u_core_subsys|u_niosv_subsys|mm_interconnect_0|u_niosv_m_data_manager_agent|awaddr_q0[4]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-09-18*15:24:52} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {The Nios V data manager has multiple fanouts causing long timing paths to destination nodes. This could impact the timing performance but the design is able to meet the required timing, so this warning is waived.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" == 'u_baseline_top|u_core_subsys|u_niosv_subsys|mm_interconnect_0|u_niosv_m_data_manager_agent|araddr_q0[3]~DUPLICATE'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-09-18*15:25:12} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {The Nios V data manager has multiple fanouts causing long timing paths to destination nodes. This could impact the timing performance but the design is able to meet the required timing, so this warning is waived.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" == 'u_baseline_top|u_core_subsys|u_niosv_subsys|mm_interconnect_0|u_niosv_m_data_manager_agent|awaddr_q0[2]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-09-18*15:25:37} \
+	-owner {user} \
+	-no_warn

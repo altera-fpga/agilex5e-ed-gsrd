@@ -4,32 +4,31 @@ Baseline Golden Hardware Reference Design (GHRD) for Agilex 5 FPGA E-Series 065B
 
 ## Description
 
-Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
+<p>Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
-The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
-Refer to the [Agilex 5 E-Series Premium Development Kit GSRD](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/) for information about GSRD.
+</p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.\nRefer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/\">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
 
-The design uses HPS First configuration mode.
+</p><p>The design uses HPS First configuration mode.
 
-## Baseline feature
-This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
-- Hard Processor System (HPS) enablement and configuration
-  - Enable dual core Arm Cortex-A76 processor
-  - Enable dual core Arm Cortex-A55 processor
-  - Hard Processor System enablement and configuration
-  - HPS Peripheral and I/O (SD/MMC, EMAC, SPI, MDIO, I2C, I3C, UART, TRACE, and GPIO)
-  - HPS Clock and Reset
-  - HPS FPGA Bridge and Interrupt
-- HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
-- System integration with FPGA IPs
-  - Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
-  - Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
-  - 256KB of FPGA On-Chip Memory
+</p><h2>Baseline feature
+</h2><p>This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
+<ul><li>Hard Processor System (HPS) enablement and configuration
+<ul><li>Enable dual core Arm Cortex-A76 processor
+</li><li>Enable dual core Arm Cortex-A55 processor
+</li><li>Hard Processor System enablement and configuration
+</li><li>HPS Peripheral and I/O (SD/MMC, EMAC, SPI, MDIO, I2C, I3C, UART, TRACE, and GPIO)
+</li><li>HPS Clock and Reset
+</li><li>HPS FPGA Bridge and Interrupt
+</li></ul><li>HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
+</li><li>System integration with FPGA IPs
+<ul><li>Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
+</li><li>Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
+</li><li>256KB of FPGA On-Chip Memory</li></ul></li></ul></p>
 
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.3
+- **Quartus Version**: 25.3.1
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
 - **Category**: HPS

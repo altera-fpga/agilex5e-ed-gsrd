@@ -16,7 +16,7 @@ https://fpgasoftware.intel.com/eula.-->
   <ipxact:vendor>Altera Corporation</ipxact:vendor>
   <ipxact:library>emif_io96b_hps</ipxact:library>
   <ipxact:name>emif_io96b_hps_inst</ipxact:name>
-  <ipxact:version>4.1.0</ipxact:version>
+  <ipxact:version>4.1.1</ipxact:version>
   <ipxact:busInterfaces>
     <ipxact:busInterface>
       <ipxact:name>io96b0_to_hps</ipxact:name>
@@ -2078,7 +2078,7 @@ https://fpgasoftware.intel.com/eula.-->
       <ipxact:vendor>Altera Corporation</ipxact:vendor>
       <ipxact:library>emif_io96b_hps</ipxact:library>
       <ipxact:name>emif_io96b_hps</ipxact:name>
-      <ipxact:version>4.1.0</ipxact:version>
+      <ipxact:version>4.1.1</ipxact:version>
     </altera:entity_info>
     <altera:altera_module_parameters>
       <ipxact:parameters>
@@ -2213,7 +2213,7 @@ https://fpgasoftware.intel.com/eula.-->
    {
       datum _originalVersion
       {
-         value = "4.0.0";
+         value = "4.1.0";
          type = "String";
       }
       datum _sortIndex

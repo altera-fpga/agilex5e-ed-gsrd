@@ -46,7 +46,9 @@ INSTALL_ROOT_ARTIFACTS ?= $(THIS_MK_DIR)/install/artifacts
 ARCHIVE_NAME ?= $(PROJECT_NAME)
 
 # Set constants
-INSTALL_RPT_NAMES := \
+INSTALL_RPT_NAMES := ipgen.rpt
+ifneq ($(USE_ELAB_ONLY_FLOW),1)
+INSTALL_RPT_NAMES += \
 	syn.rpt \
 	fit.rpt \
 	sta.rpt \
@@ -54,6 +56,7 @@ INSTALL_RPT_NAMES := \
 	pow.rpt \
 	flow.rpt \
 	tq.drc.signoff.rpt
+endif
 
 ##############################################################################
 # Set default goal before any targets. The default goal here is "test"
@@ -144,7 +147,7 @@ output_files/pre-prep.done: | output_files
 
 output_files/prep-%.done: output_files/pre-prep.done | output_files
 	chmod a-w $(PROJECT_NAME).qpf
-	flock --verbose output_files/ipgenerate.lock quartus_ipgenerate top -c $* --simulation=verilog --synthesis=verilog --simulator=modelsim,vcsmx,riviera,xcelium |& tee output_files/$*.ipgen.rpt
+	flock --verbose output_files/ipgenerate.lock quartus_ipgenerate top -c $* --simulation=verilog --synthesis=verilog --simulator=modelsim,vcsmx,riviera,xcelium --clear_ip_generation_dirs |& tee output_files/$*.ipgen.rpt
 	ip-setup-simulation --quartus-project=top --revision=$* --output-directory=sim_setup_$* --simulator=modelsim,vcsmx,riviera,xcelium |& tee -a output_files/$*.ipgen.rpt
 	touch $@
 
@@ -153,7 +156,11 @@ pre-prep: output_files/pre-prep.done
 
 $(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip: pre-prep | $(INSTALL_ROOT_DESIGNS)
  	# Validate metadata in the README.md
+ifneq ($(NO_ENFORCE_README_VALIDATION),1)
 	quartus_sh --validate_metadata -file README.md -strict
+else
+	quartus_sh --validate_metadata -file README.md
+endif
 	rm validate_metadata_log.txt
 	zip -r $@ * -x .gitignore "output_files/*" "qdb/*" "dni/*" "tmp-clearbox/*"
 
@@ -173,12 +180,17 @@ prep: $(ALL_PREP_TARGETS)
 # building the SW outside of building the FPGA design
 ifneq ($(RESTORE_INSTALL),1)
 output_files/%.sof: output_files/prep-%.done
+ifneq ($(USE_ELAB_ONLY_FLOW),1)
 	quartus_syn top -c $*
 	quartus_fit top -c $*
 	quartus_sta top -c $* --mode=finalize
 	quartus_asm top -c $*
 	quartus_pow top -c $*
 	mv $*.qpta output_files/$*.qpta
+else
+	quartus_syn top -c $* --quick_elab
+	touch $@
+endif
 else
 output_files/%.sof: $(INSTALL_ROOT_BINARIES)/%.sof
 	mkdir -p $(dir $@)

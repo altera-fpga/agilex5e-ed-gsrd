@@ -4,46 +4,43 @@ Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO) Gold
 
 ## Description
 
-Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
+<p>Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
-The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
-Refer to the [Agilex 5 E-Series Premium Development Kit GSRD](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/) for information about GSRD.
+</p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.\nRefer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/\">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
 
-The design uses HPS First configuration mode.
+</p><p>The design uses HPS First configuration mode.
 
-## Baseline feature
-This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
-- Hard Processor System (HPS) enablement and configuration
-  - Enable dual core Arm Cortex-A76 processor
-  - Enable dual core Arm Cortex-A55 processor
-  - HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
-  - HPS Clock and Reset
-  - HPS FPGA Bridge and Interrupt
-- HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
-- System integration with FPGA IPs
-  - Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
-  - Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
-  - 256KB of FPGA On-Chip Memory
+</p><h2>Baseline feature
 
-### USB modes
-This design supports USB 3.1 in both host and device mode.
-Once power up, the USB mode will remain and cannot be changed during runtime.
+</h2><p>This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
+<ul><li>Hard Processor System (HPS) enablement and configuration
+<ul><li>Enable dual core Arm Cortex-A76 processor
+</li><li>Enable dual core Arm Cortex-A55 processor
+</li><li>HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
+</li><li>HPS Clock and Reset
+</li><li>HPS FPGA Bridge and Interrupt
+</li></ul><li>HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
+</li><li>System integration with FPGA IPs
+<ul><li>Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
+</li><li>Debug subsystem that consists of JTAG-to-Avalon Master IP to allow System-Console debug activity and FPGA content access through JTAG
+</li><li>256KB of FPGA On-Chip Memory
 
-The linux device tree (dts) needs to be configured.
-The dts can be set with "dr_mode".
+</li></ul></li></ul></p><h3>USB modes
+</h3><p>This design supports USB 3.1 in both host and device mode.<br>Once power up, the USB mode will remain and cannot be changed during runtime.
 
-| dr_mode value | Equivalent USB mode |
-| :-- | :-- |
-| host | Host |
-| peripheral | Device |
+</p><p>The linux device tree (dts) needs to be configured.<br>The dts can be set with &quot;dr_mode&quot;.
 
-## Advanced feature
-- FPGA RGMII subsystem that consists of GMII-to-RGMII conversion for HPS XGMAC into FPGA IO connection
+</p><table border=\"1\" cellpadding=\"10\"><tr><th>dr_mode value</th><th>Equivalent USB mode
+</th></tr><tr><td>host</td><td>Host</td></tr>
+<tr><td>peripheral</td><td>Device</td></tr></table>
+
+<h2>Advanced feature
+</h2><p>FPGA RGMII subsystem that consists of GMII-to-RGMII conversion for HPS XGMAC into FPGA IO connection</p>
 
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.3
+- **Quartus Version**: 25.3.1
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
 - **Category**: HPS

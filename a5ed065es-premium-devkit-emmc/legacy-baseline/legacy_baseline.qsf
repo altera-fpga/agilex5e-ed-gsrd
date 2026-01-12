@@ -24,7 +24,7 @@
 # -------------------------------------------------------------------------- #
 
 # Quartus version assignments
-set_global_assignment -name LAST_QUARTUS_VERSION "25.3.0 Pro Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "25.3.1 Pro Edition"
 
 
 # Device properties
