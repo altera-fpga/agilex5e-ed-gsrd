@@ -495,7 +495,7 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="USE_LIVE_TIMESTAMP" type="bit">
           <ipxact:name>USE_LIVE_TIMESTAMP</ipxact:name>
           <ipxact:displayName>Use Live Timestamp</ipxact:displayName>
-          <ipxact:value>false</ipxact:value>
+          <ipxact:value>true</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="USE_MANUAL_ID" type="bit">
           <ipxact:name>USE_MANUAL_ID</ipxact:name>
@@ -981,7 +981,7 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;cmsisVars&gt;
                     &lt;entry&gt;
                         &lt;key&gt;sysid_timestamp_value&lt;/key&gt;
-                        &lt;value&gt;0x0&lt;/value&gt;
+                        &lt;value&gt;0x694700ed&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;sysid_id_value&lt;/key&gt;

@@ -591,10 +591,6 @@
 			<title>Dynamic connector.1065</title>
 			<path d="M0 783 L37.5 783" class="st9"/>
 		</g>
-		<g id="shape1072-236" v:mID="1072" v:groupContext="shape" v:layerMember="0" transform="translate(548.25,-313.875)">
-			<title>Dynamic connector.1066</title>
-			<path d="M0 792 L11.25 792 L11.25 587.38 L-33.96 587.38" class="st10"/>
-		</g>
 		<g id="shape1073-241" v:mID="1073" v:groupContext="shape" transform="translate(417.75,-364.375)">
 			<title>Rectangle.1067</title>
 			<desc>GTS Reset Sequencer</desc>
@@ -632,10 +628,6 @@
 		<g id="shape1078-261" v:mID="1078" v:groupContext="shape" v:layerMember="0" transform="translate(429,-310.5)">
 			<title>Dynamic connector.1072</title>
 			<path d="M0 792 L-55.13 792 L-55.13 705.5" class="st9"/>
-		</g>
-		<g id="shape1079-264" v:mID="1079" v:groupContext="shape" v:layerMember="0" transform="translate(305.25,-397.125)">
-			<title>Dynamic connector.1079</title>
-			<path d="M0 792 L0 833.5 L65.62 833.5 A3 3 0 0 1 71.62 833.5 L230.25 833.5 L230.25 680.5 L209.04 680.5" class="st10"/>
 		</g>
 	</g>
 </svg>

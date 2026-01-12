@@ -1,0 +1,6 @@
+header:
+  version: 17
+
+local_conf_header:
+  hello-world: |
+    IMAGE_INSTALL:append = " hello-world"

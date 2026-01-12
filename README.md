@@ -32,7 +32,7 @@ This is only applicable if the feature is enabled.
 3. modify and compile the [designs](#designs) with Quartus Prime.
 
 ## Dependency
-* Altera Quartus Prime 25.3
+* Altera Quartus Prime 25.3.1
 * Supported Board
   - Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
   ![Agilex 5 E-Series Premium Development Kit](images/agilex5-premium-devkit-es.png)
@@ -47,13 +47,13 @@ This is only applicable if the feature is enabled.
 
 Several tools are required to be in the path.
 
-* Altera Quartus Prime 25.3
+* Altera Quartus Prime 25.3.1
 * Python 3.11.5 (only required when using command line to build)
 
 ### Example Setup for Altera Quartus Prime tools
 This is recommended, when using command line to build.
 ```bash
-export QUARTUS_ROOTDIR=~/intelFPGA_pro/25.3/quartus
+export QUARTUS_ROOTDIR=~/intelFPGA_pro/25.3.1/quartus
 ```
 Note: Adapt the path above to where Quartus Prime is installed.
 
@@ -73,7 +73,7 @@ After build, the design files (zip, sof and rbf) can be found in install/designs
 
 ### using Quartus GUI
 - Launch Quartus.
-- Open the project. Example: a5ed065es-premium-devkit-oobe/legacy-baseline/top.qpf
+- Open the project. Example: a5ed065es-premium-devkit-oobe/baseline-a55/top.qpf
 - Click the play button to compile the design.
 - The compiled sof can be found in output_folders of the project path.
 
@@ -82,16 +82,18 @@ After build, the design files (zip, sof and rbf) can be found in install/designs
 ### Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 Refer to the individual readme for details of the design.
 
-* [a5ed065es-premium-devkit-oobe/baseline](a5ed065es-premium-devkit-oobe/baseline/README.md) :
-  Baseline GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
+* [a5ed065es-premium-devkit-oobe/baseline-a55](a5ed065es-premium-devkit-oobe/baseline-a55/README.md) :
+  Baseline-A55 GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
+  This design boots from Arm Cortex-A55 core 0 processor.
 ```bash
-make a5ed065es-premium-devkit-oobe-baseline-all
+make a5ed065es-premium-devkit-oobe-baseline-a55-all
 ```
 
-* [a5ed065es-premium-devkit-oobe/legacy-baseline](a5ed065es-premium-devkit-oobe/legacy-baseline/README.md) :
-  Legacy baseline GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
+* [a5ed065es-premium-devkit-oobe/baseline-a76](a5ed065es-premium-devkit-oobe/baseline-a76/README.md) :
+  Baseline-A76 GHRD for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
+  This design boots from Arm Cortex-A76 core 2 processor.
 ```bash
-make a5ed065es-premium-devkit-oobe-legacy-baseline-all
+make a5ed065es-premium-devkit-oobe-baseline-a76-all
 ```
 
 * [a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2](a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2/README.md) :
@@ -140,4 +142,4 @@ After build, the generated design files will be organized as follows:
     - Compiled bitstream. Can be programm on board.
   - \<design_name>**hps_debug.sof**
     - This bitstream is injected with hps wipe program. This creates a wait loop to boot with arm debugger.
-    - Refer [readme](a5ed065es-premium-devkit-oobe/baseline/software/hps_debug/README.md)
+    - Refer [readme](a5ed065es-premium-devkit-oobe/baseline-a55/software/hps_debug/README.md)

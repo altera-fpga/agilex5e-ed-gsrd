@@ -1,0 +1,66 @@
+header:
+  version: 17
+
+repos:
+  poky:
+    url: https://github.com/yoctoproject/poky
+    branch: walnascar
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    branch: walnascar
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+  meta-altera-fpga:
+    url: https://github.com/altera-fpga/meta-altera-fpga.git
+    commit: 34f9caad20b202f4b8b72629984bbbdfa363a437
+    layers:
+      meta-altera-bsp:
+      meta-altera-platform:
+  meta-custom:
+    path: meta-custom
+
+local_conf_header:
+  machine: |
+    MACHINE = "agilex5e"
+
+  bsp: |
+    PREFERRED_PROVIDER_virtual/kernel = "linux-socfpga-lts"
+    PREFERRED_VERSION_linux-socfpga-lts = "6.12%"
+    KBRANCH = "socfpga-6.12.43-lts"
+    LINUX_SRCREV = "4ce49ba4bd8f598ff39e77b5d3d8c0bac1c9dcb1"
+    PREFERRED_PROVIDER_virtual/bootloader = "u-boot-socfpga"
+    PREFERRED_VERSION_u-boot-socfpga = "v2025.10%"
+    UBOOT_REPO = "git://github.com/altera-fpga/u-boot-socfpga.git"
+    UBOOT_BRANCH = "socfpga_v2025.10"
+    UBOOT_SRCREV = "a0db71cfad37d884e57fd49299b84df214bae9fd"
+    PREFERRED_VERSION_arm-trusted-firmware = "v2.13%"
+    ATF_REPO = "git://github.com/altera-fpga/arm-trusted-firmware.git"
+    ATF_BRANCH = "socfpga_v2.13.1"
+    ATF_SRCREV = "376b6cd83a2ad2cc18189370fdeed2d658d2532d"
+
+  boot-source: |
+    SSBL_BOOT_SOURCE ?= "mmc0"
+    KERNEL_BOOTARGS_SD_MMC ?= ""
+
+  device-tree: |
+    CUSTOM_UBOOT_DEVICE_TREE = "0"
+    CUSTOM_LINUX_DEVICE_TREE = "0"
+
+  # RBF file should be placed in meta-custom/recipes-fpga/fpga-bitstream/files/
+  fpga-bitstream: |
+    FPGA_ENABLE_CORE_PGM ?= "1"
+    FPGA_RBF_FILE ?= "baseline_a55_hps_debug.core.rbf"
+
+  kernel-modules: |
+    KERNEL_MODULE_PROBECONF = "cfg80211"
+    module_conf_cfg80211 = "blacklist cfg80211"
+
+  distro: |
+    DISTRO_FEATURES:append = " systemd usrmerge"
+    VIRTUAL-RUNTIME_init_manager = "systemd"

@@ -24,7 +24,7 @@
 # -------------------------------------------------------------------------- #
 
 # Quartus version assignments
-set_global_assignment -name LAST_QUARTUS_VERSION "25.3.0 Pro Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "25.3.1 Pro Edition"
 
 
 # Device properties
@@ -449,8 +449,8 @@ set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRAT
 set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_txd[3]
 set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_tx_ctl
 set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to emac1_mdc
-set_instance_assignment -name CURRENT_STRENGTH_NEW 12MA -to emac1_mdio
-
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 30 OHM WITHOUT CALIBRATION" -to emac1_mdio
+set_instance_assignment -name INPUT_TERMINATION OFF -to emac1_mdio
 
 # Variant IP source files
 set_global_assignment -name IP_FILE ip/fpga_rgmii_subsys/intel_gmii_to_rgmii_converter_0.ip

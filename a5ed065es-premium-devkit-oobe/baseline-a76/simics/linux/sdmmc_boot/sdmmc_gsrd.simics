@@ -1,0 +1,5 @@
+$sd_image_filename = "console-image-minimal-agilex5e.rootfs.wic"
+$fsbl_image_filename = "u-boot-spl-dtb.bin"
+$hps_boot_core = 2
+$create_hps_sd_card = TRUE
+run-command-file "targets/agilex5e-universal/agilex5e-universal.simics"

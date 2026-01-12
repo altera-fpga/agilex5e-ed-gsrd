@@ -1,0 +1,49 @@
+menu "Image target selection"
+
+choice
+	prompt "Image target selection"
+	default GSRD_CONSOLE_IMAGE
+
+config GSRD_CONSOLE_IMAGE
+	bool "GSRD Console Image"
+	help
+	  Select this to build GSRD console image(gsrd-console-image) target.
+
+config CONSOLE_IMAGE_MINIMAL
+	bool "Console Image Minimal"
+	help
+	  Select this to build console image minimal(console-image-minimal) target.
+
+config CORE_IMAGE_MINIMAL
+	bool "Core Image Minimal"
+	help
+	  Select this to build core image minimal(core-image-minimal) target.
+
+config SELECT_ALL_IMAGES
+	bool "Select all image targets"
+	help
+	  Select this to build all image targets(console-image-minimal,gsrd-console-image & core-image-minimal).
+endchoice
+
+# Define build flags
+config CONSOLE_IMAGE_MINIMAL_BUILD
+	bool
+	default y if CONSOLE_IMAGE_MINIMAL || SELECT_ALL_IMAGES
+
+config GSRD_CONSOLE_IMAGE_BUILD
+	bool
+	default y if GSRD_CONSOLE_IMAGE || SELECT_ALL_IMAGES
+
+config CORE_IMAGE_MINIMAL_BUILD
+	bool
+	default y if CORE_IMAGE_MINIMAL || SELECT_ALL_IMAGES
+
+# KAS include logic
+config KAS_INCLUDE_IMAGE
+	string
+	default "kas/image/console-image-minimal.yaml" if CONSOLE_IMAGE_MINIMAL
+	default "kas/image/gsrd-console-image.yaml" if GSRD_CONSOLE_IMAGE
+	default "kas/image/core-image-minimal.yaml" if CORE_IMAGE_MINIMAL
+	default "kas/image/all-image-targets.yaml" if SELECT_ALL_IMAGES
+
+endmenu

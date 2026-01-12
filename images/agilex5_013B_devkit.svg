@@ -166,14 +166,14 @@
 			<text x="15.76" y="784.88" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>I3C1</text>		</g>
 		<g id="shape1026-38" v:mID="1026" v:groupContext="shape" transform="translate(452.25,-594)">
 			<title>Rectangle.27</title>
-			<desc>USB3.1</desc>
+			<desc>*USB3.1</desc>
 			<v:userDefs>
 				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
 			</v:userDefs>
 			<v:textBlock v:margins="rect(4,4,4,4)"/>
 			<v:textRect cx="24.75" cy="781.875" width="49.51" height="20.25"/>
 			<rect x="0" y="771.75" width="49.5" height="20.25" class="st4"/>
-			<text x="10.19" y="784.88" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>USB3.1</text>		</g>
+			<text x="10.19" y="784.88" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>*USB3.1</text>		</g>
 		<g id="shape1030-41" v:mID="1030" v:groupContext="shape" v:layerMember="0" transform="translate(254.25,-670.188)">
 			<title>Dynamic connector.32</title>
 			<path d="M0 792 L45 792 L45 767.56 L177.75 767.56 L177.75 749.56" class="st9"/>
@@ -379,10 +379,6 @@
 			<title>Dynamic connector.1065</title>
 			<path d="M0 783 L38.25 783" class="st9"/>
 		</g>
-		<g id="shape1070-143" v:mID="1070" v:groupContext="shape" v:layerMember="0" transform="translate(423,-350)">
-			<title>Dynamic connector.1066</title>
-			<path d="M0 792 L-21 792 L-21 737 L108 737 L108 534.5 L85.29 534.5" class="st10"/>
-		</g>
 		<g id="shape1071-148" v:mID="1071" v:groupContext="shape" transform="translate(417.375,-124.875)">
 			<title>Rectangle.1067</title>
 			<desc>GTS Reset Sequencer IP</desc>
@@ -412,10 +408,6 @@
 		<g id="shape1074-162" v:mID="1074" v:groupContext="shape" v:layerMember="0" transform="translate(461.25,-285.875)">
 			<title>Dynamic connector.1070</title>
 			<path d="M-9 792 L-9 811.03" class="st12"/>
-		</g>
-		<g id="shape1077-167" v:mID="1077" v:groupContext="shape" v:layerMember="0" transform="translate(299.25,-400)">
-			<title>Dynamic connector.1079</title>
-			<path d="M0 792 L0 773.5 L65.62 773.5 A3 3 0 0 1 71.62 773.5 L222.75 773.5 L222.75 593.5 L209.04 593.5" class="st10"/>
 		</g>
 		<g id="shape1078-172" v:mID="1078" v:groupContext="shape" transform="translate(1104.75,79.375) rotate(90)">
 			<title>Sheet.1078</title>

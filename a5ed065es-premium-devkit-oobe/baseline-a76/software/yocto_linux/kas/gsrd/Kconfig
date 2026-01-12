@@ -1,0 +1,132 @@
+if GSRD_CONSOLE_IMAGE_BUILD
+menu "Networking libraries and applications"
+
+config APP_LINUXPTP
+    bool "linuxptp"
+    default y
+    help
+      linuxptp - Linux precision time protocol implementation for clock
+      synchronization over networks.
+
+config LIB_OPEN62541
+    bool "open62541 library"
+    default y
+    help
+      open62541 - OPC UA library for embedded systems.
+
+config NET_APP_LINUXPTP
+    string
+    default "true" if APP_LINUXPTP
+    default "false" if !APP_LINUXPTP
+
+config NET_LIB_OPEN62541
+    string
+    default "true" if LIB_OPEN62541
+    default "false" if !LIB_OPEN62541
+
+endmenu
+endif
+
+if GSRD_CONSOLE_IMAGE_BUILD
+menu "Benchmarking applications"
+
+config APP_COREMARK
+    bool "CoreMark"
+    default n
+    help
+      CoreMark - EEMBC benchmark for evaluating embedded CPU performance
+      through lightweight core tests.
+
+config BENCHMARK_APP_COREMARK
+    string
+    default "true" if APP_COREMARK
+    default "false" if !APP_COREMARK
+
+config UTIL_NUMACTL
+    bool "numactl"
+    default n
+    help
+      numactl - Utility to control NUMA memory and CPU affinity policies for
+      performance optimization on NUMA architectures.
+
+config TOOLS_UTIL_NUMACTL
+    string
+    default "true" if UTIL_NUMACTL
+    default "false" if !UTIL_NUMACTL
+
+endmenu
+endif
+
+menu "Altera Linux applications"
+
+config APP_SYSCHK
+    bool "Syschk"
+    default n
+    help
+      syschk - System Check application located under the intelFPGA directory and 
+      provides a glance of system status of basic peripherals such as:
+        Power management device information : Input Voltage (vin), output voltage (vout1), output current (iout1)
+        USB: USB device driver
+        SysID : FPGA system ID
+        Network IP (IPv4) : Network IP address
+        HPS LEDs : HPS LED state
+        FPGA LEDs : FPGA LED state
+
+config APP_LED_CTRL
+    bool "LED control"
+    default y
+    help
+      LED control - Set of user space apps (blink, toggle, scroll_client and scroll_server)
+      to test and demonstrate the LED functionality on SoC FPGA platforms. For more info,
+      refer meta-altera-fpga/meta-altera-platform/recipes-gsrd/gsrd-apps/files/README.
+
+config APP_REMOTE_DEBUG
+    bool "Remote debug"
+    depends on GSRD_CONSOLE_IMAGE_BUILD
+    default n
+    help
+      Remote debug application - Network-accessible debug interface for SoC FPGA platforms.
+      https://github.com/altera-fpga/remote-debug-for-intel-fpga/blob/main/README.md
+      https://altera-fpga.github.io/rel-25.1/embedded-designs/agilex-5/e-series/premium/remote-debug/ug-remote-debug-agx5e-premium/
+
+config APP_TSN_REF_SW
+    bool "TSN reference software"
+    depends on GSRD_CONSOLE_IMAGE_BUILD
+    default n
+    help
+      tsn-ref-sw - Time-Sensitive Networking Reference Software.
+      https://github.com/intel/iotg_tsn_ref_sw/blob/master/README.md
+
+config APP_GPIO_INT_TEST
+    bool "GPIO interrupt"
+    default y
+    help
+      GPIO Interrupt - Enables registration and handling of GPIO based interrupts
+      (e.g buttons, switches) on SoC FPGA platforms.
+
+config GSRD_APP_SYSCHK
+    string
+    default "true" if APP_SYSCHK
+    default "false" if !APP_SYSCHK
+
+config GSRD_APP_LED_CTRL
+    string
+    default "true" if APP_LED_CTRL
+    default "false" if !APP_LED_CTRL
+
+config GSRD_APP_REMOTE_DEBUG
+    string
+    default "true" if APP_REMOTE_DEBUG
+    default "false" if !APP_REMOTE_DEBUG
+
+config GSRD_APP_TSN_REF_SW
+    string
+    default "true" if APP_TSN_REF_SW
+    default "false" if !APP_TSN_REF_SW
+
+config GSRD_APP_GPIO_INT_TEST
+    string
+    default "true" if APP_GPIO_INT_TEST
+    default "false" if !APP_GPIO_INT_TEST
+
+endmenu

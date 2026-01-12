@@ -16,7 +16,7 @@ https://fpgasoftware.intel.com/eula.-->
   <ipxact:vendor>Altera</ipxact:vendor>
   <ipxact:library>agilex_hps</ipxact:library>
   <ipxact:name>intel_agilex_5_soc_inst</ipxact:name>
-  <ipxact:version>11.1.0</ipxact:version>
+  <ipxact:version>13.0.0</ipxact:version>
   <ipxact:busInterfaces>
     <ipxact:busInterface>
       <ipxact:name>h2f_reset</ipxact:name>
@@ -3056,6 +3056,11 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:name>dfhFeatureType</ipxact:name>
           <ipxact:displayName>Feature Type</ipxact:displayName>
           <ipxact:value>3</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="noNarrowTransfer" type="bit">
+          <ipxact:name>noNarrowTransfer</ipxact:name>
+          <ipxact:displayName>noNarrowTransfer</ipxact:displayName>
+          <ipxact:value>false</ipxact:value>
         </ipxact:parameter>
       </ipxact:parameters>
     </ipxact:busInterface>
@@ -7517,7 +7522,7 @@ https://fpgasoftware.intel.com/eula.-->
       <ipxact:vendor>Altera</ipxact:vendor>
       <ipxact:library>agilex_hps</ipxact:library>
       <ipxact:name>intel_agilex_5_soc</ipxact:name>
-      <ipxact:version>11.1.0</ipxact:version>
+      <ipxact:version>13.0.0</ipxact:version>
     </altera:entity_info>
     <altera:altera_module_parameters>
       <ipxact:parameters>
@@ -7746,6 +7751,26 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>FPGA-to-HPS Clock Frequency</ipxact:displayName>
           <ipxact:value>125</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="FPGA_EMAC0_tx_clk_en" type="bit">
+          <ipxact:name>FPGA_EMAC0_tx_clk_en</ipxact:name>
+          <ipxact:displayName>Enable EMAC0 TX clock input</ipxact:displayName>
+          <ipxact:value>true</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="FPGA_EMAC1_tx_clk_en" type="bit">
+          <ipxact:name>FPGA_EMAC1_tx_clk_en</ipxact:name>
+          <ipxact:displayName>Enable EMAC1 TX clock input</ipxact:displayName>
+          <ipxact:value>true</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="FPGA_EMAC2_tx_clk_en" type="bit">
+          <ipxact:name>FPGA_EMAC2_tx_clk_en</ipxact:name>
+          <ipxact:displayName>Enable EMAC2 TX clock input</ipxact:displayName>
+          <ipxact:value>true</ipxact:value>
+        </ipxact:parameter>
+        <ipxact:parameter parameterId="FPGA_EMAC_PTP_clk_en" type="bit">
+          <ipxact:name>FPGA_EMAC_PTP_clk_en</ipxact:name>
+          <ipxact:displayName>Enable EMAC PTP ref clock input</ipxact:displayName>
+          <ipxact:value>true</ipxact:value>
+        </ipxact:parameter>
         <ipxact:parameter parameterId="FPGA_EMAC0_md_clk_mhz" type="real">
           <ipxact:name>FPGA_EMAC0_md_clk_mhz</ipxact:name>
           <ipxact:displayName>EMAC0 emac0_md_clk Frequency</ipxact:displayName>
@@ -7954,7 +7979,7 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:parameter parameterId="NOC_clk_phy_div" type="int">
           <ipxact:name>NOC_clk_phy_div</ipxact:name>
           <ipxact:displayName>Soft PHY Clock Divider</ipxact:displayName>
-          <ipxact:value>4</ipxact:value>
+          <ipxact:value>1</ipxact:value>
         </ipxact:parameter>
         <ipxact:parameter parameterId="NOC_clk_cs_div" type="int">
           <ipxact:name>NOC_clk_cs_div</ipxact:name>
@@ -9379,7 +9404,7 @@ https://fpgasoftware.intel.com/eula.-->
    {
       datum _originalVersion
       {
-         value = "11.0.0";
+         value = "12.0.0";
          type = "String";
       }
       datum _sortIndex
@@ -12335,6 +12360,10 @@ https://fpgasoftware.intel.com/eula.-->
                     &lt;entry&gt;
                         &lt;key&gt;dfhFeatureType&lt;/key&gt;
                         &lt;value&gt;3&lt;/value&gt;
+                    &lt;/entry&gt;
+                    &lt;entry&gt;
+                        &lt;key&gt;noNarrowTransfer&lt;/key&gt;
+                        &lt;value&gt;false&lt;/value&gt;
                     &lt;/entry&gt;
                 &lt;/parameterValueMap&gt;
             &lt;/parameters&gt;
