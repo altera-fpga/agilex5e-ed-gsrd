@@ -1,17 +1,15 @@
 <?xml version="1.0" ?>
-<!--Your use of Intel Corporation's design tools, logic functions 
+<!--Your use of Altera Corporation's design tools, logic functions 
 and other software and tools, and any partner logic 
 functions, and any output files from any of the foregoing 
 (including device programming or simulation files), and any 
 associated documentation or information are expressly subject 
-to the terms and conditions of the Intel Program License 
-Subscription Agreement, the Intel Quartus Prime License Agreement,
-the Intel FPGA IP License Agreement, or other applicable license
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, the Altera Quartus Prime License Agreement,
+the Altera FPGA IP License Agreement, or other applicable license
 agreement, including, without limitation, that your use is for
 the sole purpose of programming logic devices manufactured by
-Intel and sold by Intel or its authorized distributors.  Please
-refer to the applicable agreement for further details, at
-https://fpgasoftware.intel.com/eula.-->
+Altera and sold by Altera or its authorized distributors.-->
 <ipxact:design xmlns:altera="http://www.altera.com/XMLSchema/IPXact2014/extensions" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
   <ipxact:vendor>Altera Corporation</ipxact:vendor>
   <ipxact:library>shell_subsys</ipxact:library>
@@ -175,7 +173,7 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;suppliedSystemInfos&gt;
                     &lt;entry&gt;
                         &lt;key&gt;INTERRUPTS_USED&lt;/key&gt;
-                        &lt;value&gt;2&lt;/value&gt;
+                        &lt;value&gt;1&lt;/value&gt;
                     &lt;/entry&gt;
                 &lt;/suppliedSystemInfos&gt;
                 &lt;consumedSystemInfos/&gt;
@@ -282,7 +280,7 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;suppliedSystemInfos&gt;
                     &lt;entry&gt;
                         &lt;key&gt;ADDRESS_MAP&lt;/key&gt;
-                        &lt;value&gt;&amp;lt;address-map&amp;gt;&amp;lt;slave name='parent/u_fabric_subsys.u_onchip_memory.axi_s1' start='0x0' end='0x40000' datawidth='128' /&amp;gt;&amp;lt;/address-map&amp;gt;&lt;/value&gt;
+                        &lt;value&gt;&lt;/value&gt;
                     &lt;/entry&gt;
                     &lt;entry&gt;
                         &lt;key&gt;ADDRESS_WIDTH&lt;/key&gt;
@@ -990,7 +988,7 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:parameter>
             <ipxact:parameter parameterId="svInterfaceDefinition" type="string">
               <ipxact:name>svInterfaceDefinition</ipxact:name>
-              <ipxact:displayName>System Verilog Interface definition</ipxact:displayName>
+              <ipxact:displayName>SystemVerilog Interface definition</ipxact:displayName>
               <ipxact:value></ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="transformParameters" type="string">
@@ -1064,7 +1062,7 @@ https://fpgasoftware.intel.com/eula.-->
     &lt;/boundary&gt;
     &lt;originalModuleInfo&gt;
         &lt;className&gt;intel_srcss_gts&lt;/className&gt;
-        &lt;version&gt;5.0.0&lt;/version&gt;
+        &lt;version&gt;5.0.1&lt;/version&gt;
         &lt;displayName&gt;GTS Reset Sequencer IP&lt;/displayName&gt;
     &lt;/originalModuleInfo&gt;
     &lt;systemInfoParameterDescriptors&gt;
@@ -1093,6 +1091,12 @@ https://fpgasoftware.intel.com/eula.-->
                 &lt;parameterType&gt;[Ljava.lang.String;&lt;/parameterType&gt;
                 &lt;systemInfoArgs&gt;DEVICE_GROUP&lt;/systemInfoArgs&gt;
                 &lt;systemInfotype&gt;DEVICE_INFO&lt;/systemInfotype&gt;
+            &lt;/descriptor&gt;
+            &lt;descriptor&gt;
+                &lt;parameterDefaultValue&gt;MAIN_SM7&lt;/parameterDefaultValue&gt;
+                &lt;parameterName&gt;die_types&lt;/parameterName&gt;
+                &lt;parameterType&gt;[Ljava.lang.String;&lt;/parameterType&gt;
+                &lt;systemInfotype&gt;DEVICE_DIE_TYPES&lt;/systemInfotype&gt;
             &lt;/descriptor&gt;
         &lt;/descriptors&gt;
     &lt;/systemInfoParameterDescriptors&gt;
@@ -1232,7 +1236,7 @@ https://fpgasoftware.intel.com/eula.-->
             </ipxact:parameter>
             <ipxact:parameter parameterId="svInterfaceDefinition" type="string">
               <ipxact:name>svInterfaceDefinition</ipxact:name>
-              <ipxact:displayName>System Verilog Interface definition</ipxact:displayName>
+              <ipxact:displayName>SystemVerilog Interface definition</ipxact:displayName>
               <ipxact:value></ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="transformParameters" type="string">
@@ -1291,7 +1295,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="AUTO_F2H_IRQ0_IN_INTERRUPTS_USED" type="string">
               <ipxact:name>AUTO_F2H_IRQ0_IN_INTERRUPTS_USED</ipxact:name>
               <ipxact:displayName>Auto INTERRUPTS_USED</ipxact:displayName>
-              <ipxact:value>2</ipxact:value>
+              <ipxact:value>1</ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="AUTO_F2H_IRQ1_IN_INTERRUPTS_USED" type="string">
               <ipxact:name>AUTO_F2H_IRQ1_IN_INTERRUPTS_USED</ipxact:name>
@@ -1346,7 +1350,7 @@ https://fpgasoftware.intel.com/eula.-->
             <ipxact:parameter parameterId="AUTO_HPS2FPGA_ADDRESS_MAP" type="string">
               <ipxact:name>AUTO_HPS2FPGA_ADDRESS_MAP</ipxact:name>
               <ipxact:displayName>Auto ADDRESS_MAP</ipxact:displayName>
-              <ipxact:value>&lt;address-map&gt;&lt;slave name='parent/u_fabric_subsys.u_onchip_memory.axi_s1' start='0x0' end='0x40000' datawidth='128' /&gt;&lt;/address-map&gt;</ipxact:value>
+              <ipxact:value></ipxact:value>
             </ipxact:parameter>
             <ipxact:parameter parameterId="AUTO_HPS2FPGA_ADDRESS_WIDTH" type="string">
               <ipxact:name>AUTO_HPS2FPGA_ADDRESS_WIDTH</ipxact:name>
@@ -1525,12 +1529,12 @@ https://fpgasoftware.intel.com/eula.-->
         <ipxact:busInterfaces>
           <ipxact:busInterface>
             <ipxact:name>u_hps_subsys.hps2fpga</ipxact:name>
-            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="26.1"></ipxact:busType>
             <ipxact:master></ipxact:master>
           </ipxact:busInterface>
           <ipxact:busInterface>
             <ipxact:name>u_hps_subsys.lwhps2fpga</ipxact:name>
-            <ipxact:busType vendor="intel" library="intel" name="axi4" version="25.3"></ipxact:busType>
+            <ipxact:busType vendor="intel" library="intel" name="axi4" version="26.1"></ipxact:busType>
             <ipxact:master></ipxact:master>
           </ipxact:busInterface>
         </ipxact:busInterfaces>

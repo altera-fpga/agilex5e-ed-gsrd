@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+set -eo pipefail
 
 # Determine the path to the bash script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,10 +37,14 @@ fi
 #   USER_DEFINED_VHDL_COMPILE_OPTIONS applied to vhdl compiler
 #   USER_DEFINED_VERILOG_COMPILE_OPTIONS applied to verilog compiler
 #
+if [ ! -f vcs_libs_comp.done ]; then
 source $SIM_SCRIPT_GEN_DIR/synopsys/vcsmx/vcsmx_setup.sh \
 SKIP_ELAB=1 \
 SKIP_SIM=1 \
 QSYS_SIMDIR=$SIM_SCRIPT_GEN_DIR
+
+touch vcs_libs_comp.done
+fi
 
 #
 # Compile all design files and testbench files, including the top level.
@@ -49,7 +54,9 @@ QSYS_SIMDIR=$SIM_SCRIPT_GEN_DIR
 vlogan -sverilog $DESIGN_ROOT_DIR/src/debounce.sv
 vlogan -sverilog $DESIGN_ROOT_DIR/src/clocks_and_resets.sv
 vlogan -sverilog $DESIGN_ROOT_DIR/baseline_a76.sv
-vlogan -sverilog baseline_a76_tb.sv
+vlogan -sverilog $DESIGN_ROOT_DIR/sim/hps_h2f_pkg.sv
+vlogan -sverilog $DESIGN_ROOT_DIR/sim/hps_h2f_lw_pkg.sv
+vlogan -sverilog $DESIGN_ROOT_DIR/sim/baseline_a76_tb.sv
 #
 # TOP_LEVEL_NAME is used in this script to set the top-level simulation or
 # testbench module/entity name.
@@ -59,8 +66,9 @@ vlogan -sverilog baseline_a76_tb.sv
 # - Override the default USER_DEFINED_SIM_OPTIONS. For example, to run
 #   until $finish(), set to an empty string: USER_DEFINED_SIM_OPTIONS="".
 #
+
 USER_DEFINED_ELAB_OPTIONS="\"\
-  $RUN_64bit \
+  -full64 \
   -timescale=1ns/1ns \
   +vpi -debug_access+r+w+nomemcbk +vcs+lic+wait \""
   
@@ -74,5 +82,19 @@ USER_DEFINED_ELAB_OPTIONS="$USER_DEFINED_ELAB_OPTIONS" \
 USER_DEFINED_SIM_OPTIONS="'-l transcript'"
 #
 # TOP-LEVEL TEMPLATE - END
+
+# Check simulation results for errors
+if [ -f transcript ]; then
+    if grep -qiE "(FAIL|Error|Fatal)" transcript; then
+        echo "ERROR: Simulation failed! Check transcript for details."
+        exit 1
+    else
+        echo "Simulation completed successfully."
+        exit 0
+    fi
+else
+    echo "ERROR: Transcript file not found!"
+    exit 1
+fi
 
 

@@ -32,10 +32,10 @@ if [ ! -f "$RBF_FILE" ]; then
     exit 1
 fi
 
-if [ "$BOOT_SOURCE" != "sd" ] && [ "$BOOT_SOURCE" != "qspi" ]; then
-    echo "Error: Boot source must be 'sd' or 'qspi'"
+if [ "$BOOT_SOURCE" != "sd" ] && [ "$BOOT_SOURCE" != "qspi" ] && [ "$BOOT_SOURCE" != "emmc" ] && [ "$BOOT_SOURCE" != "nand" ]; then
+    echo "Error: Boot source must be 'sd', 'qspi', 'emmc', or 'nand'"
     echo "Usage: $0 <RBF_FILE> <BOOT_SOURCE>"
-    echo "  BOOT_SOURCE: 'sd' or 'qspi'"
+    echo "  BOOT_SOURCE: 'sd', 'qspi', 'emmc', or 'nand'"
     exit 1
 fi
 

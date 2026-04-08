@@ -1,0 +1,5 @@
+$fsbl_image_filename = "u-boot-spl-dtb.bin"
+$nand_data_image_filename = "nand.img"
+$hps_boot_core = 0
+$create_hps_sd_card = FALSE
+run-command-file "targets/agilex5e-universal/agilex5e-universal.simics"

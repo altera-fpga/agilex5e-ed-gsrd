@@ -1,0 +1,10 @@
+header:
+  version: 17
+
+local_conf_header:
+  machine: |
+    MACHINE = "agilex5e"
+    LINUX_DTS_FILE = "socfpga_agilex5_socdk_nand.dts"
+    CUSTOM_LINUX_DTS_FILE = "baseline_a55.dts"
+    UBOOT_DEFCONFIG = "socfpga_agilex5_nand2_defconfig"
+    UBOOT_DEVICE_TREE = "socfpga_agilex5_socdk_nand2.dtb"

@@ -83,7 +83,7 @@ set_false_path -rise_from [get_clocks FPGA_RGMII_RXCLK_VIR] -fall_to [get_clocks
 set_false_path -fall_from [get_clocks FPGA_RGMII_RXCLK_VIR] -fall_to [get_clocks FPGA_RGMII_RXCLK] -hold
 set_false_path -rise_from [get_clocks FPGA_RGMII_RXCLK_VIR] -rise_to [get_clocks FPGA_RGMII_RXCLK] -hold
 
-set_clock_groups -asynchronous -group {2_5M_2MUX1 25M_2MUX1} -group {FPGA_RGMII_RXCLK}
+set_clock_groups -asynchronous -group {2_5M_2MUX1_0 25M_2MUX1_0} -group {FPGA_RGMII_RXCLK}
 
 ###############################
 #####   Set Output delay  #####
@@ -91,8 +91,8 @@ set_clock_groups -asynchronous -group {2_5M_2MUX1 25M_2MUX1} -group {FPGA_RGMII_
 create_generated_clock -divide_by 1 -name emac1_phy_txclk_o_hio [get_registers *sundancemesa_hps_inst~int_emac1_clk.reg] -master_clock [get_clocks int_emac1_clk] -source [get_nodes *sundancemesa_hps_inst~int_emac1_clk]
 create_generated_clock -name rgmii_tx_clk -source [get_pins soc_inst|subsys_hps|agilex_hps|intel_agilex_5_soc_inst|sm_hps|sundancemesa_hps_inst|emac1_phy_txclk_o_hio] -master_clock [get_clocks emac1_phy_txclk_o_hio] [get_ports fpga_rgmii_tx_clk]
 
-set_clock_groups -logically_exclusive -group 2_5M_2MUX1 -group 25M_2MUX1 -group emac1_phy_txclk_o_hio
-set_clock_groups -asynchronous -group {2_5M_2MUX1 25M_2MUX1} -group {rgmii_tx_clk}
+set_clock_groups -logically_exclusive -group 2_5M_2MUX1_0 -group 25M_2MUX1_0 -group emac1_phy_txclk_o_hio
+set_clock_groups -asynchronous -group {2_5M_2MUX1_0 25M_2MUX1_0} -group {rgmii_tx_clk}
 
 set_output_delay -clock [get_clocks rgmii_tx_clk] -max -0.6 [get_ports fpga_rgmii_tx_ctl]
 set_output_delay -clock [get_clocks rgmii_tx_clk] -min -2.0 [get_ports fpga_rgmii_tx_ctl]

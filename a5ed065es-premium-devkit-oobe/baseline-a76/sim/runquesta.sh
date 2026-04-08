@@ -1,4 +1,6 @@
 #! /bin/bash
+set -eo pipefail
+
 # Determine the path to the bash script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -50,33 +52,50 @@ SIM_SCRIPT_GEN_DIR=$DESIGN_ROOT_DIR/baseline_top/sim
 # #
 # # Call command to elaborate your design and testbench.
 # elab
+# # Elaborate design with -voptargs=+acc option
+# elab_debug
 # #
 # # Run the simulation.
-# run -a
+# run -all;
 # #
 # # Report success to the shell.
 # exit -code 0
 # #
 # # TOP-LEVEL TEMPLATE - END
 
+# vsim option
+# 	-c   runs the simulator in console mode
+# 	-gui launches the simulator in GUI mode
 vsim -c -do " 
 	set QSYS_SIMDIR $SIM_SCRIPT_GEN_DIR; 
 	source $SIM_SCRIPT_GEN_DIR/mentor/msim_setup.tcl; 
 	set TOP_LEVEL_NAME testbench; 
 	dev_com; 
 	com; 
-	vlog $DESIGN_ROOT_DIR/src/debounce.sv; 
-	vlog $DESIGN_ROOT_DIR/src/clocks_and_resets.sv; 
+	vlog -sv $DESIGN_ROOT_DIR/src/debounce.sv;
+	vlog -sv $DESIGN_ROOT_DIR/src/clocks_and_resets.sv;
 	vlog $DESIGN_ROOT_DIR/baseline_a76.sv; 
-	vlog -timescale 1ps/1ps ./baseline_a76_tb.sv;  
+	vlog -sv ./hps_h2f_pkg.sv;
+	vlog -sv ./hps_h2f_lw_pkg.sv;
+	vlog -sv -timescale 1ps/1ps ./baseline_a76_tb.sv -L altera_lnsim_ver;
 	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/sim/sys_pll.v; 
 	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/sim/user_rst_clkgate.v; 
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/intel_user_rst_clkgate_101/sim/intel_user_rst_clkgate.sv; 
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/altera_iopll_2100/synth/sys_pll_altera_iopll_2100_*.v; 
+	vlog -sv $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/altera_s10_user_rst_clkgate_1949/sim/altera_s10_user_rst_clkgate.sv; 
+	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/altera_iopll_*/synth/sys_pll_altera_iopll_*.v; 
 	set USER_DEFINED_ELAB_OPTIONS \"-suppress 14408,16154 -voptargs=-svext=+adta\"; 
-	elab;	
-	run -all; 
-	exit -code 0"
+	elab_debug;
+	run -all"
 
-
-
+# Check simulation results for errors
+if [ -f transcript ]; then
+    if grep -qiE "(FAIL|Fatal)" transcript; then
+        echo "ERROR: Simulation failed! Check transcript for details."
+        exit 1
+	else
+		echo "Simulation completed successfully."
+		exit 0
+    fi
+else
+    echo "ERROR: Transcript file not found!"
+    exit 1
+fi

@@ -1,0 +1,6 @@
+header:
+  version: 17
+
+target:
+    - console-image-minimal
+    - core-image-minimal 
