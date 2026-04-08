@@ -1,4 +1,4 @@
-# HPS Baseline-A55 System Example Design with HPS Expansion Board for Agilex 5 FPGA E-Series 065B Premium Development Kit
+# HPS Baseline-A55 System Example Design with HPS Expansion Board for Agilex 5 FPGA E-Series 065B Premium Development Kit (ES)
 
 HPS Baseline-A55 System Example Design for Agilex 5 FPGA E-Series 065B Premium Development Kit with Out of Box Experience (OOBE) daughter card, which is also known as HPS Enablement Expansion Board.
 
@@ -7,7 +7,7 @@ HPS Baseline-A55 System Example Design for Agilex 5 FPGA E-Series 065B Premium D
 <p>Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
 </p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.\n
-Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/\">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
+Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
 
 </p><p>The design uses HPS First configuration mode and boots from Arm Cortex-A55 core 0 processor.
 
@@ -19,9 +19,10 @@ Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agi
 </li><li>HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
 </li><li>HPS Clock and Reset
 </li><li>HPS FPGA Bridge and Interrupt
+<ul><li>Note: The System MMU port in F2H and F2SDRAM bridges are disabled by default</li></ul>
 </li></ul><li>HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
 </li><li>System integration with FPGA IPs
-<ul><li>Core subsystem that consists of NiosV subsystem, 256KB of FPGA On-Chip Memory, System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs.
+<ul><li>Fabric subsystem that consists of NiosV subsystem, 256KB of FPGA On-Chip Memory, System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs.
 </li><li>NiosV subsystem that consists of JTAG Avalon Master Bridge IP and Address Span Extender IP to allow System-Console debug activity and FPGA content access through JTAG.
 
 </li></ul></li></ul></p><h3>USB modes
@@ -36,7 +37,7 @@ Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agi
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.3.1
+- **Quartus Version**: 26.1
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
 - **Category**: HPS
@@ -80,7 +81,7 @@ Therefore, when accessing HPS logic in uboot or linux, the base address would be
 | LWS2F    | move data from HPS logic to FPGA fabric. Access FPGA peripherial Control Status Register (CSR). |
 | H2F      | move data from HPS logic to FPGA fabric. Access FPGA Onchip Memory as scratch pad.    |
 
-## Core Subsystem
+## Fabric Subsystem
 
 ### NiosV Subsystem
 In the NiosV subsystem, the JTAG Avalon Master Bridge IP interface allows access to the peripherals in the FPGA with System Console. This access does not rely on HPS software drivers. Refer to this [Guide](https://www.intel.com/content/www/us/en/docs/programmable/683819/current/analyzing-and-debugging-designs-with-84752.html) for information about system console.
@@ -96,25 +97,39 @@ In the NiosV subsystem, the JTAG Avalon Master Bridge IP interface allows access
 #### Notes
 - There are 4 user DIP switch inputs, 4 user push-button inputs and 4 LED outputs that is connected to fpga pins on Agilex 5 FPGA E-Series 065B Premium Development Kit.
   -  Only the lower three bits of LED outputs are available for software to control. The most significant bit of the LED is used in GHRD top module as heartbeat led. This LED blinks when the fpga design is loaded. Users will not be able to control this LED with HPS software, for example U-Boot or Linux.
-- The peripheral components in core subsystem can be accessed via the LWS2F bridge and have offset of 0x0_2000_0000. Refer to [Total Address Map Graphical](https://www.intel.com/content/www/us/en/docs/programmable/814346/current/total-address-map-graphical.html).
+- The peripheral components in fabric subsystem can be accessed via the LWS2F bridge and have offset of 0x0_2000_0000. Refer to [Total Address Map Graphical](https://www.intel.com/content/www/us/en/docs/programmable/814346/current/total-address-map-graphical.html).
 - The FPGA IRQ has offset of 17 when mapped to Generic Interrupt Controller (GIC) in device tree structure(dts). Refer to fpga2hps_interrupt_irq0[0] in [GIC Shared Peripheral Interrupts Map for the SoC HPS](https://www.intel.com/content/www/us/en/docs/programmable/814346/current/gic-shared-peripheral-interrupts-map.html).
 
-## Binaries location
+## GHRD Build
+**Prerequisites**
+- Altera Quartus Prime 26.1
+- Python 3.11.5 (only required when using command line to build)
+
+### Using Quartus GUI
+1. Launch Quartus Prime 26.1.
+2. Open the design project. E.g top.qpf.
+3. Click the play button to compile the design.
+4. The compiled sof can be found in output_files folder of the project path.
+
+### Using Command Line
+1. Build the design sof
+```bash
+make baseline_a55-build
+```
 After build, the bitstream (sof) can be found in output_files folder.
 
-## Generating FPGA Fabric Configuration (Core RBF)
-After the sof is generated, the following command can be run to generate the core.rbf.
+2. Use the following command to generate the core.rbf (optional)
 ```bash
-make baseline-a55-install-core-rbf
+make baseline_a55-install-core-rbf
 ```
 The generated core.rbf can be found in install/binaries folder.
 
-## Simulation Steps
+## GHRD simulation
 Follow the steps below to simulate the design using the testbench located in the design sim folder:
 1. Prepare simulation scripts
    In the current project directory, run the following command to generate the necessary simulation scripts for QuestaSim, VCS (3-step), and Xcelium from Quartus:
 ```bash
-make output_files/prep-baseline_a55.done
+make baseline_a55-prep
 ```
 
 2. Run the Simulation
@@ -122,12 +137,12 @@ make output_files/prep-baseline_a55.done
 ```bash
 cd sim
 ```
-   Depending on simulator license, execute the appropriate shell script to start the simulation. For example: 
+   Depending on your simulator, execute the appropriate shell script to start the simulation. For example:
    For VCS (3-step) simulator,
 ```bash
 ./runvcs.sh
-``` 
-   For QuestaSim and Questa FE simulator, 
+```
+   For QuestaSim and Questa FE simulator,
 ```bash
 ./runquesta.sh
 ```
@@ -152,3 +167,6 @@ The resulting SD card boot image is intended solely to showcase the initial HPS 
 It does **not** perform any FPGA core fabric configuration in either U-Boot or Linux.<br>
 
 Refer to [ryo_linux_sd.sh](software/ryo_linux/ryo_linux_sd.sh) and follow the steps to build the SD card image.
+
+# HPS Debug Program
+Refer to the [README](software/hps_debug/README.md) file and follow the steps to build the HPS content wipe program.

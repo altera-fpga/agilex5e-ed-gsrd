@@ -1,0 +1,60 @@
+header:
+  version: 17
+  includes:
+    - kas/machine.yml
+    - kas/bsp.yml
+
+repos:
+  bitbake:
+    url: https://github.com/openembedded/bitbake.git
+    branch: "2.16"
+    layers:
+      .: disabled
+  openembedded-core:
+    url: https://github.com/openembedded/openembedded-core.git
+    branch: whinlatter
+    layers:
+      meta:
+  meta-yocto:
+    url: https://git.yoctoproject.org/meta-yocto
+    branch: whinlatter
+    layers:
+      meta-poky:
+      meta-yocto-bsp:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    branch: whinlatter
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+  meta-clang:
+    url: https://github.com/kraj/meta-clang.git
+    branch: whinlatter
+  meta-altera-fpga:
+    url: https://github.com/altera-fpga/meta-altera-fpga.git
+    commit: 3001dcafbc8860fb95c081e2966ab22edc77f985
+    layers:
+      meta-altera-bsp:
+      meta-altera-platform:
+  meta-custom:
+    path: meta-custom
+
+local_conf_header:
+  boot-source: |
+    SSBL_BOOT_SOURCE ?= "mmc0"
+    KERNEL_BOOTARGS_SD_MMC ?= ""
+
+  device-tree: |
+    CUSTOM_UBOOT_DEVICE_TREE = "0"
+    CUSTOM_LINUX_DEVICE_TREE = "0"
+
+  # RBF file should be placed in meta-custom/recipes-fpga/fpga-bitstream/files/
+  fpga-bitstream: |
+    FPGA_ENABLE_CORE_PGM ?= "1"
+    FPGA_RBF_FILE ?= "baseline_a55_hps_debug.core.rbf"
+
+  kernel-modules: |
+    KERNEL_MODULE_PROBECONF = "cfg80211"
+    module_conf_cfg80211 = "blacklist cfg80211"
+

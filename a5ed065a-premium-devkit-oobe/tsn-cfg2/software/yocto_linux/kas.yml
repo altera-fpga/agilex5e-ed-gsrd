@@ -1,0 +1,51 @@
+header:
+  version: 17
+  includes:
+    - kas/machine.yml
+    - kas/bsp.yml
+
+repos:
+  poky:
+    url: https://github.com/yoctoproject/poky
+    branch: scarthgap
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    branch: scarthgap
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+  meta-clang:
+    url: https://github.com/kraj/meta-clang.git
+    branch: scarthgap
+  meta-altera-fpga:
+    url: https://github.com/altera-fpga/meta-altera-fpga.git
+    commit: eb26020e7020d39fed948c29c115a7fb7a9841ed
+    layers:
+      meta-altera-bsp:
+      meta-altera-platform:
+  meta-custom:
+    path: meta-custom
+
+local_conf_header:
+  boot-source: |
+    SSBL_BOOT_SOURCE ?= "mmc0"
+    KERNEL_BOOTARGS_SD_MMC ?= ""
+
+  device-tree: |
+    CUSTOM_UBOOT_DEVICE_TREE = "0"
+    CUSTOM_LINUX_DEVICE_TREE = "0"
+
+  # RBF file should be placed in meta-custom/recipes-fpga/fpga-bitstream/files/
+  fpga-bitstream: |
+    FPGA_ENABLE_CORE_PGM ?= "1"
+    FPGA_RBF_FILE ?= "tsn_cfg2_hps_debug.core.rbf"
+
+  kernel-modules: |
+    KERNEL_MODULE_PROBECONF = "cfg80211"
+    module_conf_cfg80211 = "blacklist cfg80211"
+

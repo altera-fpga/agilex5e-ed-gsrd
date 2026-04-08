@@ -1,4 +1,4 @@
-# HPS Time-Sensitive Network (RGMII from HVIO) System Example Design with HPS Expansion Board for Agilex 5 FPGA E-Series 065B Premium Development Kit
+# HPS Time-Sensitive Network (RGMII from HVIO) System Example Design with HPS Expansion Board for Agilex 5 FPGA E-Series 065B Premium Development Kit (ES)
 
 Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO) Golden Hardware Reference Design (GHRD) for Agilex 5 FPGA E-Series 065B Premium Development Kit with Out of Box Experience (OOBE) daughter card, which is also known as HPS Enablement Expansion Board.
 
@@ -6,7 +6,7 @@ Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO) Gold
 
 <p>Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
-</p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.\nRefer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/\">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
+</p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.\nRefer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
 
 </p><p>The design uses HPS First configuration mode.
 
@@ -19,6 +19,7 @@ Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO) Gold
 </li><li>HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
 </li><li>HPS Clock and Reset
 </li><li>HPS FPGA Bridge and Interrupt
+<ul><li>Note: The System MMU port in F2H and F2SDRAM bridges are disabled by default</li></ul>
 </li></ul><li>HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
 </li><li>System integration with FPGA IPs
 <ul><li>Peripheral subsystem that consists of System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs
@@ -40,7 +41,7 @@ Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO) Gold
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 25.3.1
+- **Quartus Version**: 26.1
 - **Development Kit**: Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AES1
 - **Device Part**: A5ED065BB32AE6SR0
 - **Category**: HPS

@@ -4,8 +4,4 @@ config HELLO_WORLD_APP
 	bool "Hello World"
     default y
 
-config KAS_INCLUDE_HELLO_WORLD_APP
-	string
-	default "kas/apps/hello-world.yaml" if HELLO_WORLD_APP
-
 endmenu

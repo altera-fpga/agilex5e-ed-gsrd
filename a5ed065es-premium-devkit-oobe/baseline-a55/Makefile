@@ -181,20 +181,21 @@ prep: $(ALL_PREP_TARGETS)
 ifneq ($(RESTORE_INSTALL),1)
 output_files/%.sof: output_files/prep-%.done
 ifneq ($(USE_ELAB_ONLY_FLOW),1)
-	quartus_syn top -c $*
-	quartus_fit top -c $*
-	quartus_sta top -c $* --mode=finalize
+	quartus_sh --flow compile top -c $*
 	quartus_asm top -c $*
 	quartus_pow top -c $*
 	mv $*.qpta output_files/$*.qpta
+	@test -f $@ && echo "$@ found after eLab flow!" || (echo "Error: $@ not found after eLab flow!" && exit 1)
 else
 	quartus_syn top -c $* --quick_elab
 	touch $@
+	@test -f $@ && echo "$@ found after quick_elab" || (echo "Error: $@ not found after quick_elab!" && exit 1)
 endif
 else
 output_files/%.sof: $(INSTALL_ROOT_BINARIES)/%.sof
 	mkdir -p $(dir $@)
 	cp $< $@
+	@test -f $@ && echo "$@ found after restore!" || (echo "Error: $@ not found after restore!" && exit 1)
 endif
 
 # Clean all files

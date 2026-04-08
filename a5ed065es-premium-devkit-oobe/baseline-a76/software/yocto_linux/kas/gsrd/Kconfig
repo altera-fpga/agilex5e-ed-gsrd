@@ -32,15 +32,58 @@ menu "Benchmarking applications"
 
 config APP_COREMARK
     bool "CoreMark"
-    default n
+    default y
     help
-      CoreMark - EEMBC benchmark for evaluating embedded CPU performance
-      through lightweight core tests.
+      CoreMark - EEMBC benchmark for evaluating embedded CPU performance through lightweight core tests.
 
 config BENCHMARK_APP_COREMARK
     string
     default "true" if APP_COREMARK
     default "false" if !APP_COREMARK
+
+config APP_DHRYSTONE
+    bool "Dhrystone"
+    default y
+    help
+      Dhrystone - benchmark for CPU/compiler performance measurement, in particular in the area of minicomputers, workstations, PCs, and microprocesors.
+
+config BENCHMARK_APP_DHRYSTONE
+    string
+    default "true" if APP_DHRYSTONE
+    default "false" if !APP_DHRYSTONE
+
+config APP_STREAM
+    bool "STREAM"
+    default y
+    help
+      STREAM - de facto industry standard benchmark for measuring sustained memory bandwidth.
+
+config BENCHMARK_APP_STREAM
+    string
+    default "true" if APP_STREAM
+    default "false" if !APP_STREAM
+
+config APP_LMBENCH
+    bool "LMbench"
+    default y
+    help
+      LMbench - a suite of simple, portable, ANSI/C microbenchmarks for UNIX/POSIX.
+
+config BENCHMARK_APP_LMBENCH
+    string
+    default "true" if APP_LMBENCH
+    default "false" if !APP_LMBENCH
+
+config APP_RUN_HPS_BENCHMARKS
+    bool "Sample Benchmarking Script"
+    default y
+    help
+      CoreMark - Example script for running benchmarking commands
+
+config BENCHMARK_APP_RUN_HPS_BENCHMARKS
+    string
+    default "true" if APP_RUN_HPS_BENCHMARKS
+    default "false" if !APP_RUN_HPS_BENCHMARKS
 
 config UTIL_NUMACTL
     bool "numactl"
@@ -61,9 +104,9 @@ menu "Altera Linux applications"
 
 config APP_SYSCHK
     bool "Syschk"
-    default n
+    default y
     help
-      syschk - System Check application located under the intelFPGA directory and 
+      syschk - System Check application located under the alteraFPGA directory and 
       provides a glance of system status of basic peripherals such as:
         Power management device information : Input Voltage (vin), output voltage (vout1), output current (iout1)
         USB: USB device driver
@@ -92,7 +135,7 @@ config APP_REMOTE_DEBUG
 config APP_TSN_REF_SW
     bool "TSN reference software"
     depends on GSRD_CONSOLE_IMAGE_BUILD
-    default n
+    default y
     help
       tsn-ref-sw - Time-Sensitive Networking Reference Software.
       https://github.com/intel/iotg_tsn_ref_sw/blob/master/README.md

@@ -1,4 +1,6 @@
 #! /bin/bash
+set -eo pipefail
+
 MENTOR_VIP_AE=${MENTOR_VIP_AE:-$QUARTUS_ROOTDIR/../ip/altera/mentor_vip_ae}
 export QUESTA_MVC_GCC_LIB=$MENTOR_VIP_AE/common/questa_mvc_core/linux_x86_64_gcc-*_ius
 export LD_LIBRARY_PATH=${QUESTA_MVC_GCC_LIB}:${LD_LIBRARY_PATH}
@@ -59,6 +61,8 @@ SKIP_COM=1
 xmvlog -sv $DESIGN_ROOT_DIR/src/debounce.sv 
 xmvlog -sv $DESIGN_ROOT_DIR/src/clocks_and_resets.sv
 xmvlog -sv $DESIGN_ROOT_DIR/baseline_a76.sv 
+xmvlog -sv $DESIGN_ROOT_DIR/sim/hps_h2f_pkg.sv
+xmvlog -sv $DESIGN_ROOT_DIR/sim/hps_h2f_lw_pkg.sv
 xmvlog -sv $DESIGN_ROOT_DIR/sim/baseline_a76_tb.sv 
 
 #
@@ -91,5 +95,19 @@ USER_DEFINED_ELAB_OPTIONS="$USER_DEFINED_ELAB_OPTIONS" \
 USER_DEFINED_SIM_OPTIONS="$USER_DEFINED_SIM_OPTIONS"
 #
 # TOP-LEVEL TEMPLATE - END
+
+# Check simulation results for errors
+if [ -f xmsim.log ]; then
+    if grep -qiP "(FAIL|\bError\b|Fatal|\*E,)" xmsim.log; then
+        echo "ERROR: Simulation failed! Check xmsim.log for details."
+        exit 1
+    else
+        echo "Simulation completed successfully."
+        exit 0
+    fi
+else
+    echo "ERROR: xmsim.log file not found!"
+    exit 1
+fi
 
 

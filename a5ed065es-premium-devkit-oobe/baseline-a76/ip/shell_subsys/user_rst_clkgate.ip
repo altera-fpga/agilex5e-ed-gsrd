@@ -15,7 +15,7 @@ https://fpgasoftware.intel.com/eula.-->
 <ipxact:component xmlns:altera="http://www.altera.com/XMLSchema/IPXact2014/extensions" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
   <ipxact:vendor>Intel Corporation</ipxact:vendor>
   <ipxact:library>user_rst_clkgate</ipxact:library>
-  <ipxact:name>intel_user_rst_clkgate_inst</ipxact:name>
+  <ipxact:name>altera_s10_user_rst_clkgate_inst</ipxact:name>
   <ipxact:version>1.0.1</ipxact:version>
   <ipxact:busInterfaces>
     <ipxact:busInterface>
@@ -67,7 +67,7 @@ https://fpgasoftware.intel.com/eula.-->
     <ipxact:instantiations>
       <ipxact:componentInstantiation>
         <ipxact:name>QUARTUS_SYNTH</ipxact:name>
-        <ipxact:moduleName>intel_user_rst_clkgate</ipxact:moduleName>
+        <ipxact:moduleName>altera_s10_user_rst_clkgate</ipxact:moduleName>
         <ipxact:fileSetRef>
           <ipxact:localName>QUARTUS_SYNTH</ipxact:localName>
         </ipxact:fileSetRef>
@@ -92,7 +92,7 @@ https://fpgasoftware.intel.com/eula.-->
     <altera:entity_info>
       <ipxact:vendor>Intel Corporation</ipxact:vendor>
       <ipxact:library>user_rst_clkgate</ipxact:library>
-      <ipxact:name>intel_user_rst_clkgate</ipxact:name>
+      <ipxact:name>altera_s10_user_rst_clkgate</ipxact:name>
       <ipxact:version>1.0.1</ipxact:version>
     </altera:entity_info>
     <altera:altera_module_parameters>
@@ -141,7 +141,7 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>bonusData</ipxact:displayName>
           <ipxact:value>bonusData
 {
-   element intel_user_rst_clkgate_inst
+   element altera_s10_user_rst_clkgate_inst
    {
       datum _sortIndex
       {
@@ -218,7 +218,7 @@ https://fpgasoftware.intel.com/eula.-->
       </ipxact:parameters>
     </altera:altera_system_parameters>
     <altera:altera_interface_boundary>
-      <altera:interface_mapping altera:name="ninit_done" altera:internal="intel_user_rst_clkgate_inst.ninit_done" altera:type="conduit" altera:dir="end">
+      <altera:interface_mapping altera:name="ninit_done" altera:internal="altera_s10_user_rst_clkgate_inst.ninit_done" altera:type="conduit" altera:dir="end">
         <altera:port_mapping altera:name="ninit_done" altera:internal="ninit_done"></altera:port_mapping>
       </altera:interface_mapping>
     </altera:altera_interface_boundary>

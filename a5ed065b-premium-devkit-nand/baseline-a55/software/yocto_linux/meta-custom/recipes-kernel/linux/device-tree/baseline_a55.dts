@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2025, Altera Corporation
+ */
+/dts-v1/;
+#include "socfpga_agilex5_socdk_nand.dts"
+
+/ {
+
+    soc@0 {
+
+        // FPGA LED PIO
+        led_pio: gpio@20010080 {
+            compatible = "altr,pio-1.0";
+            reg = <0x20010080 0x10>;
+            #gpio-cells = <2>;
+            gpio-controller;
+            resetvalue = <0>;
+        };
+
+        // FPGA Button PIO
+        button_pio: gpio@20010060 {
+            compatible = "altr,pio-1.0";
+            reg = <0x20010060 0x10>;
+            interrupt-parent = <&intc>;
+            interrupts = <0 17 1>;
+            altr,interrupt-type = <2>;
+            #gpio-cells = <2>;
+            gpio-controller;
+        };
+
+        // FPGA DIP switch PIO
+        dipsw_pio: gpio@20010070 {
+            compatible = "altr,pio-1.0";
+            reg = <0x20010070 0x10>;
+            #gpio-cells = <2>;
+            gpio-controller;
+        };
+    };
+
+    /* LED nodes */
+    soc_leds: leds {
+        compatible = "gpio-leds";
+
+        led_fpga0: fpga0 {
+            label = "fpga_led0";
+            gpios = <&led_pio 0 GPIO_ACTIVE_HIGH>;
+        };
+
+        led_fpga1: fpga1 {
+            label = "fpga_led1";
+            gpios = <&led_pio 1 GPIO_ACTIVE_HIGH>;
+        };
+
+        led_fpga2: fpga2 {
+            label = "fpga_led2";
+            gpios = <&led_pio 2 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};

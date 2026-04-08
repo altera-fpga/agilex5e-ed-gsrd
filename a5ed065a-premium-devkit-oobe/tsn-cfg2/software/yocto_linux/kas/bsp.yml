@@ -1,0 +1,18 @@
+header:
+  version: 17
+
+local_conf_header:
+  bsp: |
+    PREFERRED_PROVIDER_virtual/kernel = "linux-socfpga-lts"
+    PREFERRED_VERSION_linux-socfpga-lts = "6.18%"
+    KBRANCH = "socfpga-6.18.2-lts"
+    LINUX_SRCREV = "b2496f2fcb06db4d598d0073ad0e9e9be99b9288"
+    PREFERRED_PROVIDER_virtual/bootloader = "u-boot-socfpga"
+    PREFERRED_VERSION_u-boot-socfpga = "v2026.01%"
+    UBOOT_REPO = "git://github.com/altera-fpga/u-boot-socfpga.git"
+    UBOOT_BRANCH = "socfpga_v2026.01"
+    UBOOT_SRCREV = "6e59447316d06b25ca98caaa5c16787f5c74e862"
+    PREFERRED_VERSION_arm-trusted-firmware = "v2.14%"
+    ATF_REPO = "git://github.com/altera-fpga/arm-trusted-firmware.git"
+    ATF_BRANCH = "socfpga_v2.14.0"
+    ATF_SRCREV = "4a4b4573e12fabd0a88e95952af49840db6b770d"

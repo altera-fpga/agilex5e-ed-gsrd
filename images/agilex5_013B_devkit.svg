@@ -166,14 +166,14 @@
 			<text x="15.76" y="784.88" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>I3C1</text>		</g>
 		<g id="shape1026-38" v:mID="1026" v:groupContext="shape" transform="translate(452.25,-594)">
 			<title>Rectangle.27</title>
-			<desc>*USB3.1</desc>
+			<desc>USB3.1</desc>
 			<v:userDefs>
 				<v:ud v:nameU="visVersion" v:val="VT0(15):26"/>
 			</v:userDefs>
 			<v:textBlock v:margins="rect(4,4,4,4)"/>
 			<v:textRect cx="24.75" cy="781.875" width="49.51" height="20.25"/>
 			<rect x="0" y="771.75" width="49.5" height="20.25" class="st4"/>
-			<text x="10.19" y="784.88" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>*USB3.1</text>		</g>
+			<text x="10.19" y="784.88" class="st5" v:langID="1033"><v:paragraph v:horizAlign="1"/><v:tabList/>USB3.1</text>		</g>
 		<g id="shape1030-41" v:mID="1030" v:groupContext="shape" v:layerMember="0" transform="translate(254.25,-670.188)">
 			<title>Dynamic connector.32</title>
 			<path d="M0 792 L45 792 L45 767.56 L177.75 767.56 L177.75 749.56" class="st9"/>

@@ -157,18 +157,11 @@ module baseline_a76 (
     wire [30:0] fpga2hps_interrupts;
     assign fpga2hps_interrupts = '0;
 
-    // Synchronize the reset request signal to system clock domain
-    // and loopback to the ack signals.
+    // Directly loop reset request signal to the reset acknowledge signals.
     logic h2f_warm_reset_handshake_reset_ack;
     logic h2f_warm_reset_handshake_reset_req;
-    altera_std_synchronizer #(
-        .depth(2)
-    ) h2f_warm_reset_handshake_reset_req_sync (
-        .clk    (sys_clk_100),
-        .reset_n(sys_clk_100_reset_n),
-        .din    (h2f_warm_reset_handshake_reset_req),
-        .dout   (h2f_warm_reset_handshake_reset_ack)
-    );
+
+    assign h2f_warm_reset_handshake_reset_ack = h2f_warm_reset_handshake_reset_req;
 
     wire [1:0] usb31_io_usb_ctrl_int;
     assign usb31_io_usb_ctrl = usb31_io_usb_ctrl_int[1];

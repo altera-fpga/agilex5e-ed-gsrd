@@ -1,0 +1,19 @@
+::drc::add_waiver \
+	-description {Waived this warning. These clocks are defined for the same target. } \
+	-rule_id {CLK-30042} \
+	-query_string {"Clock Group Flag" == '-logically_exclusive' && "Clock Groups" == '2_5M_2MUX1_0 - emac1_phy_txclk_o_hio' && "Recommended Flag" == '-asynchronous'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-11-19*18:18:52} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {Waived this warning. These clocks are defined for the same target. } \
+	-rule_id {CLK-30042} \
+	-query_string {"Clock Group Flag" == '-logically_exclusive' && "Clock Groups" == '25M_2MUX1_0 - emac1_phy_txclk_o_hio' && "Recommended Flag" == '-asynchronous'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-11-19*18:18:52} \
+	-owner {user} \
+	-no_warn

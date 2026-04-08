@@ -90,6 +90,9 @@ ALL_CLEAN_TARGETS += $(addsuffix -clean,$(addprefix $(strip $(1))-,$(strip $(3))
 ALL_DEV_CLEAN_TARGETS += $(addsuffix -dev-clean,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_TARGET_ALL_NAMES += $(addsuffix -all,$(addprefix $(strip $(1))-,$(strip $(3))))
 
+# Auto-detect default SW target based on platform name for -all target: emmc→software-yocto_linux_emmc, nand→software-yocto_linux_nand, else→software-yocto_linux_sd
+SW_TARGET_FOR_$(strip $(1))-$(strip $(3)) = $(if $(findstring -emmc,$(strip $(1))),software-yocto_linux_emmc,$(if $(findstring -nand,$(strip $(1))),software-yocto_linux_nand,software-yocto_linux_sd))
+
 
 $(strip $(1))-%-pre-prep : venv
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-pre-prep
@@ -139,8 +142,8 @@ $(addsuffix -all,$(addprefix $(strip $(1))-,$(strip $(3)))): venv
 	$(MAKE) $(addsuffix -build,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(addsuffix -test,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(addsuffix -install,$(addprefix $(strip $(1))-,$(strip $(3))))
-	$(MAKE) $(addsuffix -build-sw,$(addprefix $(strip $(1))-,$(strip $(3))))
-	$(MAKE) $(addsuffix -install-sw,$(addprefix $(strip $(1))-,$(strip $(3))))
+	$(MAKE) $(strip $(1))-$(strip $(3))-$$(SW_TARGET_FOR_$(strip $(1))-$(strip $(3)))-build-sw
+	$(MAKE) $(strip $(1))-$(strip $(3))-$$(SW_TARGET_FOR_$(strip $(1))-$(strip $(3)))-install-sw
 endef
 
 # Create targets per SW project on each subdir

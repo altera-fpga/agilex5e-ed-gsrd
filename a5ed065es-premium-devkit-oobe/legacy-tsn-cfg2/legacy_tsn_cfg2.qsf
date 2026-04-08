@@ -24,7 +24,7 @@
 # -------------------------------------------------------------------------- #
 
 # Quartus version assignments
-set_global_assignment -name LAST_QUARTUS_VERSION "25.3.1 Pro Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "26.1.0 Pro Edition"
 
 
 # Device properties
@@ -85,8 +85,10 @@ set_global_assignment -name USE_CHECKSUM_AS_USERCODE OFF
 # Clocks, resets, GPIO
 set_location_assignment PIN_BK109 -to fpga_clk_100
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_clk_100
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_clk_100
 set_location_assignment PIN_BR112 -to fpga_reset_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_reset_n
 set_location_assignment PIN_BM59 -to fpga_led_pio[0]
 set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_led_pio[0]
 set_instance_assignment -name SLEW_RATE 0 -to fpga_led_pio[0]
@@ -101,24 +103,32 @@ set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_led_pio[3]
 set_instance_assignment -name SLEW_RATE 0 -to fpga_led_pio[3]
 set_location_assignment PIN_CH12 -to fpga_dipsw_pio[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[0]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[0]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[0]
 set_location_assignment PIN_BU22 -to fpga_dipsw_pio[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[1]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[1]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[1]
 set_location_assignment PIN_BW19 -to fpga_dipsw_pio[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[2]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[2]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[2]
 set_location_assignment PIN_BH28 -to fpga_dipsw_pio[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[3]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[3]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[3]
 set_location_assignment PIN_BK31 -to fpga_button_pio[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[0]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[0]
 set_location_assignment PIN_BP22 -to fpga_button_pio[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[1]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[1]
 set_location_assignment PIN_BK28 -to fpga_button_pio[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[2]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[2]
 set_location_assignment PIN_BR22 -to fpga_button_pio[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[3]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[3]
 set_location_assignment PIN_B23 -to fpga_rgmii_rx_clk
 set_instance_assignment -name IO_STANDARD "1.8-V LVCMOS" -to fpga_rgmii_rx_clk
 set_location_assignment PIN_B14 -to fpga_rgmii_tx_clk
@@ -151,10 +161,13 @@ set_instance_assignment -name INPUT_DELAY_CHAIN 45 -to fpga_rgmii_rxd[2]
 set_instance_assignment -name INPUT_DELAY_CHAIN 45 -to fpga_rgmii_rxd[3]
 set_location_assignment PIN_CF121 -to usb31_io_vbus_det
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_vbus_det
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_vbus_det
 set_location_assignment PIN_CG135 -to usb31_io_flt_bar
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_flt_bar
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_flt_bar
 set_location_assignment PIN_CF118 -to usb31_io_usb31_id
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_usb31_id
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_usb31_id
 set_location_assignment PIN_CL128 -to usb31_io_usb_ctrl
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_usb_ctrl
 set_location_assignment PIN_AP120 -to usb31_phy_refclk_p_clk

@@ -16,7 +16,7 @@
 module clocks_and_resets (
     // FPGA fabric Clock
     input  wire fpga_clk_100,
-    // External warm reset
+    // External FPGA reset
     input  wire fpga_reset_n,
     // HPS to FPGA reset signal
     input  wire h2f_reset_in,

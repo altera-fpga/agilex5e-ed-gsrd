@@ -1,29 +1,27 @@
 <?xml version="1.0" ?>
-<!--Your use of Intel Corporation's design tools, logic functions 
+<!--Your use of Altera Corporation's design tools, logic functions 
 and other software and tools, and any partner logic 
 functions, and any output files from any of the foregoing 
 (including device programming or simulation files), and any 
 associated documentation or information are expressly subject 
-to the terms and conditions of the Intel Program License 
-Subscription Agreement, the Intel Quartus Prime License Agreement,
-the Intel FPGA IP License Agreement, or other applicable license
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, the Altera Quartus Prime License Agreement,
+the Altera FPGA IP License Agreement, or other applicable license
 agreement, including, without limitation, that your use is for
 the sole purpose of programming logic devices manufactured by
-Intel and sold by Intel or its authorized distributors.  Please
-refer to the applicable agreement for further details, at
-https://fpgasoftware.intel.com/eula.-->
+Altera and sold by Altera or its authorized distributors.-->
 <ipxact:component xmlns:altera="http://www.altera.com/XMLSchema/IPXact2014/extensions" xmlns:ipxact="http://www.accellera.org/XMLSchema/IPXACT/1685-2014">
   <ipxact:vendor>Altera Corporation</ipxact:vendor>
   <ipxact:library>gts_inst</ipxact:library>
   <ipxact:name>intel_srcss_gts_inst</ipxact:name>
-  <ipxact:version>5.0.0</ipxact:version>
+  <ipxact:version>5.0.1</ipxact:version>
   <ipxact:busInterfaces>
     <ipxact:busInterface>
       <ipxact:name>o_pma_cu_clk</ipxact:name>
-      <ipxact:busType vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:busType>
+      <ipxact:busType vendor="intel" library="intel" name="conduit" version="26.1"></ipxact:busType>
       <ipxact:abstractionTypes>
         <ipxact:abstractionType>
-          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="25.3"></ipxact:abstractionRef>
+          <ipxact:abstractionRef vendor="intel" library="intel" name="conduit" version="26.1"></ipxact:abstractionRef>
           <ipxact:portMaps>
             <ipxact:portMap>
               <ipxact:logicalPort>
@@ -105,7 +103,7 @@ https://fpgasoftware.intel.com/eula.-->
       <ipxact:vendor>Altera Corporation</ipxact:vendor>
       <ipxact:library>gts_inst</ipxact:library>
       <ipxact:name>intel_srcss_gts</ipxact:name>
-      <ipxact:version>5.0.0</ipxact:version>
+      <ipxact:version>5.0.1</ipxact:version>
     </altera:entity_info>
     <altera:altera_module_parameters>
       <ipxact:parameters>
@@ -159,6 +157,11 @@ https://fpgasoftware.intel.com/eula.-->
           <ipxact:displayName>device_group</ipxact:displayName>
           <ipxact:value>B</ipxact:value>
         </ipxact:parameter>
+        <ipxact:parameter parameterId="die_types" type="string">
+          <ipxact:name>die_types</ipxact:name>
+          <ipxact:displayName>die_types</ipxact:displayName>
+          <ipxact:value>MAIN_SM7</ipxact:value>
+        </ipxact:parameter>
       </ipxact:parameters>
     </altera:altera_module_parameters>
     <altera:altera_system_parameters>
@@ -205,7 +208,7 @@ https://fpgasoftware.intel.com/eula.-->
    {
       datum _originalVersion
       {
-         value = "4.0.1";
+         value = "5.0.0";
          type = "String";
       }
       datum _sortIndex

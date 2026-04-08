@@ -24,7 +24,7 @@
 # -------------------------------------------------------------------------- #
 
 # Quartus version assignments
-set_global_assignment -name LAST_QUARTUS_VERSION "25.3.1 Pro Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "26.1.0 Pro Edition"
 
 
 # Device properties
@@ -63,8 +63,10 @@ set_global_assignment -name PROMOTE_WARNING_TO_ERROR 12677
 # Clocks, resets, GPIO
 set_location_assignment PIN_BK109 -to fpga_clk_100
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_clk_100
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_clk_100
 set_location_assignment PIN_BR112 -to fpga_reset_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_reset_n
 set_location_assignment PIN_BM59 -to fpga_led_pio[0]
 set_instance_assignment -name IO_STANDARD "1.1 V" -to fpga_led_pio[0]
 set_instance_assignment -name SLEW_RATE 0 -to fpga_led_pio[0]
@@ -79,24 +81,32 @@ set_instance_assignment -name IO_STANDARD "1.1 V" -to fpga_led_pio[3]
 set_instance_assignment -name SLEW_RATE 0 -to fpga_led_pio[3]
 set_location_assignment PIN_CH12 -to fpga_dipsw_pio[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[0]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[0]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[0]
 set_location_assignment PIN_BU22 -to fpga_dipsw_pio[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[1]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[1]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[1]
 set_location_assignment PIN_BW19 -to fpga_dipsw_pio[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[2]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[2]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[2]
 set_location_assignment PIN_BH28 -to fpga_dipsw_pio[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_dipsw_pio[3]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_dipsw_pio[3]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_dipsw_pio[3]
 set_location_assignment PIN_BK31 -to fpga_button_pio[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[0]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[0]
 set_location_assignment PIN_BP22 -to fpga_button_pio[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[1]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[1]
 set_location_assignment PIN_BK28 -to fpga_button_pio[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[2]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[2]
 set_location_assignment PIN_BR22 -to fpga_button_pio[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_button_pio[3]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_button_pio[3]
 
 set_global_assignment -name HPS_DAP_NO_CERTIFICATE on
 set_global_assignment -name QSPI_OWNERSHIP HPS

@@ -1,0 +1,46 @@
+menu "Altera Linux applications"
+
+config APP_SYSCHK
+    bool "Syschk"
+    default y
+    help
+      syschk - System Check application located under the alteraFPGA directory and 
+      provides a glance of system status of basic peripherals such as:
+        Power management device information : Input Voltage (vin), output voltage (vout1), output current (iout1)
+        USB: USB device driver
+        SysID : FPGA system ID
+        Network IP (IPv4) : Network IP address
+        HPS LEDs : HPS LED state
+        FPGA LEDs : FPGA LED state
+
+config APP_LED_CTRL
+    bool "LED control"
+    default y
+    help
+      LED control - Set of user space apps (blink, toggle, scroll_client and scroll_server)
+      to test and demonstrate the LED functionality on SoC FPGA platforms. For more info,
+      refer meta-altera-fpga/meta-altera-platform/recipes-gsrd/gsrd-apps/files/README.
+
+config APP_GPIO_INT_TEST
+    bool "GPIO interrupt"
+    default y
+    help
+      GPIO Interrupt - Enables registration and handling of GPIO based interrupts
+      (e.g buttons, switches) on SoC FPGA platforms.
+
+config GSRD_APP_SYSCHK
+    string
+    default "true" if APP_SYSCHK
+    default "false" if !APP_SYSCHK
+
+config GSRD_APP_LED_CTRL
+    string
+    default "true" if APP_LED_CTRL
+    default "false" if !APP_LED_CTRL
+
+config GSRD_APP_GPIO_INT_TEST
+    string
+    default "true" if APP_GPIO_INT_TEST
+    default "false" if !APP_GPIO_INT_TEST
+
+endmenu

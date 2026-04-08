@@ -5,48 +5,42 @@ set -eo pipefail
 # ============================
 # Usage check
 # ============================
-if [[ $# -lt 2 ]]; then
-    echo "Usage: $0 <command: sdmmc|qspi|clean> [binaries_path]"
+COMMAND="${1:-}"
+
+if [[ -z "$COMMAND" ]]; then
+    echo "Usage: $0 clean"
+    echo "       $0 <sdmmc|qspi> <binaries_path>"
     exit 1
 fi
 
-COMMAND="$1"
-BINARIES_PATH="${2:-.}"   # Default to current directory if not given
+BINARIES_PATH="$2"
 
 # ============================
 # Validate path (for commands that need it)
 # ============================
-if [[ "$COMMAND" != "clean" && ! -d "$BINARIES_PATH" ]]; then
-    echo "[ERROR] Binaries path '$BINARIES_PATH' does not exist or is not a directory"
-    exit 1
-fi
+if [[ "$COMMAND" != "clean" ]]; then
+    if [[ -z "$BINARIES_PATH" ]]; then
+        echo "[ERROR] Binaries path is required for '$COMMAND' command"
+        echo "Usage: $0 $COMMAND <binaries_path>"
+        exit 1
+    fi
+    if [[ ! -d "$BINARIES_PATH" ]]; then
+        echo "[ERROR] Binaries path '$BINARIES_PATH' does not exist or is not a directory"
+        exit 1
+    fi
 
-# Convert BINARIES_PATH to absolute path
-if [[ "$BINARIES_PATH" != /* ]]; then
-    BINARIES_PATH="$(readlink -f "$BINARIES_PATH")"
+    # Convert BINARIES_PATH to absolute path
+    if [[ "$BINARIES_PATH" != /* ]]; then
+        BINARIES_PATH="$(readlink -f "$BINARIES_PATH")"
+    fi
+    echo "[INFO] Binaries path: $BINARIES_PATH"
 fi
-echo "[INFO] Binaries path: $BINARIES_PATH"
 
 # ============================
 # Clean command
 # ============================
 if [[ "$COMMAND" == "clean" ]]; then
-    echo "[INFO] Cleaning all build and Simics artifacts..."
-
-    # Remove binaries
-    (
-        cd "$BINARIES_PATH" || { echo "[ERROR] Failed to cd into $BINARIES_PATH"; exit 1; }
-        rm -rf \
-            simics-u-boot-spl-dtb.hex \
-            u-boot-itb.bin \
-            agilex5_factory.sof \
-            agilex5_factory_hps_auto.sof \
-            rootfs.ubifs \
-            hps.bin \
-            flash_image.jic \
-            flash_image_jic.map \
-            flash_image_jic.rpd
-    )
+    echo "[INFO] Cleaning Simics project files..."
 
     # Remove project files
     (
@@ -114,7 +108,7 @@ elif [[ "$BOOTMODE" == "qspi" ]]; then
 
     # Define image file paths
     UBOOT_FILE="$BINARIES_PATH/u-boot-spl-dtb.bin"
-    QSPI_IMAGE_FILE="$BINARIES_PATH/flash_image_jic.rpd"
+    QSPI_IMAGE_FILE="$BINARIES_PATH/qspi_boot.rpd"
 
     # Get absolute path to BOOTDIR
     BOOTDIR_ABS="$(readlink -f "$BOOTDIR")"

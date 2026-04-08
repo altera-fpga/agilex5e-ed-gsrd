@@ -26,7 +26,7 @@
 
 # Quartus version assignments
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 24.3.0
-set_global_assignment -name LAST_QUARTUS_VERSION "25.3.1 Pro Edition"
+set_global_assignment -name LAST_QUARTUS_VERSION "26.1.0 Pro Edition"
 
 
 # Device properties
@@ -90,8 +90,10 @@ set_global_assignment -name NUMBER_OF_SLAVE_DEVICE 2
 # Clocks, resets, GPIO
 set_location_assignment PIN_BK109 -to pll_refclk_100
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to pll_refclk_100
+set_instance_assignment -name INPUT_TERMINATION OFF -to pll_refclk_100
 set_location_assignment PIN_BR112 -to fpga_reset_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n -entity baseline_a76
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_reset_n
 set_location_assignment PIN_BM59 -to fpga_user_leds[0]
 set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[0] -entity baseline_a76
 set_instance_assignment -name SLEW_RATE 0 -to fpga_user_leds[0] -entity baseline_a76
@@ -122,6 +124,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_switches[
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_user_switches[3] -entity baseline_a76
 set_location_assignment PIN_BK31 -to fpga_user_push_buttons[0]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_push_buttons[0] -entity baseline_a76
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_push_buttons[0]
 set_location_assignment PIN_BP22 -to fpga_user_push_buttons[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_push_buttons[1] -entity baseline_a76
 set_location_assignment PIN_BK28 -to fpga_user_push_buttons[2]
@@ -219,14 +222,23 @@ set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA7
 set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA7
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_CCLK
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_PPS
-set_location_assignment PIN_W134 -to hps_uart0_TX
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_CMD
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D0
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D1
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D2
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D3
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i3c1_SDA
+set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i3c1_SCL
 # HPS USB1 (3.1) IO interface
 set_location_assignment PIN_CF121 -to usb31_io_vbus_det
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_vbus_det
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_vbus_det
 set_location_assignment PIN_CG135 -to usb31_io_flt_bar
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_flt_bar
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_flt_bar
 set_location_assignment PIN_CF118 -to usb31_io_usb31_id
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_usb31_id
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_usb31_id
 set_location_assignment PIN_CL128 -to usb31_io_usb_ctrl
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_usb_ctrl
 set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to usb31_io_usb_ctrl
@@ -299,14 +311,6 @@ set_location_assignment PIN_H117 -to emif_hps_emif_mem_0_mem_reset_n
 set_instance_assignment -name IO_STANDARD "SSTL-12" -to emif_hps_emif_mem_0_mem_reset_n
 set_location_assignment PIN_K108 -to emif_hps_emif_mem_0_mem_par
 set_instance_assignment -name IO_STANDARD "SSTL-12" -to emif_hps_emif_mem_0_mem_par
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_CMD
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D0
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D1
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D2
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_sdmmc_D3
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i3c1_SDA
-set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_i3c1_SCL
-set_location_assignment PIN_AK115 -to hps_uart0_RX
 set_instance_assignment -name IO_STANDARD "1.8-V" -to hps_emac2_PPS_TRIG
 set_location_assignment PIN_AK111 -to emif_hps_emif_oct_0_oct_rzqin
 set_instance_assignment -name IO_STANDARD "1.2-V" -to emif_hps_emif_oct_0_oct_rzqin
@@ -489,4 +493,3 @@ set_global_assignment -name DESIGN_ASSISTANT_WAIVER_FILE baseline_a76.dawf
 #set_instance_assignment -name PARTITION_COLOUR 4283486463 -to baseline_a76 -entity baseline_a76
 #set_instance_assignment -name PARTITION_COLOUR 4286438143 -to auto_fab_0 -entity baseline_a76
 #set_instance_assignment -name PARTITION_COLOUR 4294956150 -to u_baseline_top|u_fabric_subsys|auto_fab_1 -entity baseline_a76
-
