@@ -13,8 +13,6 @@ Starting with Intel® FPGA Design Suite 26.1, the Agilex™ 5 HPS Golden Hardwar
 
 Visual Designer Studio is a next‑generation system design environment integrated directly into Quartus® Prime Pro Edition. It simplifies the creation of complex systems through an intuitive drag‑and‑drop interface and intelligent connectivity automation, enabling faster IP integration, system assembly, and seamless RTL integration.
 
-This design is provided as a reference demonstration design intended to support evaluation, enablement, and development on the Agilex™ 5 platform. It is not guaranteed or qualified for direct use in production systems. Users should treat this design as a starting point and are responsible for performing their own verification, validation, and qualification to ensure that any derivative work meets applicable performance, reliability, and production requirements.
-
 </p><p>The design uses HPS First configuration mode and boots from Arm Cortex-A55 core processor.
 
 </p><h2>Baseline-A55 feature
