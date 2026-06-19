@@ -1,17 +1,19 @@
 # HPS Baseline-A55 System Example Design with HPS Expansion Board for Agilex 5 FPGA E-Series 065A Premium Development Kit
 
-HPS Baseline-A55 System Example Design for Agilex 5 FPGA E-Series 065A Premium Development Kit with Out of Box Experience (OOBE) daughter card, also known as HPS Enablement Expansion Board.
+HPS Baseline-A55 System Example Design for Agilex 5 FPGA E-Series 065A Premium Development Kit with Out of Box Experience (OOBE) daughter card, which is also known as HPS Enablement Expansion Board.
 
 ## Description
 
-<p>The HPS Baseline-A55 System Example Design (formerly GHRD) for Altera Agilex 5 System On Chip (SoC) FPGA.
+<p>Agilex 5 GHRD is a reference design for Altera Agilex 5 System On Chip (SoC) FPGA.
 
-</p><p>The HPS Baseline-A55 System Example Design is part of a complete solution (formerly GSRD) that exercises soft IP in the fabric, boots to U-Boot, then Linux, and runs sample Linux applications.
-Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about this design.
+</p><p>The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.\n
+Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/">Agilex 5 E-Series Premium Development Kit GSRD</a> for information about GSRD.
 
-Starting with Altera® FPGA Design Suite 26.1, the HPS Baseline-A55 System Example Design has been upgraded to use the Visual Designer Studio (VDS) flow. This repository contains the VDS-based implementation of the HPS Baseline‑A55 System Example Design, maintaining functional equivalence with earlier GHRD releases while adopting the VDS system design methodology.
+Starting with Intel® FPGA Design Suite 26.1, the Agilex™ 5 HPS Golden Hardware Reference Design (GHRD) has been upgraded to use the Visual Designer Studio (VDS) flow. This repository contains the VDS-based implementation of the HPS Baseline‑A55 System Example Design, maintaining functional equivalence with earlier GHRD releases while adopting the VDS system design methodology.
 
 Visual Designer Studio is a next‑generation system design environment integrated directly into Quartus® Prime Pro Edition. It simplifies the creation of complex systems through an intuitive drag‑and‑drop interface and intelligent connectivity automation, enabling faster IP integration, system assembly, and seamless RTL integration.
+
+This design is provided as a reference demonstration design intended to support evaluation, enablement, and development on the Agilex™ 5 platform. It is not guaranteed or qualified for direct use in production systems. Users should treat this design as a starting point and are responsible for performing their own verification, validation, and qualification to ensure that any derivative work meets applicable performance, reliability, and production requirements.
 
 </p><p>The design uses HPS First configuration mode and boots from Arm Cortex-A55 core processor.
 

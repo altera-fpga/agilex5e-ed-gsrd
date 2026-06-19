@@ -33,7 +33,7 @@ repos:
     branch: whinlatter
   meta-altera-fpga:
     url: https://github.com/altera-fpga/meta-altera-fpga.git
-    commit: 3001dcafbc8860fb95c081e2966ab22edc77f985
+    tag: rel_whinlatter_26.06.01_pr
     layers:
       meta-altera-bsp:
       meta-altera-platform:

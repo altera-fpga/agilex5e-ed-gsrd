@@ -24,7 +24,7 @@ repos:
     branch: scarthgap
   meta-altera-fpga:
     url: https://github.com/altera-fpga/meta-altera-fpga.git
-    commit: eb26020e7020d39fed948c29c115a7fb7a9841ed
+    tag: QPDS26.1_p1_REL_GSRD_PR
     layers:
       meta-altera-bsp:
       meta-altera-platform:
