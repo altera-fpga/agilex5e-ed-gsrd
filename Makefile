@@ -66,6 +66,7 @@ ALL_GENERATE_DESIGN_TARGETS =
 ALL_PACKAGE_DESIGN_TARGETS =
 ALL_BUILD_TARGETS =
 ALL_TEST_TARGETS =
+ALL_FUNCTIONAL_SIM_TARGETS =
 ALL_INSTALL_TARGETS =
 ALL_CLEAN_TARGETS =
 ALL_DEV_CLEAN_TARGETS =
@@ -140,6 +141,7 @@ $(addsuffix -all,$(addprefix $(strip $(1))-,$(strip $(3)))): venv
 	$(MAKE) $(addsuffix -package-design,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(addsuffix -prep,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(addsuffix -build,$(addprefix $(strip $(1))-,$(strip $(3))))
+	$(MAKE) $(addsuffix -functional-sim,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(addsuffix -test,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(addsuffix -install,$(addprefix $(strip $(1))-,$(strip $(3))))
 	$(MAKE) $(strip $(1))-$(strip $(3))-$$(SW_TARGET_FOR_$(strip $(1))-$(strip $(3)))-build-sw
@@ -157,6 +159,14 @@ $(strip $(1))-%-build-sw :
 
 $(strip $(1))-%-install-sw :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-install-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
+endef
+
+# Create function sim targets per project on each subdir
+define create_sim_targets_on_subdir
+ALL_FUNCTIONAL_SIM_TARGETS += $(addprefix $(strip $(1))-,$(strip $(3)))
+
+$(strip $(1))-% :
+	$(MAKE) --no-print-directory -C $(strip $(2)) $$*
 endef
 
 # Dummy SW build targets
@@ -181,6 +191,11 @@ define create_subdir_sw_targets
 $(foreach target, $(shell make  --no-print-directory -q -C $(1) print-sw-targets), $(eval $(call create_sw_targets_on_subdir, $(1),$(1),$(target),$(NOOP))))
 endef
 $(foreach subdir,$(TARGET_SUBDIR),$(eval $(call create_subdir_sw_targets,$(subdir))))
+
+define create_subdir_sim_targets
+$(foreach target, $(shell make  --no-print-directory -q -C $(1) print-sim-targets), $(eval $(call create_sim_targets_on_subdir, $(1),$(1),$(target),$(NOOP))))
+endef
+$(foreach subdir,$(TARGET_SUBDIR),$(eval $(call create_subdir_sim_targets,$(subdir))))
 
 ###############################################################################
 #                          UTILITY TARGETS

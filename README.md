@@ -1,11 +1,11 @@
-# Agilex 5 E-Series Golden Hardware Reference Design (GHRD)
+# Agilex 5 E-Series Quartus Design
 
-This repository contains Golden Hardware Reference Design (GHRD) for Agilex 5 E-Series System On Chip (SoC) FPGA.
-The GHRD is part of the Golden System Reference Design (GSRD), which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
-Refer to the [Agilex 5 E-Series Premium Development Kit GSRD](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/) and [Agilex 5 E-Series Modular Development Kit GSRD](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/) for information about GSRD.
+This repository contains Quartus Design for Agilex 5 E-Series System On Chip (SoC) FPGA.
+The Quartus Design (formerly known as GHRD or Golden Hardware Reference Design) is a hardware reference design for Altera Agilex 5 System On Chip (SoC) FPGA and it is part of the HPS Baseline System Example Design (formerly known as GSRD or Golden System Reference Design) that exercises soft IP in the fabric, boots to U-Boot, then Linux, and runs sample Linux applications.
+Refer to the [Agilex 5 E-Series Premium Development Kit HPS Baseline System Example Design](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/) and [Agilex 5 E-Series Modular Development Kit HPS Baseline System Example Design](https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/) for information about this design.
 
 The [designs](#designs) are stored in individual folders. Each design can be opened, modified and compiled by using Quartus Prime software.
-GHRD releases are created for each version of Quartus Prime Software. It is recommended to use the release for your version of Quartus Prime.
+HPS Baseline System Example Design releases are created for each version of Quartus Prime Software. It is recommended to use the release for your version of Quartus Prime.
 These reference designs demonstrate the system integration between Hard Processor System (HPS) and FPGA IPs.
 
 ## Baseline feature
@@ -28,7 +28,7 @@ This is only applicable if the feature is enabled.
 - Time-Sensitive Networking (TSN): PHY configuration 2 (RGMII from FPGA HVIO)
 
 ## Dependency
-* Altera Quartus Prime 26.1
+* Altera Quartus Prime 26.1.1
 * Supported Altera Development Kit
   - Agilex 5 FPGA E-Series 065B Premium Development Kit (ES) DK-A5E065BB32AES1
   - Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AEA
@@ -41,20 +41,20 @@ This is only applicable if the feature is enabled.
   - Agilex 5 FPGA E-Series 013B Development Kit DK-A5E013BM16AEA
   ![Agilex 5 E-Series Modular Development Kit](images/agilex5-013b-devkit.png)
 
-## Tested Platform for the GHRD Build Flow
+## Tested Platform for the Quartus Design Build Flow
 * SUSE Linux Enterprise Server 15 SP4
 
 ## Setup
 
 Several tools are required to be in the path.
 
-* Altera Quartus Prime 26.1
+* Altera Quartus Prime 26.1.1
 * Python 3.11.5 (only required when using command line to build)
 
 ### Example Setup for Altera Quartus Prime tools
 This is recommended, when using command line to build.
 ```bash
-export QUARTUS_ROOTDIR=~/alteraFPGA_pro/26.1/quartus
+export QUARTUS_ROOTDIR=~/alteraFPGA_pro/26.1.1/quartus
 ```
 Note: Adapt the path above to where Quartus Prime is installed.
 
@@ -69,7 +69,7 @@ export PATH="$QUARTUS_ROOTDIR/bin:$QUARTUS_ROOTDIR/../qsys/bin:$QUARTUS_ROOTDIR/
 
 ### Using Quartus GUI
 - Launch Quartus.
-- Open the project. Example: a5ed065es-premium-devkit-oobe/baseline-a55/top.qpf
+- Open the project. Example: dk-a5e065bb32aes1-enablement/baseline-a55/top.qpf
 - Click the play button to compile the design.
 - The compiled sof can be found in output_files folder of the project path.
 
@@ -83,80 +83,80 @@ export PATH="$QUARTUS_ROOTDIR/bin:$QUARTUS_ROOTDIR/../qsys/bin:$QUARTUS_ROOTDIR/
 ### Agilex 5 FPGA E-Series 065B Premium Development Kit (ES) DK-A5E065BB32AES1
 Refer to the individual readme for details of the design.
 
-* [a5ed065es-premium-devkit-oobe/baseline-a55](a5ed065es-premium-devkit-oobe/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065B ES Premium Devkit with HPS Enablement Expansion Board.
+* [dk-a5e065bb32aes1-enablement/baseline-a55](dk-a5e065bb32aes1-enablement/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
   This design boots from Arm Cortex-A55 core 0 processor.
 
-* [a5ed065es-premium-devkit-oobe/baseline-a76](a5ed065es-premium-devkit-oobe/baseline-a76/README.md) :
-  Baseline-A76 GHRD for the A5ED065B ES Premium Devkit with HPS Enablement Expansion Board.
+* [dk-a5e065bb32aes1-enablement/baseline-a76](dk-a5e065bb32aes1-enablement/baseline-a76/README.md) :
+  Baseline-A76 Quartus Design for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
   This design boots from Arm Cortex-A76 core 2 processor.
 
-* [a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2](a5ed065es-premium-devkit-oobe/legacy-tsn-cfg2/README.md) :
-  Legacy TSN-CFG2 GHRD for the A5ED065B ES Premium Devkit with HPS Enablement Expansion Board.
-  This design enables RGMII from FPGA HVIO for TSN PHY configuration 2.
+* [dk-a5e065bb32aes1-enablement/tsn-rgmii-hvio](dk-a5e065bb32aes1-enablement/tsn-rgmii-hvio/README.md) :
+  TSN RGMII HVIO Quartus Design for the A5ED065 ES Premium Devkit with HPS Enablement Expansion Board.
+  This design enables RGMII from FPGA HVIO for TSN.
 
-* [a5ed065es-premium-devkit-debug2/legacy-baseline](a5ed065es-premium-devkit-debug2/legacy-baseline/README.md) :
-  Legacy baseline GHRD for the A5ED065B ES Premium Devkit with HPS Test Board.
+* [dk-a5e065bb32aes1-test/baseline-a55](dk-a5e065bb32aes1-test/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 ES Premium Devkit with HPS Test Board.
 
-* [a5ed065es-premium-devkit-emmc/legacy-baseline](a5ed065es-premium-devkit-emmc/legacy-baseline/README.md) :
-  Legacy baseline GHRD for the A5ED065B ES Premium Devkit with HPS NAND Board (This board also offers eMMC).
+* [dk-a5e065bb32aes1-emmc/baseline-a55](dk-a5e065bb32aes1-emmc/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 ES Premium Devkit with HPS NAND Board (This board also offers eMMC).
 
 ### Agilex 5 FPGA E-Series 065B Modular Development Kit (ES) MK-A5E065BB32AES1
 
-* [a5ed065es-modular-devkit-som/baseline-a55](a5ed065es-modular-devkit-som/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065B ES Modular Devkit.
+* [mk-a5e065bb32aes1/baseline-a55](mk-a5e065bb32aes1/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 ES Modular Devkit with speed grade 6 device.
 
 ### Agilex 5 FPGA E-Series 013B Development Kit DK-A5E013BM16AEA
 
-* [a5ed013-devkit-oobe/baseline-a55](a5ed013-devkit-oobe/baseline-a55/README.md) :
-  Baseline GHRD for the A5ED013B Development Kit.
+* [dk-a5e013bm16aea/baseline-a55](dk-a5e013bm16aea/baseline-a55/README.md) :
+  Baseline Quartus Design for the A5ED013 Development Kit.
 
 ### Agilex 5 FPGA E-Series 065B Premium Development Kit DK-A5E065BB32AEA
 
-* [a5ed065b-premium-devkit-oobe/baseline-a55](a5ed065b-premium-devkit-oobe/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065B Premium Devkit with HPS Enablement Expansion Board.
+* [dk-a5e065bb32aea-enablement/baseline-a55](dk-a5e065bb32aea-enablement/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Premium Devkit with HPS Enablement Expansion Board.
   This design boots from Arm Cortex-A55 core 0 processor.
 
-* [a5ed065b-premium-devkit-oobe/baseline-a76](a5ed065b-premium-devkit-oobe/baseline-a76/README.md) :
-  Baseline-A76 GHRD for the A5ED065B Premium Devkit with HPS Enablement Expansion Board.
+* [dk-a5e065bb32aea-enablement/baseline-a76](dk-a5e065bb32aea-enablement/baseline-a76/README.md) :
+  Baseline-A76 Quartus Design for the A5ED065 Premium Devkit with HPS Enablement Expansion Board.
   This design boots from Arm Cortex-A76 core 2 processor.
 
-* [a5ed065b-premium-devkit-oobe/tsn-cfg2](a5ed065b-premium-devkit-oobe/tsn-cfg2/README.md) :
-  TSN-CFG2 GHRD for the A5ED065B Premium Devkit with HPS Enablement Expansion Board.
-  This design enables RGMII from FPGA HVIO for TSN PHY configuration 2.
+* [dk-a5e065bb32aea-enablement/tsn-rgmii-hvio](dk-a5e065bb32aea-enablement/tsn-rgmii-hvio/README.md) :
+  TSN RGMII HVIO Quartus Design for the A5ED065 Premium Devkit with HPS Enablement Expansion Board.
+  This design enables RGMII from FPGA HVIO for TSN.
 
-* [a5ed065b-premium-devkit-debug2/baseline-a55](a5ed065b-premium-devkit-debug2/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065B Premium Devkit with HPS Test Board.
+* [dk-a5e065bb32aea-test/baseline-a55](dk-a5e065bb32aea-test/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Premium Devkit with HPS Test Board.
 
-* [a5ed065b-premium-devkit-emmc/baseline-a55](a5ed065b-premium-devkit-emmc/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065B Premium Devkit with HPS NAND Board (This board also offers eMMC).
+* [dk-a5e065bb32aea-emmc/baseline-a55](dk-a5e065bb32aea-emmc/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Premium Devkit with HPS NAND Board (This board also offers eMMC).
 
-### Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065BB32AEA
+### Agilex 5 FPGA E-Series 065B Production Premium Development Kit DK-A5E065AB32AEA with speed grade 1 device
 
-* [a5ed065b-modular-devkit-som/baseline-a55](a5ed065b-modular-devkit-som/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065B Modular Devkit.
-
-### Agilex 5 FPGA E-Series 065A Premium Development Kit DK-A5E065AB32AEA
-
-* [a5ed065a-premium-devkit-oobe/baseline-a55](a5ed065a-premium-devkit-oobe/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065A Premium Devkit with HPS Enablement Expansion Board.
+* [dk-a5e065ab32aea-enablement/baseline-a55](dk-a5e065ab32aea-enablement/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Premium Devkit with HPS Enablement Expansion Board.
   This design boots from Arm Cortex-A55 core 0 processor.
 
-* [a5ed065a-premium-devkit-oobe/baseline-a76](a5ed065a-premium-devkit-oobe/baseline-a76/README.md) :
-  Baseline-A76 GHRD for the A5ED065A Premium Devkit with HPS Enablement Expansion Board.
+* [dk-a5e065ab32aea-enablement/baseline-a76](dk-a5e065ab32aea-enablement/baseline-a76/README.md) :
+  Baseline-A76 Quartus Design for the A5ED065 Premium Devkit with HPS Enablement Expansion Board.
   This design boots from Arm Cortex-A76 core 2 processor.
 
-* [a5ed065a-premium-devkit-oobe/tsn-cfg2](a5ed065a-premium-devkit-oobe/tsn-cfg2/README.md) :
-  TSN-CFG2 GHRD for the A5ED065A Premium Devkit with HPS Enablement Expansion Board.
-  This design enables RGMII from FPGA HVIO for TSN PHY configuration 2.
+* [dk-a5e065ab32aea-enablement/tsn-rgmii-hvio](dk-a5e065ab32aea-enablement/tsn-rgmii-hvio/README.md) :
+  TSN RGMII HVIO Quartus Design for the A5ED065 Premium Devkit with HPS Enablement Expansion Board.
+  This design enables RGMII from FPGA HVIO for TSN.
 
-* [a5ed065a-premium-devkit-debug2/baseline-a55](a5ed065a-premium-devkit-debug2/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065A Premium Devkit with HPS Test Board.
+* [dk-a5e065ab32aea-test/baseline-a55](dk-a5e065ab32aea-test/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Premium Devkit with HPS Test Board.
 
-* [a5ed065a-premium-devkit-emmc/baseline-a55](a5ed065a-premium-devkit-emmc/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065A Premium Devkit with HPS NAND Board (This board also offers eMMC).
+* [dk-a5e065ab32aea-emmc/baseline-a55](dk-a5e065ab32aea-emmc/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Premium Devkit with HPS NAND Board (This board also offers eMMC).
 
-### Agilex 5 FPGA E-Series 065A Modular Development Kit MK-A5E065AB32AEA
+### Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065AB32AEA with speed grade 4 device.
 
-* [a5ed065a-modular-devkit-som/baseline-a55](a5ed065a-modular-devkit-som/baseline-a55/README.md) :
-  Baseline-A55 GHRD for the A5ED065A Modular Devkit.
+* [mk-a5e065bb32aea/baseline-a55](mk-a5e065bb32aea/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Modular Devkit.
+
+### Agilex 5 FPGA E-Series 065B Modular Development Kit MK-A5E065AB32AEA with speed grade 1 device.
+
+* [mk-a5e065ab32aea/baseline-a55](mk-a5e065ab32aea/baseline-a55/README.md) :
+  Baseline-A55 Quartus Design for the A5ED065 Modular Devkit.

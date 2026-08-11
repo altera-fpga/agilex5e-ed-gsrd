@@ -1,0 +1,43 @@
+From 30ecf98c8e791d1333f4e3c80becc1c73fb1db4c Mon Sep 17 00:00:00 2001
+From: Adrian Ng Ho Yin <adrianhoyin.ng@altera.com>
+Date: Thu, 29 Jan 2026 10:49:14 +0800
+Subject: [PATCH 2/2] arm64: agilex5: enable optee support for agilex5_013b atf
+ boot
+
+Add optee support for agilex5_013b atf sdmmc boot.
+
+Signed-off-by: Adrian Ng Ho Yin <adrianhoyin.ng@altera.com>
+---
+ ...cfpga_agilex5_socdk_013b_sdmmc_atfboot.dts | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b_sdmmc_atfboot.dts b/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b_sdmmc_atfboot.dts
+index 0cfb796d0d4d..c390bc520cb9 100644
+--- a/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b_sdmmc_atfboot.dts
++++ b/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b_sdmmc_atfboot.dts
+@@ -17,4 +17,23 @@ memory@80000000 {
+ 		device_type = "memory";
+ 		reg = <0 0x80000000 0x0 0x70000000>;
+ 	};
++
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* OP-TEE Secure RAM - 32MB at 0x83000000 (after kernel) */
++		optee_core: optee@83000000 {
++			reg = <0x0 0x83000000 0x0 0x02000000>;
++			no-map;
++		};
++	};
++
++	firmware {
++		optee {
++			compatible = "linaro,optee-tz";
++			method = "smc";
++		};
++	};
+ };
+-- 
+2.43.7

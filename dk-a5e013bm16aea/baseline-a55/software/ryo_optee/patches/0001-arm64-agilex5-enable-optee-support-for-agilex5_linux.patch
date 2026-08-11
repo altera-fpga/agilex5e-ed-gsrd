@@ -1,0 +1,44 @@
+From 804e3a5c3e297530700dbd02955ef37ee259d23e Mon Sep 17 00:00:00 2001
+From: Yong Zi Hao <zi.hao.yong@altera.com>
+Date: Wed, 22 Apr 2026 14:32:39 +0800
+Subject: [PATCH] arm64: agilex5: enable optee support for agilex5
+
+Add optee support for agilex5_013b.
+
+Signed-off-by: Yong, Zi Hao <zi.hao.yong@altera.com>
+---
+ .../dts/intel/socfpga_agilex5_socdk_013b.dts  | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b.dts b/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b.dts
+index 5cc0b5aac..95d5d144f 100644
+--- a/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b.dts
++++ b/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b.dts
+@@ -37,6 +37,25 @@ memory@80000000 {
+ 		/* We expect the bootloader to fill in the reg */
+ 		reg = <0x0 0x80000000 0x0 0x0>;
+ 	};
++
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/* OP-TEE Secure RAM - 32MB at 0x83000000 (after kernel) */
++		optee_core: optee@83000000 {
++			reg = <0x0 0x83000000 0x0 0x02000000>;
++			no-map;
++		};
++	};
++
++	firmware {
++		optee {
++			compatible = "linaro,optee-tz";
++			method = "smc";
++		};
++	};
+ };
+ 
+ &gmac2 {
+-- 
+2.43.7

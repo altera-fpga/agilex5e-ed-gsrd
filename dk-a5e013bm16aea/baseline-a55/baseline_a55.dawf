@@ -1,0 +1,19 @@
+::drc::add_waiver \
+	-description {Multiple reset synchronizers are detected within the design and this means some part of the design may come out of reset at different clock cycle. This is not likely to cause any design issues since the HPS will not initiate communication with the fabric core logic immediately after reset is released.} \
+	-rule_id {RDC-50003} \
+	-query_string {"Reset Clock Domain" == 'u_baseline_top|u_shell_subsys|u_clks_and_rsts|u_sys_pll|iopll_0_outclk0' && "Reset Chain Register Heads" == 'u_baseline_top|u_shell_subsys|u_clks_and_rsts|fpga_reset_n_sync|din_s1   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|sink_crosser|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_niosv_m|niosv_m|dbg_mod|dtm_inst|cmd_clk_xer|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_niosv_m|niosv_m|dbg_mod|dtm_inst|rsp_clk_xer|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|jtag_streaming|clock_sense_reset_n_synchronizer|din_s1' && "Reset Sources" == 'u_baseline_top|u_shell_subsys|u_clks_and_rsts|u_sys_pll|iopll_0|tennm_ph2_iopll~pll_ctrl_reg   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain_out   u_baseline_top|u_fabric_subsys|u_niosv_subsys|rst_controller|r_sync_rst   u_baseline_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|jtag_streaming|clock_sense_reset_n'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2025-09-18*15:14:05} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {The register mem_used[0] in the ace5lite_cache_coherency_translator write_rsp_fifo exhibits high timing path endpoint tension due to how the Quartus fitter routes its high fanout connections. This is intermittent and does not indicate a functional or timing violation.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" =~ '.*ace5lite_cache_coherency_translator_s_axi_agent\|write_rsp_fifo\|my_altera_avalon_sc_fifo_wr\|mem_used.*'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-04-29*10:06:00} \
+	-owner {user} \
+	-no_warn

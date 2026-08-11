@@ -1,0 +1,16 @@
+/applications.fpga.soc.arm-trusted-firmware-dev/
+/applications.fpga.soc.linux-socfpga-dev/
+/applications.fpga.soc.uboot-socfpga-dev/
+/files_ext3/
+/files_fat/
+/gcc-arm/
+/genimage/
+/genimage.cfg
+/ghrd.core.rbf
+/ghrd_a5ed013bm16ae4scs.sof
+/ghrd_sd.core.rbf
+/gsrd-console-image-agilex5.tar.gz
+/optee_client/
+/optee_examples/
+/optee_os/
+/sd_image/

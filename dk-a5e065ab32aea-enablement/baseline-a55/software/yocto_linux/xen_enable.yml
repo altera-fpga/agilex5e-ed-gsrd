@@ -1,0 +1,34 @@
+header:
+  version: 17
+
+repos:
+  meta-virtualization:
+    url: https://git.yoctoproject.org/meta-virtualization
+    branch: wrynose
+    commit: 8299290e88b4a77c7f5c2cc6f9a6031055d48791
+
+  meta-openembedded:
+    layers:
+      meta-filesystems:
+
+local_conf_header:
+  virtualization: |
+    # XEN Hypervisor Configuration
+    # Adds virtualization and xen DISTRO_FEATURES
+    DISTRO_FEATURES:append = " virtualization xen"
+
+    # Force Xen 4.19 version (PV in meta-virtualization xen_4.19.bb is "4.19.0+stable")
+    PREFERRED_VERSION_xen = "4.19.0+stable"
+    PREFERRED_VERSION_xen-tools = "4.19+stable"
+
+    # Add XEN tools and utilities to the image
+    IMAGE_INSTALL:append = " xen-tools net-tools"
+
+    # XEN device tree repository for passthrough examples
+    XEN_DTB_REPO = "git://github.com/altera-fpga/xen-passthrough-examples.git"
+
+    # Set HYP_BUILD flag to enable XEN-specific configurations in meta-custom
+    HYP_BUILD = "1"
+
+    # Use the larger hypervisor partition layout for ALL images in XEN builds
+    WKS_FILE = "sdimage-agilex-hypervisor.wks"
