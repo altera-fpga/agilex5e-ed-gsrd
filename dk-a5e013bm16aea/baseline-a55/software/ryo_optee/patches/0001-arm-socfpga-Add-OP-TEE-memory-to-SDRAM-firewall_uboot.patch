@@ -1,0 +1,301 @@
+From e2b47d4c8ee3f3e54db474e81c512f90bfe70ad9 Mon Sep 17 00:00:00 2001
+From: Boon Khai Ng <boon.khai.ng@altera.com>
+Date: Tue, 27 Jan 2026 18:47:25 +0800
+Subject: [PATCH 1/2] arm: socfpga: Add OP-TEE memory to SDRAM firewall.
+
+This patch enhances the SDRAM firewall configuration on
+SoCFPGA platforms to explicitly protect the OP-TEE secure
+memory region. It introduces two regions in the MPU
+and Non-MPU DDR firewall registers:
+
+1) Region 0: Non-secure, from 1MB after ATF
+   up to the start of OP-TEE (0x80100000 - 0x82FFFFFF)
+
+2) Region 1: Non-secure, from the end of
+   OP-TEE up to the end of valid DRAM (0x85000000 - DRAM end)
+
+Key changes:
+- Adds register definitions for Region 1 for
+  both MPU and Non-MPU firewall configuration.
+
+- Defines OPTEE_TZDRAM_START and
+  OPTEE_TZDRAM_SIZE for secure memory.
+
+- Refactors functions to configure and
+  enable both regions, ensuring OP-TEE memory
+  is not accessible from non-secure world.
+
+Signed-off-by: Boon Khai Ng <boon.khai.ng@altera.com>
+---
+ arch/arm/mach-socfpga/include/mach/firewall.h |  16 ++
+ drivers/ddr/altera/sdram_soc64.c              | 198 +++++++++++-------
+ 2 files changed, 138 insertions(+), 76 deletions(-)
+
+diff --git a/arch/arm/mach-socfpga/include/mach/firewall.h b/arch/arm/mach-socfpga/include/mach/firewall.h
+index a6736c2720a..d90a19d7ab6 100644
+--- a/arch/arm/mach-socfpga/include/mach/firewall.h
++++ b/arch/arm/mach-socfpga/include/mach/firewall.h
+@@ -127,6 +127,16 @@ struct socfpga_firwall_l4_sys {
+ #define FW_MPU_DDR_SCR_NONMPUREGION0ADDR_LIMITEXT	0x9c
+ #define FW_MPU_DDR_SCR_NONMPUREGION0ADDR_LIMITEXT_FIELD	0xff
+ 
++/* Region 1 registers for OP-TEE memory protection */
++#define FW_MPU_DDR_SCR_MPUREGION1ADDR_BASE		0x20
++#define FW_MPU_DDR_SCR_MPUREGION1ADDR_BASEEXT		0x24
++#define FW_MPU_DDR_SCR_MPUREGION1ADDR_LIMIT		0x28
++#define FW_MPU_DDR_SCR_MPUREGION1ADDR_LIMITEXT		0x2c
++#define FW_MPU_DDR_SCR_NONMPUREGION1ADDR_BASE		0xa0
++#define FW_MPU_DDR_SCR_NONMPUREGION1ADDR_BASEEXT	0xa4
++#define FW_MPU_DDR_SCR_NONMPUREGION1ADDR_LIMIT		0xa8
++#define FW_MPU_DDR_SCR_NONMPUREGION1ADDR_LIMITEXT	0xac
++
+ /* Firewall F2SDRAM DDR SCR registers */
+ #define FW_F2SDRAM_DDR_SCR_EN				0x00
+ #define FW_F2SDRAM_DDR_SCR_EN_SET			0x04
+@@ -135,6 +145,12 @@ struct socfpga_firwall_l4_sys {
+ #define FW_F2SDRAM_DDR_SCR_REGION0ADDR_LIMIT		0x18
+ #define FW_F2SDRAM_DDR_SCR_REGION0ADDR_LIMITEXT		0x1c
+ 
++/* F2SDRAM Region 1 registers */
++#define FW_F2SDRAM_DDR_SCR_REGION1ADDR_BASE		0x20
++#define FW_F2SDRAM_DDR_SCR_REGION1ADDR_BASEEXT		0x24
++#define FW_F2SDRAM_DDR_SCR_REGION1ADDR_LIMIT		0x28
++#define FW_F2SDRAM_DDR_SCR_REGION1ADDR_LIMITEXT		0x2c
++
+ #define MPUREGION0_ENABLE				BIT(0)
+ #define NONMPUREGION0_ENABLE				BIT(8)
+ 
+diff --git a/drivers/ddr/altera/sdram_soc64.c b/drivers/ddr/altera/sdram_soc64.c
+index 2d0093c591c..1f11d772952 100644
+--- a/drivers/ddr/altera/sdram_soc64.c
++++ b/drivers/ddr/altera/sdram_soc64.c
+@@ -27,6 +27,10 @@
+ #include <linux/sizes.h>
+ #include <u-boot/schedule.h>
+ 
++/* OP-TEE Secure Memory Region */
++#define OPTEE_TZDRAM_START	0x83000000
++#define OPTEE_TZDRAM_SIZE	0x02000000  /* 32MB */
++
+ #define PGTABLE_OFF	0x4000
+ 
+ #define SINGLE_RANK_CLAMSHELL	0xc3c3
+@@ -285,6 +289,82 @@ phys_size_t sdram_calculate_size(struct altera_sdram_plat *plat)
+ 	return size;
+ }
+ 
++/*
++ * Configure non-secure region 0: From 1MB to before OP-TEE
++ * This opens the region: 0x80100000 to 0x82FFFFFF
++ */
++static void sdram_set_firewall_region0_before_optee(void)
++{
++	phys_size_t base, limit;
++	u32 lower, upper;
++
++	/* Region 0: Start at 1MB (after ATF) */
++	base = CFG_SYS_SDRAM_BASE + SZ_1M;
++
++	/* Region 0: End just before OP-TEE */
++	limit = OPTEE_TZDRAM_START - 1;
++
++	/* Configure MPU Region 0 base */
++	lower = lower_32_bits(base);
++	upper = upper_32_bits(base);
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_MPUREGION0ADDR_BASE);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_MPUREGION0ADDR_BASEEXT);
++
++	/* Configure Non-MPU Region 0 base */
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_NONMPUREGION0ADDR_BASE);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_NONMPUREGION0ADDR_BASEEXT);
++
++	/* Configure MPU Region 0 limit */
++	lower = lower_32_bits(limit);
++	upper = upper_32_bits(limit);
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_MPUREGION0ADDR_LIMIT);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_MPUREGION0ADDR_LIMITEXT);
++
++	/* Configure Non-MPU Region 0 limit */
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_NONMPUREGION0ADDR_LIMIT);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_NONMPUREGION0ADDR_LIMITEXT);
++
++	debug("DDR: Firewall Region 0: 0x%llx - 0x%llx (Non-secure)\n", base, limit);
++}
++
++/*
++ * Configure non-secure region 1: From after OP-TEE to end of valid DRAM
++ * This opens the region: 0x85000000 to 0xEFFFFFFF
++ */
++static void sdram_set_firewall_region1_after_optee(phys_size_t ddr_end)
++{
++	phys_size_t base, limit;
++	u32 lower, upper;
++
++	/* Region 1: Start after OP-TEE */
++	base = OPTEE_TZDRAM_START + OPTEE_TZDRAM_SIZE;
++
++	/* Region 1: End at last valid DRAM address */
++	limit = ddr_end - 1;
++
++	/* Configure MPU Region 1 base */
++	lower = lower_32_bits(base);
++	upper = upper_32_bits(base);
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_MPUREGION1ADDR_BASE);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_MPUREGION1ADDR_BASEEXT);
++
++	/* Configure Non-MPU Region 1 base */
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_NONMPUREGION1ADDR_BASE);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_NONMPUREGION1ADDR_BASEEXT);
++
++	/* Configure MPU Region 1 limit */
++	lower = lower_32_bits(limit);
++	upper = upper_32_bits(limit);
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_MPUREGION1ADDR_LIMIT);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_MPUREGION1ADDR_LIMITEXT);
++
++	/* Configure Non-MPU Region 1 limit */
++	FW_MPU_DDR_SCR_WRITEL(lower, FW_MPU_DDR_SCR_NONMPUREGION1ADDR_LIMIT);
++	FW_MPU_DDR_SCR_WRITEL(upper & 0xff, FW_MPU_DDR_SCR_NONMPUREGION1ADDR_LIMITEXT);
++
++	debug("DDR: Firewall Region 1: 0x%llx - 0x%llx (Non-secure)\n", base, limit);
++}
++
+ static void sdram_set_firewall_non_f2sdram(struct bd_info *bd)
+ {
+ 	u32 i;
+@@ -297,53 +377,16 @@ static void sdram_set_firewall_non_f2sdram(struct bd_info *bd)
+ 
+ 		value = bd->bi_dram[i].start;
+ 
+-		/* Keep first 1MB of SDRAM memory region as secure region when
+-		 * using ATF flow, where the ATF code is located.
+-		 */
+-		if (IS_ENABLED(CONFIG_SPL_ATF) && i == 0)
+-			value += SZ_1M;
+-
+-		/* Setting non-secure MPU region base and base extended */
+-		lower = lower_32_bits(value);
+-		upper = upper_32_bits(value);
+-		FW_MPU_DDR_SCR_WRITEL(lower,
+-				      FW_MPU_DDR_SCR_MPUREGION0ADDR_BASE +
+-				      (i * 4 * sizeof(u32)));
+-		FW_MPU_DDR_SCR_WRITEL(upper & 0xff,
+-				      FW_MPU_DDR_SCR_MPUREGION0ADDR_BASEEXT +
+-				      (i * 4 * sizeof(u32)));
+-
+-		/* Setting non-secure Non-MPU region base and base extended */
+-		FW_MPU_DDR_SCR_WRITEL(lower,
+-				      FW_MPU_DDR_SCR_NONMPUREGION0ADDR_BASE +
+-				      (i * 4 * sizeof(u32)));
+-		FW_MPU_DDR_SCR_WRITEL(upper & 0xff,
+-				      FW_MPU_DDR_SCR_NONMPUREGION0ADDR_BASEEXT +
+-				      (i * 4 * sizeof(u32)));
+-
+-		/* Setting non-secure MPU limit and limit extended */
+-		value = bd->bi_dram[i].start + bd->bi_dram[i].size - 1;
+-
+-		lower = lower_32_bits(value);
+-		upper = upper_32_bits(value);
+-
+-		FW_MPU_DDR_SCR_WRITEL(lower,
+-				      FW_MPU_DDR_SCR_MPUREGION0ADDR_LIMIT +
+-				      (i * 4 * sizeof(u32)));
+-		FW_MPU_DDR_SCR_WRITEL(upper & 0xff,
+-				      FW_MPU_DDR_SCR_MPUREGION0ADDR_LIMITEXT +
+-				      (i * 4 * sizeof(u32)));
+-
+-		/* Setting non-secure Non-MPU limit and limit extended */
+-		FW_MPU_DDR_SCR_WRITEL(lower,
+-				      FW_MPU_DDR_SCR_NONMPUREGION0ADDR_LIMIT +
+-				      (i * 4 * sizeof(u32)));
+-		FW_MPU_DDR_SCR_WRITEL(upper & 0xff,
+-				      FW_MPU_DDR_SCR_NONMPUREGION0ADDR_LIMITEXT +
+-				      (i * 4 * sizeof(u32)));
+-
+-		FW_MPU_DDR_SCR_WRITEL(BIT(i) | BIT(i + 8),
++		/* Configure two-region firewall to protect OP-TEE memory */
++		sdram_set_firewall_region0_before_optee();
++		sdram_set_firewall_region1_after_optee(value + bd->bi_dram[i].size);
++
++		/* Enable both Region 0 and Region 1 for MPU and Non-MPU */
++		FW_MPU_DDR_SCR_WRITEL(BIT(0) | BIT(1) | BIT(8) | BIT(9),
+ 				      FW_MPU_DDR_SCR_EN_SET);
++
++		debug("DDR: OP-TEE Secure Region: 0x%08x - 0x%08x (Firewall Protected)\n",
++		      OPTEE_TZDRAM_START, OPTEE_TZDRAM_START + OPTEE_TZDRAM_SIZE - 1);
+ 	}
+ }
+ 
+@@ -359,36 +402,39 @@ static void sdram_set_firewall_f2sdram(struct bd_info *bd)
+ 
+ 		value = bd->bi_dram[i].start;
+ 
+-		/* Keep first 1MB of SDRAM memory region as secure region when
+-		 * using ATF flow, where the ATF code is located.
+-		 */
+-		if (IS_ENABLED(CONFIG_SPL_ATF) && i == 0)
+-			value += SZ_1M;
+-
+-		/* Setting base and base extended */
+-		lower = lower_32_bits(value);
+-		upper = upper_32_bits(value);
+-		FW_F2SDRAM_DDR_SCR_WRITEL(lower,
+-					  FW_F2SDRAM_DDR_SCR_REGION0ADDR_BASE +
+-					  (i * 4 * sizeof(u32)));
+-		FW_F2SDRAM_DDR_SCR_WRITEL(upper & 0xff,
+-					  FW_F2SDRAM_DDR_SCR_REGION0ADDR_BASEEXT +
+-					  (i * 4 * sizeof(u32)));
+-
+-		/* Setting limit and limit extended */
+-		value = bd->bi_dram[i].start + bd->bi_dram[i].size - 1;
+-
+-		lower = lower_32_bits(value);
+-		upper = upper_32_bits(value);
+-
+-		FW_F2SDRAM_DDR_SCR_WRITEL(lower,
+-					  FW_F2SDRAM_DDR_SCR_REGION0ADDR_LIMIT +
+-					  (i * 4 * sizeof(u32)));
+-		FW_F2SDRAM_DDR_SCR_WRITEL(upper & 0xff,
+-					  FW_F2SDRAM_DDR_SCR_REGION0ADDR_LIMITEXT +
+-					  (i * 4 * sizeof(u32)));
+-
+-		FW_F2SDRAM_DDR_SCR_WRITEL(BIT(i), FW_F2SDRAM_DDR_SCR_EN_SET);
++		/* Region 0: From 1MB to before OP-TEE (0x80100000 - 0x82FFFFFF) */
++		phys_size_t base0 = value + SZ_1M;
++		phys_size_t limit0 = OPTEE_TZDRAM_START - 1;
++
++		lower = lower_32_bits(base0);
++		upper = upper_32_bits(base0);
++		FW_F2SDRAM_DDR_SCR_WRITEL(lower, FW_F2SDRAM_DDR_SCR_REGION0ADDR_BASE);
++		FW_F2SDRAM_DDR_SCR_WRITEL(upper & 0xff, FW_F2SDRAM_DDR_SCR_REGION0ADDR_BASEEXT);
++
++		lower = lower_32_bits(limit0);
++		upper = upper_32_bits(limit0);
++		FW_F2SDRAM_DDR_SCR_WRITEL(lower, FW_F2SDRAM_DDR_SCR_REGION0ADDR_LIMIT);
++		FW_F2SDRAM_DDR_SCR_WRITEL(upper & 0xff, FW_F2SDRAM_DDR_SCR_REGION0ADDR_LIMITEXT);
++
++		/* Region 1: From after OP-TEE to end of DRAM (0x85000000 - end) */
++		phys_size_t base1 = OPTEE_TZDRAM_START + OPTEE_TZDRAM_SIZE;
++		phys_size_t limit1 = value + bd->bi_dram[i].size - 1;
++
++		lower = lower_32_bits(base1);
++		upper = upper_32_bits(base1);
++		FW_F2SDRAM_DDR_SCR_WRITEL(lower, FW_F2SDRAM_DDR_SCR_REGION1ADDR_BASE);
++		FW_F2SDRAM_DDR_SCR_WRITEL(upper & 0xff, FW_F2SDRAM_DDR_SCR_REGION1ADDR_BASEEXT);
++
++		lower = lower_32_bits(limit1);
++		upper = upper_32_bits(limit1);
++		FW_F2SDRAM_DDR_SCR_WRITEL(lower, FW_F2SDRAM_DDR_SCR_REGION1ADDR_LIMIT);
++		FW_F2SDRAM_DDR_SCR_WRITEL(upper & 0xff, FW_F2SDRAM_DDR_SCR_REGION1ADDR_LIMITEXT);
++
++		/* Enable both regions */
++		FW_F2SDRAM_DDR_SCR_WRITEL(BIT(0) | BIT(1), FW_F2SDRAM_DDR_SCR_EN_SET);
++
++		debug("DDR: F2SDRAM Firewall - Region 0: 0x%llx - 0x%llx\n", base0, limit0);
++		debug("DDR: F2SDRAM Firewall - Region 1: 0x%llx - 0x%llx\n", base1, limit1);
+ 	}
+ }
+ #endif
+-- 
+2.43.7
+

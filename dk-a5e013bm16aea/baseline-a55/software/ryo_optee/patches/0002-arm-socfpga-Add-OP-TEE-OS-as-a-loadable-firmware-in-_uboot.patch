@@ -1,0 +1,104 @@
+From ff18a40bc9d1ce86c18081788a12ef36b2acc570 Mon Sep 17 00:00:00 2001
+From: Boon Khai Ng <boon.khai.ng@altera.com>
+Date: Tue, 27 Jan 2026 21:38:36 +0800
+Subject: [PATCH 2/2] arm: socfpga: Add OP-TEE OS as a loadable firmware in FIT
+ Image
+
+This patch integrates OP-TEE OS as a loadable firmware in the
+FIT image for SoCFPGA and updates the memory layout to avoid
+conflicts with the secure OP-TEE region.
+
+1) Add an `optee` node to the FIT image device tree,
+   specifying the load and entry address at 0x83000000,
+   and referencing the OP-TEE binary.
+
+2) Update the board configuration to include OP-TEE as
+   a loadable alongside U-Boot.
+
+3) Change the default kernel load address
+   (`kernel_addr_r`) to 0x85000000 to avoid
+   overlap with the OP-TEE reserved region.
+
+4) Enhance SPL ATF support to find the
+  `/images` node in addition to `/fit-images`,
+   ensuring correct firmware loading order with OP-TEE
+   present.
+
+These changes ensure OP-TEE is loaded at the correct address,
+the kernel does not overwrite the secure region, and
+the U-Boot SPL can properly load all required firmware components.
+
+Signed-off-by: Boon Khai Ng <boon.khai.ng@altera.com>
+---
+ arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi | 18 +++++++++++++++++-
+ common/spl/spl_atf.c                       |  4 +++-
+ include/configs/socfpga_soc64_common.h     |  2 +-
+ 3 files changed, 21 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi b/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi
+index 93a8e0697d6..8aabc3d98b7 100644
+--- a/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi
++++ b/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi
+@@ -73,6 +73,22 @@
+ 						algo = "crc32";
+ 					};
+ 				};
++
++				optee {
++					description = "OP-TEE OS";
++					type = "firmware";
++					os = "tee";
++					arch = "arm64";
++					compression = "none";
++					load = <0x83000000>;
++					entry = <0x83000000>;
++					optee_blob: blob-ext {
++						filename = "tee-pager_v2.bin";
++					};
++					hash {
++						algo = "crc32";
++					};
++				};
+ 			};
+ 
+ 			board_config: configurations {
+@@ -81,7 +97,7 @@
+ 				board-0 {
+ 					description = "board_0";
+ 					firmware = "atf";
+-					loadables = "uboot";
++					loadables = "uboot", "optee";
+ 					fdt = "fdt-0";
+ 					signature {
+ 						algo = "crc32";
+diff --git a/common/spl/spl_atf.c b/common/spl/spl_atf.c
+index 8bc5db77395..d529d6a0660 100644
+--- a/common/spl/spl_atf.c
++++ b/common/spl/spl_atf.c
+@@ -217,7 +217,9 @@ static int spl_fit_images_find(void *blob, int os)
+ 	if (!blob)
+ 		return -FDT_ERR_BADMAGIC;
+ 
+-	parent = fdt_path_offset(blob, "/fit-images");
++	parent = fdt_path_offset(blob, "/images");
++	if (parent < 0)
++		parent = fdt_path_offset(blob, "/fit-images");
+ 	if (parent < 0)
+ 		return -FDT_ERR_NOTFOUND;
+ 
+diff --git a/include/configs/socfpga_soc64_common.h b/include/configs/socfpga_soc64_common.h
+index 8ef603073e3..fd214dd9f12 100644
+--- a/include/configs/socfpga_soc64_common.h
++++ b/include/configs/socfpga_soc64_common.h
+@@ -153,7 +153,7 @@
+ #if IS_ENABLED(CONFIG_TARGET_SOCFPGA_AGILEX5)
+ 
+ #define CFG_EXTRA_ENV_SETTINGS \
+-	"kernel_addr_r=0x82000000\0" \
++	"kernel_addr_r=0x85000000\0" \
+ 	"fdt_addr_r=0x86000000\0" \
+ 	"qspiscriptaddr=0x02110000\0" \
+ 	"scriptsize=0x00010000\0" \
+-- 
+2.43.7
+

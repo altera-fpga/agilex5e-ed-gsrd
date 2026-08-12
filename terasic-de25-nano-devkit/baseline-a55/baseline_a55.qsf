@@ -1,0 +1,304 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2025  Altera Corporation. All rights reserved.
+# Your use of Altera Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Altera Program License
+# Subscription Agreement, the Altera Quartus Prime License Agreement,
+# the Altera IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Altera and sold by Altera or its authorized distributors.  Please
+# refer to the Altera Software License Subscription Agreements
+# on the Quartus Prime software download page.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 25.1.0 Build 109 02/26/2025 SC Pro Edition
+# Date created = 15:43:58  March 05, 2025
+#
+# -------------------------------------------------------------------------- #
+
+
+#============================================================
+# Quartus version assignments
+#============================================================
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION "25.1.0 PRO EDITION"
+set_global_assignment -name LAST_QUARTUS_VERSION "26.1.1 Pro Edition"
+
+#============================================================
+# Device properties
+#============================================================
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5EB013BB23BE4SCS
+
+#============================================================
+# Toplevel and toplevel RTL
+#============================================================
+set_global_assignment -name TOP_LEVEL_ENTITY baseline_a55
+
+#============================================================
+# Flow assignments
+#============================================================
+# Put all reports into the output_files directory
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+# Set the default parallelization to 4
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
+# Define the board as default
+# Convert timing failures to errors
+set_global_assignment -name PROMOTE_WARNING_TO_ERROR 332148
+# Include custom IP in IP search path
+set_global_assignment -name IP_SEARCH_PATHS "custom_ip/**/*; ip/fabric_subsys/**/*; ip/shell_subsys/**/*"
+# Disable assembler during "play button" flow
+set_global_assignment -name FLOW_DISABLE_ASSEMBLER ON
+# Disable spawning the Timing Analyzer GUI during the "play button" flow
+set_global_assignment -name FLOW_ENABLE_INTERACTIVE_TIMING_ANALYZER OFF
+# Promote pins without location assignments to errors
+set_global_assignment -name PROMOTE_WARNING_TO_ERROR 12677
+
+#============================================================
+# Configuration Assignments
+#============================================================
+set_global_assignment -name DEVICE_FILTER_PACKAGE VPBGA
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO11
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ACTIVE_SERIAL_CLOCK AS_FREQ_125MHZ
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name QSPI_OWNERSHIP HPS
+set_global_assignment -name HPS_INITIALIZATION "HPS FIRST"
+set_global_assignment -name HPS_DAP_SPLIT_MODE "SDM PINS"
+set_global_assignment -name HPS_DAP_NO_CERTIFICATE on
+
+#============================================================
+# Pin location and IO standard assignments
+#============================================================
+# Clocks, resets, GPIO
+set_location_assignment PIN_V16 -to pll_refclk_100
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to pll_refclk_100
+set_instance_assignment -name INPUT_TERMINATION OFF -to pll_refclk_100
+
+set_location_assignment PIN_DF35 -to fpga_user_leds[0]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[0] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[0] -entity baseline_a55
+set_location_assignment PIN_DJ32 -to fpga_user_leds[1]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[1] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[1] -entity baseline_a55
+set_location_assignment PIN_DN22 -to fpga_user_leds[2]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[2] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[2] -entity baseline_a55
+set_location_assignment PIN_DP23 -to fpga_user_leds[3]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[3] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[3] -entity baseline_a55
+set_location_assignment PIN_DN25 -to fpga_user_leds[4]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[4] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[4] -entity baseline_a55
+set_location_assignment PIN_DP25 -to fpga_user_leds[5]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[5] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[5] -entity baseline_a55
+set_location_assignment PIN_DJ27 -to fpga_user_leds[6]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[6] -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[6] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[6] -entity baseline_a55
+set_location_assignment PIN_DP30 -to fpga_user_leds[7]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to fpga_user_leds[7] -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 1 -to fpga_user_leds[7] -entity baseline_a55
+
+set_location_assignment PIN_C8 -to fpga_user_push_buttons[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_push_buttons[0]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_push_buttons[0] -entity baseline_a55
+set_location_assignment PIN_C11 -to fpga_user_push_buttons[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_push_buttons[1]
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_push_buttons[1] -entity baseline_a55
+
+set_location_assignment PIN_DK24 -to fpga_user_switches[0]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_switches[0] -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_switches[0] -entity baseline_a55
+set_location_assignment PIN_DD24 -to fpga_user_switches[1]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_switches[1] -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_switches[1] -entity baseline_a55
+set_location_assignment PIN_DD27 -to fpga_user_switches[2]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_switches[2] -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_switches[2] -entity baseline_a55
+set_location_assignment PIN_DF27 -to fpga_user_switches[3]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_switches[3] -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_switches[3] -entity baseline_a55
+
+# HPS
+#set_location_assignment PIN_AN67 -to hps_osc_clk
+#set_location_assignment PIN_D71 -to hps_emac0_MDC
+#set_location_assignment PIN_C74 -to hps_emac0_MDIO
+#set_location_assignment PIN_BL75 -to hps_emac0_RX_CLK
+#set_location_assignment PIN_AP74 -to hps_emac0_RX_CTL
+#set_location_assignment PIN_BD74 -to hps_emac0_RXD0
+#set_location_assignment PIN_AN71 -to hps_emac0_RXD1
+#set_location_assignment PIN_AJ74 -to hps_emac0_RXD2
+#set_location_assignment PIN_AJ75 -to hps_emac0_RXD3
+#set_location_assignment PIN_BP75 -to hps_emac0_TX_CLK
+#set_location_assignment PIN_BL74 -to hps_emac0_TX_CTL
+#set_location_assignment PIN_BG74 -to hps_emac0_TXD0
+#set_location_assignment PIN_AP75 -to hps_emac0_TXD1
+#set_location_assignment PIN_BD75 -to hps_emac0_TXD2
+#set_location_assignment PIN_AM74 -to hps_emac0_TXD3
+#set_location_assignment PIN_P75 -to hps_gpio1_io5
+#set_location_assignment PIN_Y75 -to hps_gpio1_io4
+#set_location_assignment PIN_N72 -to hps_i2c1_SCL
+set_instance_assignment -name SLEW_RATE 2 -to hps_i2c1_SCL -entity baseline_a55
+#set_location_assignment PIN_L75 -to hps_i2c1_SDA
+set_instance_assignment -name SLEW_RATE 2 -to hps_i2c1_SDA -entity baseline_a55
+#set_location_assignment PIN_F75 -to hps_gpio1_io16
+#set_location_assignment PIN_AD71 -to hps_gpio1_io19
+#set_location_assignment PIN_AC74 -to hps_sdmmc_CCLK
+#set_location_assignment PIN_AK69 -to hps_sdmmc_CMD
+#set_location_assignment PIN_AF75 -to hps_sdmmc_D0
+#set_location_assignment PIN_AC75 -to hps_sdmmc_D1
+#set_location_assignment PIN_AN64 -to hps_sdmmc_D2
+#set_location_assignment PIN_Y74 -to hps_sdmmc_D3
+#set_location_assignment PIN_AD72 -to hps_uart1_RX
+#set_location_assignment PIN_N71 -to hps_uart1_TX
+#set_location_assignment PIN_BC64 -to hps_usb0_CLK
+#set_location_assignment PIN_AN72 -to hps_usb0_DATA0
+#set_location_assignment PIN_AY69 -to hps_usb0_DATA1
+#set_location_assignment PIN_BC71 -to hps_usb0_DATA2
+#set_location_assignment PIN_AU74 -to hps_usb0_DATA3
+#set_location_assignment PIN_AY71 -to hps_usb0_DATA4
+#set_location_assignment PIN_AU75 -to hps_usb0_DATA5
+#set_location_assignment PIN_BC72 -to hps_usb0_DATA6
+#set_location_assignment PIN_BP74 -to hps_usb0_DATA7
+#set_location_assignment PIN_AY67 -to hps_usb0_DIR
+#set_location_assignment PIN_BA75 -to hps_usb0_NXT
+#set_location_assignment PIN_BC67 -to hps_usb0_STP
+
+# EMIF
+set_location_assignment PIN_B55 -to emif_hps_emif_ref_clk_0_clk
+set_location_assignment PIN_B58 -to emif_hps_emif_mem_0_mem_cs
+set_location_assignment PIN_B66 -to emif_hps_emif_mem_0_mem_ca[0]
+set_location_assignment PIN_A68 -to emif_hps_emif_mem_0_mem_ca[1]
+set_location_assignment PIN_B68 -to emif_hps_emif_mem_0_mem_ca[2]
+set_location_assignment PIN_A70 -to emif_hps_emif_mem_0_mem_ca[3]
+set_location_assignment PIN_B63 -to emif_hps_emif_mem_0_mem_ca[4]
+set_location_assignment PIN_A66 -to emif_hps_emif_mem_0_mem_ca[5]
+set_location_assignment PIN_J42 -to emif_hps_emif_mem_0_mem_ck_t
+set_location_assignment PIN_A61 -to emif_hps_emif_mem_0_mem_cke
+set_location_assignment PIN_G42 -to emif_hps_emif_mem_0_mem_ck_c
+set_location_assignment PIN_J59 -to emif_hps_emif_mem_0_mem_dmi[0]
+set_location_assignment PIN_T59 -to emif_hps_emif_mem_0_mem_dmi[1]
+set_location_assignment PIN_J27 -to emif_hps_emif_mem_0_mem_dmi[2]
+set_location_assignment PIN_A25 -to emif_hps_emif_mem_0_mem_dmi[3]
+set_location_assignment PIN_T62 -to emif_hps_emif_mem_0_mem_dq[0]
+set_location_assignment PIN_T56 -to emif_hps_emif_mem_0_mem_dq[1]
+set_location_assignment PIN_G56 -to emif_hps_emif_mem_0_mem_dq[2]
+set_location_assignment PIN_E56 -to emif_hps_emif_mem_0_mem_dq[3]
+set_location_assignment PIN_G65 -to emif_hps_emif_mem_0_mem_dq[4]
+set_location_assignment PIN_J65 -to emif_hps_emif_mem_0_mem_dq[5]
+set_location_assignment PIN_M56 -to emif_hps_emif_mem_0_mem_dq[6]
+set_location_assignment PIN_M62 -to emif_hps_emif_mem_0_mem_dq[7]
+set_location_assignment PIN_W62 -to emif_hps_emif_mem_0_mem_dq[8]
+set_location_assignment PIN_M65 -to emif_hps_emif_mem_0_mem_dq[9]
+set_location_assignment PIN_M51 -to emif_hps_emif_mem_0_mem_dq[10]
+set_location_assignment PIN_T51 -to emif_hps_emif_mem_0_mem_dq[11]
+set_location_assignment PIN_AB48 -to emif_hps_emif_mem_0_mem_dq[12]
+set_location_assignment PIN_W48 -to emif_hps_emif_mem_0_mem_dq[13]
+set_location_assignment PIN_T65 -to emif_hps_emif_mem_0_mem_dq[14]
+set_location_assignment PIN_AB62 -to emif_hps_emif_mem_0_mem_dq[15]
+set_location_assignment PIN_G24 -to emif_hps_emif_mem_0_mem_dq[16]
+set_location_assignment PIN_E24 -to emif_hps_emif_mem_0_mem_dq[17]
+set_location_assignment PIN_J35 -to emif_hps_emif_mem_0_mem_dq[18]
+set_location_assignment PIN_T32 -to emif_hps_emif_mem_0_mem_dq[19]
+set_location_assignment PIN_M32 -to emif_hps_emif_mem_0_mem_dq[20]
+set_location_assignment PIN_T24 -to emif_hps_emif_mem_0_mem_dq[21]
+set_location_assignment PIN_G35 -to emif_hps_emif_mem_0_mem_dq[22]
+set_location_assignment PIN_M24 -to emif_hps_emif_mem_0_mem_dq[23]
+set_location_assignment PIN_A22 -to emif_hps_emif_mem_0_mem_dq[24]
+set_location_assignment PIN_A23 -to emif_hps_emif_mem_0_mem_dq[25]
+set_location_assignment PIN_A33 -to emif_hps_emif_mem_0_mem_dq[26]
+set_location_assignment PIN_B33 -to emif_hps_emif_mem_0_mem_dq[27]
+set_location_assignment PIN_B30 -to emif_hps_emif_mem_0_mem_dq[28]
+set_location_assignment PIN_A36 -to emif_hps_emif_mem_0_mem_dq[29]
+set_location_assignment PIN_A20 -to emif_hps_emif_mem_0_mem_dq[30]
+set_location_assignment PIN_B22 -to emif_hps_emif_mem_0_mem_dq[31]
+set_location_assignment PIN_G62 -to emif_hps_emif_mem_0_mem_dqs_t[0]
+set_location_assignment PIN_AB56 -to emif_hps_emif_mem_0_mem_dqs_t[1]
+set_location_assignment PIN_G32 -to emif_hps_emif_mem_0_mem_dqs_t[2]
+set_location_assignment PIN_B28 -to emif_hps_emif_mem_0_mem_dqs_t[3]
+set_location_assignment PIN_E62 -to emif_hps_emif_mem_0_mem_dqs_c[0]
+set_location_assignment PIN_W56 -to emif_hps_emif_mem_0_mem_dqs_c[1]
+set_location_assignment PIN_E32 -to emif_hps_emif_mem_0_mem_dqs_c[2]
+set_location_assignment PIN_A30 -to emif_hps_emif_mem_0_mem_dqs_c[3]
+set_location_assignment PIN_M48 -to emif_hps_emif_mem_0_mem_reset_n
+set_location_assignment PIN_T48 -to emif_hps_emif_oct_0_oct_rzqin
+
+#============================================================
+# Variant IP source files
+#============================================================
+set_global_assignment -name IP_FILE ip/hps_subsys/agilex_hps.ip
+set_global_assignment -name IP_FILE ip/hps_subsys/emif_io96b_hps.ip
+set_global_assignment -name QSYS_FILE hps_subsys.qsys
+
+set_global_assignment -name IP_FILE ip/fabric_subsys/sysid.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/button_pio.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/led_pio.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/peripherals_mm_bridge.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/ocm.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/system_reset.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/system_clock.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/lwh2f_axi_bridge.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/lwh2f_mm_bridge.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/f2sdram_adapter.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/h2f_axi_bridge.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/dipsw_pio.ip
+set_global_assignment -name IP_FILE ip/fabric_subsys/ace5lite_cache_coherency_translator.ip
+set_global_assignment -name QSYS_FILE fabric_subsys.qsys
+
+set_global_assignment -name IP_FILE ip/shell_subsys/clks_and_rsts.ip
+set_global_assignment -name IP_FILE ip/shell_subsys/sys_pll.ip
+set_global_assignment -name IP_FILE ip/shell_subsys/user_rst_clkgate.ip
+#set_global_assignment -name IP_FILE ip/shell_subsys/gts_reset_sequencer.ip
+set_global_assignment -name QSYS_FILE shell_subsys.qsys
+
+set_global_assignment -name IP_FILE ip/baseline_top/sys_clock.ip
+set_global_assignment -name IP_FILE ip/baseline_top/sys_reset.ip
+set_global_assignment -name QSYS_FILE baseline_top.qsys
+
+set_global_assignment -name IP_FILE ip/niosv_subsys/f2sdram_address_span_extender.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/fpga2hps_address_span_extender.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/jtag_avalon_master.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/jtag_uart.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/niosv_clock.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/niosv_m.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/niosv_onchip_memory.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/niosv_pio_in.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/niosv_pio_out.ip
+set_global_assignment -name IP_FILE ip/niosv_subsys/niosv_reset.ip
+set_global_assignment -name QSYS_FILE niosv_subsys.qsys
+
+
+#============================================================
+# Variant RTL source files
+#============================================================
+set_global_assignment -name SYSTEMVERILOG_FILE baseline_a55.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/debounce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/clocks_and_resets.sv
+
+#============================================================
+# SDC files
+#============================================================
+set_global_assignment -name SDC_FILE baseline_a55.sdc
+set_global_assignment -name SDC_FILE jtag.sdc
+
+#============================================================
+# Design Assistant files
+#============================================================
+set_global_assignment -name DESIGN_ASSISTANT_WAIVER_FILE baseline_a55.dawf
+set_global_assignment -name BOARD default

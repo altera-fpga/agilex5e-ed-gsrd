@@ -1,0 +1,64 @@
+header:
+  version: 17
+  includes:
+    - kas/machine.yml
+    - kas/bsp.yml
+
+repos:
+  bitbake:
+    url: https://github.com/openembedded/bitbake.git
+    branch: "2.18"
+    commit: acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd
+    layers:
+      .: disabled
+  openembedded-core:
+    url: https://github.com/openembedded/openembedded-core.git
+    branch: wrynose
+    commit: 6f5681afb324aed2cba4e5b819ffc878f74a2bac
+    layers:
+      meta:
+  meta-yocto:
+    url: https://git.yoctoproject.org/meta-yocto
+    branch: wrynose
+    commit: 824795b885b25e074a2880fbcd54e1a6c875d47d
+    layers:
+      meta-poky:
+      meta-yocto-bsp:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    branch: wrynose
+    commit: 532ac37990a592d9cb006469d06e4dcfd41a586
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+  meta-clang:
+    url: https://github.com/kraj/meta-clang.git
+    branch: wrynose
+    commit: ef0d22f21910a0c30c967eeb17d8f209806e2d81
+  meta-altera-fpga:
+    url: https://github.com/altera-fpga/meta-altera-fpga.git
+    tag: QPDS26.1.1_REL_GSRD_PR
+    layers:
+      meta-altera-bsp:
+      meta-altera-platform:
+  meta-custom:
+    path: meta-custom
+
+local_conf_header:
+  boot-source: |
+    SSBL_BOOT_SOURCE ?= "mmc0"
+    KERNEL_BOOTARGS_SD_MMC ?= ""
+
+  device-tree: |
+    CUSTOM_UBOOT_DEVICE_TREE = "0"
+    CUSTOM_LINUX_DEVICE_TREE = "0"
+
+  # RBF file should be placed in meta-custom/recipes-fpga/fpga-bitstream/files/
+  fpga-bitstream: |
+    FPGA_ENABLE_CORE_PGM ?= "1"
+    FPGA_RBF_FILE ?= "tsn_rgmii_hvio_hps_debug.core.rbf"
+
+  kernel-modules: |
+    KERNEL_MODULE_PROBECONF = "cfg80211"
+    module_conf_cfg80211 = "blacklist cfg80211"

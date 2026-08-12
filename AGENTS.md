@@ -1,8 +1,8 @@
-# Agilex 5 E-Series GHRD Agent Guide
+# Agilex 5 E-Series Quartus Design Agent Guide
 
 ## Purpose
 
-- Provide concise, actionable guidance for agents working on the Agilex 5 E‑Series GHRD workspace.
+- Provide concise, actionable guidance for agents working on the Agilex 5 E‑Series Quartus Design workspace.
 - Focus on build flows, environment setup, safe edits, and common operations.
 
 ## Quick Start (CLI)
@@ -18,14 +18,14 @@ which quartus_sh
 - Build one design from the repo root (pick a target from [README.md](README.md)):
 
 ```bash
-make a5ed065es-premium-devkit-oobe-baseline-a55-all
+make dk-a5e065bb32aes1-enablement-baseline-a55-all
 ```
 
 - Outputs land under `install/` (see Artifacts Layout). Intermediate build products land under `work/`.
 
 ## Scope
 
-- This repo hosts Golden Hardware Reference Designs (GHRD) for Agilex 5 E‑Series SoC FPGA.
+- This repo hosts Golden Hardware Reference Designs (Quartus Design) for Agilex 5 E‑Series SoC FPGA.
 - Designs live under platform folders (e.g., a5ed065es‑premium‑devkit‑oobe/, a5ed013‑devkit‑oobe/) with variants like `baseline-a55`, `baseline-a76`, and legacy designs.
 - Use Quartus Prime Pro for hardware builds; optional Python tooling for CLI orchestration.
 
@@ -39,7 +39,7 @@ make a5ed065es-premium-devkit-oobe-baseline-a55-all
 
 ```bash
 # Example environment (adjust for installation path/version)
-export QUARTUS_ROOTDIR=~/alteraFPGA_pro/26.1/quartus
+export QUARTUS_ROOTDIR=~/alteraFPGA_pro/26.1.1/quartus
 export PATH="$QUARTUS_ROOTDIR/bin:$QUARTUS_ROOTDIR/../qsys/bin:$QUARTUS_ROOTDIR/../niosv/bin:$QUARTUS_ROOTDIR/sopc_builder/bin:$QUARTUS_ROOTDIR/../questa_fe/bin:$QUARTUS_ROOTDIR/../syscon/bin:$QUARTUS_ROOTDIR/../riscfree/RiscFree:$PATH"
 ```
 
@@ -83,8 +83,8 @@ make PYTHON3=/path/to/python3.11 venv
 - Platform and design folders typically also provide a help/listing:
 
 ```bash
-make -C a5ed065es-premium-devkit-oobe help
-make -C a5ed065es-premium-devkit-oobe print-targets
+make -C dk-a5e065bb32aes1-enablement help
+make -C dk-a5e065bb32aes1-enablement print-targets
 ```
 
 ## What `...-all` Does
@@ -99,19 +99,22 @@ make -C a5ed065es-premium-devkit-oobe print-targets
 
 ```bash
 # Premium Devkit ES, Baseline-A55
-make a5ed065es-premium-devkit-oobe-baseline-a55-all
+make dk-a5e065bb32aes1-enablement-baseline-a55-all
 
 # Premium Devkit ES, Baseline-A76
-make a5ed065es-premium-devkit-oobe-baseline-a76-all
+make dk-a5e065bb32aes1-enablement-baseline-a76-all
 
 # Legacy TSN CFG2 (Premium Devkit ES)
-make a5ed065es-premium-devkit-oobe-legacy-tsn-cfg2-all
+make dk-a5e065bb32aes1-enablement-legacy-tsn-cfg2-all
+
+# TSN RGMII HVIO baseline (Premium Devkit ES)
+make dk-a5e065bb32aes1-enablement-tsn-rgmii-hvio-all
 
 # Debug2 / EMMC / Modular / 013 Devkit legacy designs
-make a5ed065es-premium-devkit-debug2-legacy-baseline-all
-make a5ed065es-premium-devkit-emmc-legacy-baseline-all
-make a5ed065es-modular-devkit-som-legacy-baseline-all
-make a5ed013-devkit-oobe-legacy-baseline-all
+make dk-a5e065bb32aes1-test-legacy-baseline-all
+make dk-a5e065bb32aes1-emmc-legacy-baseline-all
+make mk-a5e065bb32aes1-legacy-baseline-all
+make dk-a5e013bm16aea-legacy-baseline-all
 ```
 
 ## Quartus GUI Flow
@@ -174,7 +177,7 @@ make dev-clean   # deeper clean; removes install/work and untracked files
 
 ## Design Navigation
 
-- Per‑platform design docs live inside platform folders, e.g., see [a5ed013-devkit-oobe/baseline-a55/README.md](a5ed013-devkit-oobe/baseline-a55/README.md) for features and subsystem details.
+- Per‑platform design docs live inside platform folders, e.g., see [dk-a5e013bm16aea/baseline-a55/README.md](dk-a5e013bm16aea/baseline-a55/README.md) for features and subsystem details.
 
 ## Do/Don’t
 

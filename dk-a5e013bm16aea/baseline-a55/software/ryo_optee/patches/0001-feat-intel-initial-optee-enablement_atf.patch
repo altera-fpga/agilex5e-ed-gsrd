@@ -1,0 +1,260 @@
+From cb1fc3292ad940c7454e0fbbdbc7e2466f1074e0 Mon Sep 17 00:00:00 2001
+From: Bryan Chan Jia Ching <bryan.chan@altera.com>
+Date: Mon, 23 Feb 2026 13:59:44 +0800
+Subject: [PATCH] [PATCH] feat(intel): initial optee enablement
+
+This patch is the initial optee enablement.
+
+Signed-off-by: Jit Loon Lim <jit.loon.lim@altera.com>
+Signed-off-by: Bryan Chan <bryan.chan@altera.com>
+---
+ plat/intel/soc/agilex5/bl2_plat_setup.c       | 42 +++++++-----
+ plat/intel/soc/agilex5/bl31_plat_setup.c      | 26 ++++++++
+ .../soc/agilex5/include/socfpga_plat_def.h    | 11 +++-
+ .../soc/common/bl2_plat_mem_params_desc.c     | 66 ++++++++++++++++++-
+ plat/intel/soc/common/socfpga_storage.c       |  9 +++
+ 5 files changed, 137 insertions(+), 17 deletions(-)
+
+diff --git a/plat/intel/soc/agilex5/bl2_plat_setup.c b/plat/intel/soc/agilex5/bl2_plat_setup.c
+index f4bd945b2..e82c9484d 100644
+--- a/plat/intel/soc/agilex5/bl2_plat_setup.c
++++ b/plat/intel/soc/agilex5/bl2_plat_setup.c
+@@ -50,21 +50,14 @@ static struct mmc_device_info mmc_info;
+ /* Declare cadence idmac descriptor */
+ extern struct cdns_idmac_desc cdns_desc[CONFIG_CDNS_DESC_COUNT] __aligned(8);
+ 
+-const mmap_region_t agilex_plat_mmap[] = {
+-	MAP_REGION_FLAT(DRAM_BASE, DRAM_SIZE,
+-		MT_MEMORY | MT_RW | MT_NS),
+-	MAP_REGION_FLAT(PSS_BASE, PSS_SIZE,
+-		MT_DEVICE | MT_RW | MT_NS),
+-	MAP_REGION_FLAT(MPFE_BASE, MPFE_SIZE,
+-		MT_DEVICE | MT_RW | MT_SECURE),
+-	MAP_REGION_FLAT(OCRAM_BASE, OCRAM_SIZE,
+-		MT_NON_CACHEABLE | MT_RW | MT_SECURE),
+-	MAP_REGION_FLAT(CCU_BASE, CCU_SIZE,
+-		MT_DEVICE | MT_RW | MT_SECURE),
+-	MAP_REGION_FLAT(MEM64_BASE, MEM64_SIZE,
+-		MT_DEVICE | MT_RW | MT_NS),
+-	MAP_REGION_FLAT(GIC_BASE, GIC_SIZE,
+-		MT_DEVICE | MT_RW | MT_SECURE),
++const mmap_region_t agilex5_plat_mmap[] = {
++	MAP_REGION_FLAT(DRAM_BASE, DRAM_SIZE, MT_MEMORY | MT_RW | MT_NS),
++	MAP_REGION_FLAT(PSS_BASE, PSS_SIZE, MT_DEVICE | MT_RW | MT_NS),
++	MAP_REGION_FLAT(MPFE_BASE, MPFE_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
++	MAP_REGION_FLAT(OCRAM_BASE, OCRAM_SIZE, MT_NON_CACHEABLE | MT_RW | MT_SECURE),
++	MAP_REGION_FLAT(CCU_BASE, CCU_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
++	MAP_REGION_FLAT(MEM64_BASE, MEM64_SIZE, MT_DEVICE | MT_RW | MT_NS),
++	MAP_REGION_FLAT(GIC_BASE, GIC_SIZE, MT_DEVICE | MT_RW | MT_SECURE),
+ 	{0},
+ };
+ 
+@@ -170,6 +163,25 @@ void bl2_early_platform_setup2(u_register_t x0 __unused,
+ void bl2_plat_arch_setup(void)
+ {
+ 	unsigned long offset = 0;
++	const mmap_region_t bl_regions[] = {
++		MAP_REGION_FLAT(BL2_BASE, BL2_END - BL2_BASE,
++			MT_MEMORY | MT_RW | MT_SECURE),
++		MAP_REGION_FLAT(BL_CODE_BASE, BL_CODE_END - BL_CODE_BASE,
++			MT_CODE | MT_SECURE),
++		MAP_REGION_FLAT(BL32_BASE, BL32_LIMIT - BL32_BASE,
++			MT_MEMORY | MT_RW | MT_SECURE),
++		MAP_REGION_FLAT(BL_RO_DATA_BASE,
++			BL_RO_DATA_END - BL_RO_DATA_BASE,
++			MT_RO_DATA | MT_SECURE),
++#if USE_COHERENT_MEM_BAR
++		MAP_REGION_FLAT(BL_COHERENT_RAM_BASE,
++			BL_COHERENT_RAM_END - BL_COHERENT_RAM_BASE,
++			MT_DEVICE | MT_RW | MT_SECURE),
++#endif
++		{0},
++	};
++
++	setup_page_tables(bl_regions, agilex5_plat_mmap);
+ 
+ 	struct cdns_sdmmc_params params = EMMC_INIT_PARAMS((uintptr_t) &cdns_desc,
+ 							   SDEMMC_SDCLK);
+diff --git a/plat/intel/soc/agilex5/bl31_plat_setup.c b/plat/intel/soc/agilex5/bl31_plat_setup.c
+index bf5498f55..e4a27f53f 100644
+--- a/plat/intel/soc/agilex5/bl31_plat_setup.c
++++ b/plat/intel/soc/agilex5/bl31_plat_setup.c
+@@ -26,6 +26,9 @@
+ #include "socfpga_private.h"
+ #include "socfpga_reset_manager.h"
+ 
++/* Get secure SPSR for BL32. Optee */
++uint32_t arm_get_spsr_for_bl32_entry(void);
++
+ /* Get non-secure SPSR for BL33. Zephyr and Linux */
+ uint32_t arm_get_spsr_for_bl33_entry(void);
+ 
+@@ -136,6 +139,15 @@ void bl31_early_platform_setup2(u_register_t arg0, u_register_t arg1,
+ 	bl33_image_ep_info.args.arg3 = 0U;
+ #endif
+ 
++	/*
++	 * Tell BL31 where the optee software image
++	 * is located and the entry state information
++	 */
++	bl32_image_ep_info.pc = BL32_BASE;
++	bl32_image_ep_info.spsr = arm_get_spsr_for_bl32_entry();
++
++	SET_SECURITY_STATE(bl32_image_ep_info.h.attr, SECURE);
++
+ 	/*
+ 	 * Tell BL31 where the non-trusted software image
+ 	 * is located and the entry state information
+@@ -234,6 +246,20 @@ uintptr_t plat_get_ns_image_entrypoint(void)
+ #endif
+ }
+ 
++/* Get non-secure SPSR for BL32. Optee */
++uint32_t arm_get_spsr_for_bl32_entry(void)
++{
++	uint32_t spsr;
++
++	/*
++	 * TODO: Consider the possibility of specifying the SPSR in
++	 * the FIP ToC and allowing the platform to have a say as
++	 * well.
++	 */
++	spsr = SPSR_64(MODE_EL1, MODE_SP_ELX, DISABLE_ALL_EXCEPTIONS);
++	return spsr;
++}
++
+ /* Get non-secure SPSR for BL33. Zephyr and Linux */
+ uint32_t arm_get_spsr_for_bl33_entry(void)
+ {
+diff --git a/plat/intel/soc/agilex5/include/socfpga_plat_def.h b/plat/intel/soc/agilex5/include/socfpga_plat_def.h
+index 85a383346..563fdecaf 100644
+--- a/plat/intel/soc/agilex5/include/socfpga_plat_def.h
++++ b/plat/intel/soc/agilex5/include/socfpga_plat_def.h
+@@ -147,7 +147,16 @@
+ #define BL2_LIMIT						(0x0007E000)
+ 
+ #define BL31_BASE						(0x80000000)
+-#define BL31_LIMIT						(0x82000000)
++#define BL31_LIMIT						(0x80080000)
++
++#define BL32_BASE						(0x83000000)
++#define BL32_LIMIT						(0x84FFFFFF)
++
++#ifdef SPD_opteed
++/* Load pageable part of OP-TEE at end of allocated DRAM space for BL32 */
++#define OPTEE_PAGEABLE_LOAD_SIZE		0x080000 /* 512KB */
++#define OPTEE_PAGEABLE_LOAD_BASE		(BL32_LIMIT - OPTEE_PAGEABLE_LOAD_SIZE)
++#endif
+ /*******************************************************************************
+  * UART related constants
+  ******************************************************************************/
+diff --git a/plat/intel/soc/common/bl2_plat_mem_params_desc.c b/plat/intel/soc/common/bl2_plat_mem_params_desc.c
+index a09fb709f..3f3483f77 100644
+--- a/plat/intel/soc/common/bl2_plat_mem_params_desc.c
++++ b/plat/intel/soc/common/bl2_plat_mem_params_desc.c
+@@ -73,10 +73,74 @@ static bl_mem_params_node_t bl2_mem_params_descs[] = {
+ 		.image_info.image_base = BL31_BASE,
+ 		.image_info.image_max_size = BL31_LIMIT - BL31_BASE,
+ 
+-		.next_handoff_image_id = BL33_IMAGE_ID,
++		.next_handoff_image_id = BL32_IMAGE_ID,
+ 	},
+ #endif /* EL3_PAYLOAD_BASE */
+ 
++#ifdef BL32_BASE
++	/* Fill BL32 related information */
++	{
++		.image_id = BL32_IMAGE_ID,
++
++		SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP,
++			VERSION_2, entry_point_info_t,
++			SECURE | EXECUTABLE | EP_FIRST_EXE),
++		.ep_info.pc = BL32_BASE,
++		.ep_info.spsr = SPSR_64(MODE_EL1, MODE_SP_ELX,
++			DISABLE_ALL_EXCEPTIONS),
++
++		SET_STATIC_PARAM_HEAD(image_info, PARAM_EP,
++			VERSION_2, image_info_t, 0),
++		.image_info.image_base = BL32_BASE,
++		.image_info.image_max_size = BL32_LIMIT - BL32_BASE,
++
++		.next_handoff_image_id = BL33_IMAGE_ID,
++	},
++
++	/*
++	 * Fill BL32 external 1 related information.
++	 * A typical use for extra1 image is with OP-TEE where it is the pager
++	 * image.
++	 */
++	{
++		.image_id = BL32_EXTRA1_IMAGE_ID,
++
++		SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP,
++				      VERSION_2, entry_point_info_t,
++				      SECURE | NON_EXECUTABLE),
++
++		SET_STATIC_PARAM_HEAD(image_info, PARAM_EP,
++				      VERSION_2, image_info_t,
++				      IMAGE_ATTRIB_SKIP_LOADING),
++		.image_info.image_base = BL32_BASE,
++		.image_info.image_max_size = BL32_LIMIT - BL32_BASE,
++
++		.next_handoff_image_id = INVALID_IMAGE_ID,
++	},
++
++	/*
++	 * Fill BL32 external 2 related information.
++	 * A typical use for extra2 image is with OP-TEE where it is the paged
++	 * image.
++	 */
++	{
++		.image_id = BL32_EXTRA2_IMAGE_ID,
++
++		SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP,
++				      VERSION_2, entry_point_info_t,
++				      SECURE | NON_EXECUTABLE),
++
++		SET_STATIC_PARAM_HEAD(image_info, PARAM_EP,
++				      VERSION_2, image_info_t,
++				      IMAGE_ATTRIB_SKIP_LOADING),
++#ifdef SPD_opteed
++		.image_info.image_base = BL32_BASE,
++		.image_info.image_max_size = BL32_LIMIT - BL32_BASE,
++#endif
++		.next_handoff_image_id = INVALID_IMAGE_ID,
++	},
++# endif /* BL32_BASE */
++
+ 	{
+ 		.image_id = BL33_IMAGE_ID,
+ 		SET_STATIC_PARAM_HEAD(ep_info, PARAM_EP,
+diff --git a/plat/intel/soc/common/socfpga_storage.c b/plat/intel/soc/common/socfpga_storage.c
+index 66b5216cd..73c4ba298 100644
+--- a/plat/intel/soc/common/socfpga_storage.c
++++ b/plat/intel/soc/common/socfpga_storage.c
+@@ -44,6 +44,10 @@ static const io_uuid_spec_t bl31_uuid_spec = {
+ 	.uuid = UUID_EL3_RUNTIME_FIRMWARE_BL31,
+ };
+ 
++static const io_uuid_spec_t bl32_uuid_spec = {
++	.uuid = UUID_SECURE_PAYLOAD_BL32,
++};
++
+ static const io_uuid_spec_t bl33_uuid_spec = {
+ 	.uuid = UUID_NON_TRUSTED_FIRMWARE_BL33,
+ };
+@@ -95,6 +99,11 @@ static const struct plat_io_policy policies[] = {
+ 		(uintptr_t)&bl31_uuid_spec,
+ 		check_fip
+ 	},
++	[BL32_IMAGE_ID] = {
++		&fip_dev_handle,
++		(uintptr_t)&bl32_uuid_spec,
++		check_fip
++	},
+ 	[BL33_IMAGE_ID] = {
+ 		&fip_dev_handle,
+ 		(uintptr_t) &bl33_uuid_spec,
+-- 
+2.32.0
+
