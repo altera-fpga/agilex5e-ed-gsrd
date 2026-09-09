@@ -14,15 +14,16 @@
 #   - Create SD image (boot FAT + rootfs ext3) and install OP-TEE userspace
 #
 # Usage examples:
-#   export PATH_TO_CROSS_COMPILER=/usr/bin/aarch64-linux-gnu-
-#   ./build_script.sh
+#   ./ryo_optee_sd.sh
+#   GHRD_SOF=/path/to/current.sof GHRD_RBF=/path/to/ghrd.core.rbf ./ryo_optee_sd.sh
 #
 # Optional environment variables:
-#   RELEASE=2026.01
-#   BOARD_DIR=agilex5_dk_a5e013bm16aea_gsrd
 #   SKIP_JIC=1                 # skip quartus_pfg JIC generation
 #   SKIP_SD_IMAGE=1            # skip sdcard image creation
 #   JOBS=32                    # override parallelism
+#   GHRD_SOF=/path/to.sof      # SOF from current Quartus design (required unless present locally)
+#   GHRD_RBF=/path/to.core.rbf # optional; otherwise generated from SOF via quartus_pfg
+#   *_REPO / *_REF             # override pinned git URLs and tags/commits (see below)
 #
 set -euo pipefail
 
@@ -31,9 +32,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Set default environment variables (can be overridden by the user)
-#RELEASE="${RELEASE:-2026.01}"
-#BOARD_DIR="${BOARD_DIR:-agilex5_dk_a5e013bm16aea_gsrd}"
+# Rootfs only (not SOF/RBF). SOF/RBF must come from the current design / Quartus build.
 BASE_URL="https://releases.rocketboards.org/2026.01/gsrd/agilex5_dk_a5e013bm16aea_gsrd/"
 
 JOBS="${JOBS:-$(nproc)}"
@@ -41,6 +40,32 @@ SKIP_DEPS="${SKIP_DEPS:-0}"
 SKIP_JIC="${SKIP_JIC:-0}"
 SKIP_SD_IMAGE="${SKIP_SD_IMAGE:-0}"
 
+# ------------------- Pinned source revisions (reproducible builds) ------------
+# Prefer tags. Until altera-fpga OP-TEE mirrors publish tags, REF may be a commit SHA.
+# ATF / U-Boot / Linux pins match dk-a5e013bm16aea/baseline-a55/software/yocto_linux/kas/bsp.yml
+# for QPDS26.1.1_REL_GSRD_PR.
+OPTEE_OS_REPO="${OPTEE_OS_REPO:-https://github.com/altera-fpga/optee_os.git}"
+OPTEE_OS_REF="${OPTEE_OS_REF:-socfpga_v26.1.1_optee}"
+OPTEE_CLIENT_REPO="${OPTEE_CLIENT_REPO:-https://github.com/OP-TEE/optee_client.git}"
+OPTEE_CLIENT_REF="${OPTEE_CLIENT_REF:-4.5.0}"
+OPTEE_EXAMPLES_REPO="${OPTEE_EXAMPLES_REPO:-https://github.com/altera-fpga/optee_examples.git}"
+OPTEE_EXAMPLES_REF="${OPTEE_EXAMPLES_REF:-socfpga_v26.1.1_optee}"
+ATF_REPO="${ATF_REPO:-https://github.com/altera-fpga/arm-trusted-firmware.git}"
+ATF_REF="${ATF_REF:-2ea5afda7f34774ddcc677fb3a728fa57f780a1e}"   # socfpga_v2.14.1 tip used by GSRD
+UBOOT_REPO="${UBOOT_REPO:-https://github.com/altera-fpga/u-boot-socfpga.git}"
+UBOOT_REF="${UBOOT_REF:-e09d6fcc95f33b8a60377103f6e37e635660a3ee}" # socfpga_v2026.04 tip used by GSRD
+LINUX_REPO="${LINUX_REPO:-https://github.com/altera-fpga/linux-socfpga.git}"
+LINUX_REF="${LINUX_REF:-d8e46bd82a1e1dbbc641db7f0f57d7ddeb2621b1}" # socfpga-6.18.20-lts tip used by GSRD
+
+# Local FPGA artifacts (preferred over any remote download)
+GHRD_SOF_NAME="${GHRD_SOF_NAME:-ghrd_a5ed013bm16ae4scs.sof}"
+GHRD_RBF_NAME="${GHRD_RBF_NAME:-ghrd.core.rbf}"
+# Default SOF search path: Quartus output next to this software/ tree in the GSRD package
+GHRD_SOF_DEFAULT_CANDIDATES=(
+  "$SCRIPT_DIR/$GHRD_SOF_NAME"
+  "$SCRIPT_DIR/../../output_files/$GHRD_SOF_NAME"
+  "$SCRIPT_DIR/../../$GHRD_SOF_NAME"
+)
 
 # Configuration
 GENIMAGE_VERSION="${GENIMAGE_VERSION:-19}"
@@ -62,16 +87,14 @@ Options:
   -h, --help               Show this help
   --skip-jic               Skip JIC generation (also: SKIP_JIC=1)
   --skip-sd-image          Skip SD image generation (also: SKIP_SD_IMAGE=1)
-  --release=YYYY.MM        Release folder (default: 2026.01)
-  --board=<board_dir>      Board folder under <release>/gsrd/ (default: agilex5_dk_a5e013bm16aea_gsrd)
   --jobs=N                 Parallelism (default: nproc)
 
-Required env var (if you don't have the distro toolchain installed):
-  PATH_TO_CROSS_COMPILER   Cross compiler prefix ending with '-'. Example:
-                           export PATH_TO_CROSS_COMPILER=/opt/gcc-linaro/bin/aarch64-linux-gnu-
+FPGA artifacts (do not download old rocketboards SOF/RBF):
+  GHRD_SOF=/path/to.sof    SOF built with the current design + Quartus
+  GHRD_RBF=/path/to.rbf    Optional core.rbf; else generated from SOF
 
 Typical run:
-  ./ryo_optee_sd.sh
+  GHRD_SOF=/path/to/ghrd_a5ed013bm16ae4scs.sof ./ryo_optee_sd.sh
 USAGE
 }
 
@@ -87,12 +110,6 @@ for arg in "$@"; do
       ;;
     --skip-sd-image)
       SKIP_SD_IMAGE=1
-      ;;
-    --release=*)
-      RELEASE="${arg#*=}"
-      ;;
-    --board=*)
-      BOARD_DIR="${arg#*=}"
       ;;
     --jobs=*)
       JOBS="${arg#*=}"
@@ -113,6 +130,30 @@ die() { echo -e "[X] $*" >&2; exit 1; }
 # Check if a command exists in $PATH.
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || return 1
+}
+
+# Clone a git repo and check out an exact tag or commit (never leave on floating default branch).
+clone_pinned() {
+  local dest="$1"
+  local url="$2"
+  local ref="$3"
+
+  if [[ -d "$dest/.git" ]]; then
+    log "Using existing $dest (expected ref: $ref)"
+    (
+      cd "$dest"
+      git fetch --tags --force origin 2>/dev/null || true
+      git checkout --force "$ref"
+    )
+    return 0
+  fi
+
+  log "Cloning $url @ $ref -> $dest"
+  git clone "$url" "$dest"
+  (
+    cd "$dest"
+    git checkout --force "$ref"
+  )
 }
 
 download_and_extract_targz() {
@@ -396,11 +437,7 @@ log "Using CROSS_COMPILE prefix: ${CROSS_COMPILE}"
 # Clone, patch, and build OP-TEE OS, Client, and Hello World example.
 build_optee() {
   log "Step 1: Build OP-TEE OS"
-  # Clone OP-TEE OS if not present
-  if [[ ! -d optee_os ]]; then
-    git clone https://github.com/BenjaminLimJL/optee_os.git
-    (cd optee_os && git checkout socfpga_agilex5_optee)
-  fi
+  clone_pinned optee_os "$OPTEE_OS_REPO" "$OPTEE_OS_REF"
   # Build OP-TEE OS for Agilex5
   (cd optee_os && \
     make PLATFORM=altera \
@@ -421,15 +458,12 @@ build_optee() {
   [[ -f optee_os/out/agilex5/core/tee-pager_v2.bin ]] || die "OP-TEE OS build failed: tee-pager_v2.bin not found"
   log "OP-TEE OS OK: optee_os/out/agilex5/core/tee-pager_v2.bin"
   log "Step 2: Build OP-TEE Client"
-  # Clone and build OP-TEE client
-  if [[ ! -d optee_client ]]; then
-    git clone https://github.com/OP-TEE/optee_client.git
-    (cd optee_client && git checkout -b 4.5.0_br 4.5.0)
-  fi
+  clone_pinned optee_client "$OPTEE_CLIENT_REPO" "$OPTEE_CLIENT_REF"
   rm -rf optee_client/build
   mkdir -p optee_client/build
   (cd optee_client/build && \
-    cmake -DCMAKE_C_COMPILER="${CROSS_COMPILE}gcc" \
+    cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+      -DCMAKE_C_COMPILER="${CROSS_COMPILE}gcc" \
       -DCMAKE_INSTALL_LIBDIR=lib64 \
       -DCMAKE_INSTALL_PREFIX=../install \
       -DCMAKE_BUILD_TYPE=Release \
@@ -439,11 +473,7 @@ build_optee() {
   [[ -f optee_client/install/lib64/libteec.a ]] || die "OP-TEE client build failed: libteec.a missing"
   [[ -f optee_client/install/sbin/tee-supplicant ]] || die "OP-TEE client build failed: tee-supplicant missing"
   log "Step 3: Build OP-TEE hello_world example"
-  # Clone and build the hello_world example
-  if [[ ! -d optee_examples ]]; then
-    git clone https://github.com/BenjaminLimJL/optee_examples.git
-    (cd optee_examples && git checkout -b master_br master)
-  fi
+  clone_pinned optee_examples "$OPTEE_EXAMPLES_REPO" "$OPTEE_EXAMPLES_REF"
   # Symlink to match expected lib path
   ln -sf lib64 optee_client/install/lib 2>/dev/null || true
   # Build host application
@@ -462,19 +492,26 @@ build_optee() {
 
 # ------------------- Step 6: ATF (BL31) Build Step ---------------------------
 # Download and build Arm Trusted Firmware with OPTEE dispatcher.
+# Agilex5 OP-TEE platform enablement is NOT in altera-fpga ATF yet (checked
+# socfpga_v2.14.x and latest socfpga_v2.15.0). Keep applying the local patch
+# until that commit is merged; then drop the patch and this git am.
 build_atf_bl31() {
   log "Step 4: Build Arm Trusted Firmware (BL31) with OPTEED"
-  cd $SCRIPT_DIR
-  log "Step 4: Build Arm Trusted Firmware (BL31) with OPTEED"
-  if [[ ! -d arm-trusted-firmware ]]; then
-    git clone https://github.com/altera-fpga/arm-trusted-firmware
-    cd arm-trusted-firmware
-    # git am $SCRIPT_DIR/patches/0001-feat-intel-initial-optee-enablement_atf.patch
-    cd $SCRIPT_DIR
+  cd "$SCRIPT_DIR"
+  local atf_patch="$SCRIPT_DIR/patches/0001-feat-intel-initial-optee-enablement_atf.patch"
+  [[ -f "$atf_patch" ]] || die "Missing ATF OP-TEE patch: $atf_patch"
+
+  if [[ ! -d arm-trusted-firmware/.git ]]; then
+    clone_pinned arm-trusted-firmware "$ATF_REPO" "$ATF_REF"
+    (
+      cd arm-trusted-firmware
+      git am "$atf_patch"
+    )
+  else
+    log "Using existing arm-trusted-firmware (OP-TEE patch assumed already applied)"
   fi
 
-
-  (cd $SCRIPT_DIR/arm-trusted-firmware && make -j"${JOBS}" PLAT=agilex5 SPD=opteed bl2 bl31)
+  (cd "$SCRIPT_DIR/arm-trusted-firmware" && make -j"${JOBS}" PLAT=agilex5 SPD=opteed bl2 bl31)
 
   local bl31="arm-trusted-firmware/build/agilex5/release/bl31.bin"
   [[ -f "$bl31" ]] || die "BL31 not found at $bl31"
@@ -489,16 +526,19 @@ build_atf_bl31() {
 # ------------------- Step 7: U-Boot Build Step -------------------------------
 # Download, patch, and build U-Boot with OP-TEE support for Agilex5.
 build_uboot() {
-  cd $SCRIPT_DIR
+  cd "$SCRIPT_DIR"
   log "Step 5: Build U-Boot (OP-TEE enabled)"
   [[ -f $SCRIPT_DIR/arm-trusted-firmware/build/agilex5/release/bl31.bin ]] || die "Missing BL31. Run ATF step first."
   [[ -f $SCRIPT_DIR/optee_os/out/agilex5/core/tee-pager_v2.bin ]] || die "Missing OP-TEE tee-pager_v2.bin. Run OP-TEE step first."
-  if [[ ! -d u-boot-socfpga ]]; then
-    git clone https://github.com/altera-fpga/u-boot-socfpga.git
-    cd u-boot-socfpga
-    git am $SCRIPT_DIR/patches/0001-arm-socfpga-Add-OP-TEE-memory-to-SDRAM-firewall_uboot.patch
-    git am $SCRIPT_DIR/patches/0002-arm-socfpga-Add-OP-TEE-OS-as-a-loadable-firmware-in-_uboot.patch
-    cd $SCRIPT_DIR
+  if [[ ! -d u-boot-socfpga/.git ]]; then
+    clone_pinned u-boot-socfpga "$UBOOT_REPO" "$UBOOT_REF"
+    (
+      cd u-boot-socfpga
+      git am "$SCRIPT_DIR/patches/0001-arm-socfpga-Add-OP-TEE-memory-to-SDRAM-firewall_uboot.patch"
+      git am "$SCRIPT_DIR/patches/0002-arm-socfpga-Add-OP-TEE-OS-as-a-loadable-firmware-in-_uboot.patch"
+    )
+  else
+    log "Using existing u-boot-socfpga (patches assumed already applied)"
   fi
   cp arm-trusted-firmware/build/agilex5/release/bl31.bin u-boot-socfpga/
   cp optee_os/out/agilex5/core/tee-pager_v2.bin u-boot-socfpga/
@@ -557,27 +597,31 @@ CFGEOF
 # ------------------- Step 8: Linux Kernel Build Step -------------------------
 # Download, patch, and build the Linux kernel, DTB, and modules for Agilex5.
 build_linux_kernel() {
-  cd $SCRIPT_DIR
+  cd "$SCRIPT_DIR"
   log "Step 6: Build Linux kernel + DTB + modules (OP-TEE enabled)"
-  if [[ ! -d linux-socfpga ]]; then
-    mkdir -p /netbatch/$USER/git_tmp
-    export TMPDIR=/netbatch/$USER/git_tmp
-    export GIT_TMPDIR=/netbatch/$USER/git_tmp
+  if [[ ! -d linux-socfpga/.git ]]; then
+    mkdir -p "/tmp/${USER:-user}/git_tmp"
+    export TMPDIR="/tmp/${USER:-user}/git_tmp"
+    export GIT_TMPDIR="/tmp/${USER:-user}/git_tmp"
 
-    git -c pack.threads=1 clone --depth 1 --single-branch https://github.com/altera-fpga/linux-socfpga.git linux-socfpga
-    cd linux-socfpga
-    git am --reject $SCRIPT_DIR/patches/0001-arm64-agilex5-enable-optee-support-for-agilex5_linux.patch
-    git am --reject $SCRIPT_DIR/patches/0002-arm64-agilex5-enable-optee-support-for-agilex5_013b-_linux.patch
+    clone_pinned linux-socfpga "$LINUX_REPO" "$LINUX_REF"
+    (
+      cd linux-socfpga
+      git am --reject "$SCRIPT_DIR/patches/0001-arm64-agilex5-enable-optee-support-for-agilex5_linux.patch"
+      git am --reject "$SCRIPT_DIR/patches/0002-arm64-agilex5-enable-optee-support-for-agilex5_013b-_linux.patch"
+    )
+  else
+    log "Using existing linux-socfpga (patches assumed already applied)"
   fi
 
   # Minimal OP-TEE config fragment
-  cat > $SCRIPT_DIR/linux-socfpga/config-fragment-agilex5 <<'KCFGEOF'
+  cat > "$SCRIPT_DIR/linux-socfpga/config-fragment-agilex5" <<'KCFGEOF'
 CONFIG_MARVELL_PHY=y
 CONFIG_TEE=y
 CONFIG_OPTEE=y
 KCFGEOF
 
-  (cd $SCRIPT_DIR/linux-socfpga && \
+  (cd "$SCRIPT_DIR/linux-socfpga" && \
     make defconfig && \
     ./scripts/kconfig/merge_config.sh -O ./ ./.config ./config-fragment-agilex5 && \
     make -j"${JOBS}" Image && \
@@ -592,29 +636,99 @@ KCFGEOF
   [[ -f "$SCRIPT_DIR/linux-socfpga/arch/arm64/boot/Image" ]] || die "Kernel Image missing"
   [[ -f "$SCRIPT_DIR/linux-socfpga/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b.dtb" ]] || die "DTB missing"
   log "Linux OK: Image + DTB + modules_install"
-  cd $SCRIPT_DIR
+  cd "$SCRIPT_DIR"
 }
 
-# ------------------- Step 9: Fetch FPGA (GHRD) Artifacts ---------------------
-# Download required FPGA files (SOF and core.rbf).
+# ------------------- Step 9: Resolve FPGA (GHRD) Artifacts --------------------
+# Use SOF/RBF from the current design + current Quartus. Do NOT download old
+# rocketboards 25.3.1 / 2026.01 prebuilt SOF or core.rbf.
+resolve_ghrd_sof() {
+  local cand
+  if [[ -n "${GHRD_SOF:-}" ]]; then
+    [[ -f "$GHRD_SOF" ]] || die "GHRD_SOF not found: $GHRD_SOF"
+    echo "$GHRD_SOF"
+    return 0
+  fi
+  for cand in "${GHRD_SOF_DEFAULT_CANDIDATES[@]}"; do
+    if [[ -f "$cand" ]]; then
+      echo "$cand"
+      return 0
+    fi
+  done
+  return 1
+}
+
+generate_core_rbf_from_sof() {
+  local sof="$1"
+  local rbf_out="$2"
+
+  need_cmd quartus_pfg || die "quartus_pfg required to generate $rbf_out from SOF (or set GHRD_RBF)"
+
+  log "Generating core.rbf from SOF via quartus_pfg: $sof"
+  # HPS designs: -o hps=1 emits a *.core.rbf used by U-Boot fpga load
+  local tmp_base="$SCRIPT_DIR/ghrd_from_sof"
+  rm -f "${tmp_base}".* "${tmp_base}"*.rbf 2>/dev/null || true
+  quartus_pfg -c "$sof" "${tmp_base}.rbf" -o hps=1
+
+  local generated=""
+  if [[ -f "${tmp_base}.core.rbf" ]]; then
+    generated="${tmp_base}.core.rbf"
+  elif [[ -f "${tmp_base}.rbf" ]]; then
+    generated="${tmp_base}.rbf"
+  else
+    generated="$(ls -1 "$SCRIPT_DIR"/*.core.rbf 2>/dev/null | head -n1 || true)"
+  fi
+  [[ -n "$generated" && -f "$generated" ]] || die "quartus_pfg did not produce a core.rbf from $sof"
+  cp -f "$generated" "$rbf_out"
+  log "Wrote $rbf_out (from $generated)"
+}
+
 fetch_ghrd_artifacts() {
-  log "Step 7: Fetch GHRD artifacts (SOF + core.rbf)"
+  log "Step 7: Resolve GHRD artifacts (current SOF + core.rbf)"
 
-  local sof="ghrd_a5ed013bm16ae4scs.sof"
-  local rbf="ghrd.core.rbf"
+  local sof_src rbf_src
+  local sof_dst="$SCRIPT_DIR/$GHRD_SOF_NAME"
+  local rbf_dst="$SCRIPT_DIR/$GHRD_RBF_NAME"
 
-  if [[ ! -f "$sof" ]]; then
-    wget -O "$sof" "${BASE_URL}/${sof}" --no-check-certificate
+  sof_src="$(resolve_ghrd_sof)" || die \
+    "Current-design SOF not found. Build the Quartus GHRD with the matching Quartus version, then either:
+  - copy ${GHRD_SOF_NAME} into $SCRIPT_DIR, or
+  - set GHRD_SOF=/path/to/${GHRD_SOF_NAME}
+Do not use the older rocketboards prebuilt SOF."
+
+  if [[ "$(readlink -f "$sof_src")" != "$(readlink -f "$sof_dst")" ]]; then
+    log "Using SOF: $sof_src"
+    cp -f "$sof_src" "$sof_dst"
+  else
+    log "Using local SOF: $sof_dst"
   fi
 
-  if [[ ! -f "$rbf" ]]; then
-    wget -O "$rbf" "${BASE_URL}/${rbf}" --no-check-certificate
+  if [[ -n "${GHRD_RBF:-}" ]]; then
+    [[ -f "$GHRD_RBF" ]] || die "GHRD_RBF not found: $GHRD_RBF"
+    rbf_src="$GHRD_RBF"
+    if [[ "$(readlink -f "$rbf_src")" != "$(readlink -f "$rbf_dst")" ]]; then
+      log "Using RBF: $rbf_src"
+      cp -f "$rbf_src" "$rbf_dst"
+    fi
+  elif [[ -f "$rbf_dst" ]]; then
+    log "Using local RBF: $rbf_dst"
+  else
+    # Also accept RBF sitting next to the SOF in Quartus output_files/
+    local sibling
+    sibling="$(dirname "$sof_src")/$GHRD_RBF_NAME"
+    if [[ -f "$sibling" ]]; then
+      log "Using RBF next to SOF: $sibling"
+      cp -f "$sibling" "$rbf_dst"
+    else
+      generate_core_rbf_from_sof "$sof_dst" "$rbf_dst"
+    fi
   fi
 
-  # Backward-compat name expected by older scripts
-  if [[ ! -f ghrd_sd.core.rbf ]]; then
-    ln -sf "$rbf" ghrd_sd.core.rbf
-  fi
+  [[ -f "$sof_dst" ]] || die "Missing $sof_dst"
+  [[ -f "$rbf_dst" ]] || die "Missing $rbf_dst"
+
+  # Backward-compat name expected by later steps
+  ln -sfn "$GHRD_RBF_NAME" "$SCRIPT_DIR/ghrd_sd.core.rbf"
 }
 
 # ------------------- Step 10: JIC Generation (Optional) ----------------------
@@ -855,24 +969,22 @@ main() {
   echo "========================================"
   echo "Agilex 5 OP-TEE Full Build (one script)"
   echo "========================================"
-  echo "Board:    SM43"
-  echo "Base URL: ${BASE_URL}"
-  echo "JOBS:     ${JOBS}"
+  echo "Board:           DK-A5E013BM16AEA"
+  echo "Rootfs base URL: ${BASE_URL}"
+  echo "JOBS:            ${JOBS}"
+  echo "OP-TEE OS:       ${OPTEE_OS_REPO} @ ${OPTEE_OS_REF}"
+  echo "OP-TEE client:   ${OPTEE_CLIENT_REPO} @ ${OPTEE_CLIENT_REF}"
+  echo "OP-TEE examples: ${OPTEE_EXAMPLES_REPO} @ ${OPTEE_EXAMPLES_REF}"
+  echo "ATF:             ${ATF_REPO} @ ${ATF_REF}"
+  echo "U-Boot:          ${UBOOT_REPO} @ ${UBOOT_REF}"
+  echo "Linux:           ${LINUX_REPO} @ ${LINUX_REF}"
   echo ""
 
-  # 1. Check and install dependencies
-  # 2. Set up cross-compiler environment
-  # 3. Build OP-TEE (OS, Client, Examples)
   build_optee
-  # 4. Build Arm Trusted Firmware (BL31)
   build_atf_bl31
-  # 5. Build U-Boot (with OP-TEE support)
   build_uboot
-  # 6. Build Linux Kernel (with OP-TEE support)
   build_linux_kernel
-  # 7. (Optional) Build JIC file
   build_jic_optional
-  # 8. (Optional) Build SD card image
   build_sd_image
 
   echo ""
@@ -882,9 +994,11 @@ main() {
   echo "Key outputs:"
   echo "  OP-TEE OS : optee_os/out/agilex5/core/tee-pager_v2.bin"
   echo "  BL31      : arm-trusted-firmware/build/agilex5/release/bl31.bin"
-  echo "  U-Boot ITB : uboot-socfpga/u-boot.itb"
+  echo "  U-Boot ITB: u-boot-socfpga/u-boot.itb"
   echo "  Kernel    : linux-socfpga/arch/arm64/boot/Image"
   echo "  DTB       : linux-socfpga/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_013b.dtb"
+  echo "  SOF       : ${GHRD_SOF_NAME}"
+  echo "  core.rbf  : ${GHRD_RBF_NAME}"
   echo "  SD image  : sd_image/sdcard.img"
   if [[ -f ghrd_sd.hps.jic ]]; then
     echo "  JIC       : ghrd_sd.hps.jic"
