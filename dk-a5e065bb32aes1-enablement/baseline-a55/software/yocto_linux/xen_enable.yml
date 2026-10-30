@@ -5,7 +5,7 @@ repos:
   meta-virtualization:
     url: https://git.yoctoproject.org/meta-virtualization
     branch: wrynose
-    commit: 8299290e88b4a77c7f5c2cc6f9a6031055d48791
+    commit: 70a5d5a65d7237cfe978961fa4d8765c895cddc8
 
   meta-openembedded:
     layers:

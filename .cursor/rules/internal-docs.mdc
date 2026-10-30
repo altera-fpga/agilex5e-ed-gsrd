@@ -1,0 +1,40 @@
+---
+description: Internal doc hub and ARC toolchain for full repo checkouts
+alwaysApply: true
+---
+
+# Internal checkout (Cursor agents)
+
+External releases strip `.github/` and `not_shipped/`. If those paths are missing, follow root
+[AGENTS.md](AGENTS.md) only — do not error on missing internal paths.
+
+When `not_shipped/docs/` exists (normal internal clone):
+
+1. Read [AGENTS.md](AGENTS.md) first (shipped tree: designs, builds, safe edits).
+2. Read [not_shipped/docs/GETTING_STARTED.md](not_shipped/docs/GETTING_STARTED.md) — pick the active
+   project under `not_shipped/docs/projects/<slug>/`.
+3. Read that project's `AGENTS.md` (rules) and `TODO.md` (living plan) before editing.
+
+Horizontal reference: [not_shipped/docs/DEVELOPMENT.md](not_shipped/docs/DEVELOPMENT.md) (Makefile,
+regtest, formatting). Customer README policy:
+[not_shipped/docs/guides/USER_FACING_README.md](not_shipped/docs/guides/USER_FACING_README.md).
+
+## Quartus / ARC (Intel dev hosts)
+
+Quartus is not on `PATH` until ARC loads tools. Wrap Quartus-dependent commands:
+
+```bash
+arc shell --no-inherit $(cat .github/arc_resource.txt) -- $COMMAND
+```
+
+Use for `quartus_sh`, hardware `make` targets, `make -j style-check-readme-metadata`, and similar.
+After any shipped README edit, verify with
+`arc shell --no-inherit $(cat .github/arc_resource.txt) -- make -j style-check-readme-metadata`.
+Details: [not_shipped/docs/AGENTS.md](not_shipped/docs/AGENTS.md).
+
+## CI / workflow work only
+
+Workflow YAML and migration plan stay beside workflows — start at
+[.github/workflows/README.md](.github/workflows/README.md) and
+[.github/workflows/WORKFLOW_DEVELOPMENT.md](.github/workflows/WORKFLOW_DEVELOPMENT.md).
+Project rules: [not_shipped/docs/projects/artifact-migration/AGENTS.md](not_shipped/docs/projects/artifact-migration/AGENTS.md).

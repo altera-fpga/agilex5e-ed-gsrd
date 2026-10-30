@@ -42,15 +42,15 @@ TOOLCHAIN_URL="https://github.com/cross-tools/musl-cross/releases/download/20250
 TOOLCHAIN_DIR="aarch64-unknown-linux-musl"
 
 ATF_REPO="https://github.com/altera-fpga/arm-trusted-firmware"
-ATF_BRANCH="QPDS26.1.1_REL_GSRD_PR"
+ATF_BRANCH="QPDS26.3_REL_BASELINE_PR"
 ATF_DIR="arm-trusted-firmware"
 
 UBOOT_REPO="https://github.com/altera-fpga/u-boot-socfpga"
-UBOOT_BRANCH="QPDS26.1.1_REL_GSRD_PR"
+UBOOT_BRANCH="QPDS26.3_REL_BASELINE_PR"
 UBOOT_DIR="u-boot-socfpga"
 
 LINUX_REPO="https://github.com/altera-fpga/linux-socfpga"
-LINUX_BRANCH="QPDS26.1.1_REL_GSRD_PR"
+LINUX_BRANCH="QPDS26.3_REL_BASELINE_PR"
 LINUX_DIR="linux-socfpga"
 
 TOYBOX_REPO="https://github.com/landley/toybox.git"
@@ -181,7 +181,7 @@ CONFIG_DISTRO_DEFAULTS=n
 CONFIG_HUSH_PARSER=y
 CONFIG_SYS_PROMPT_HUSH_PS2="> "
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="printenv bootcmd; fatls mmc 0:1; setenv bootargs console=ttyS0,115200 initrd=0x90000000 root=/dev/ram0 rw init=init ramdisk_size=10000000 earlycon panic=-1 loglevel=8; mmc info; fatload mmc 0:1 0x86000000 Image; fatload mmc 0:1 0x8c000000 socfpga_agilex5_socdk.dtb; fatload mmc 0:1 0x90000000 initramfs.cpio; booti 0x86000000 0x90000000:\${filesize} 0x8c000000"
+CONFIG_BOOTCOMMAND="printenv bootcmd; fatls mmc 0:1; setenv bootargs console=ttyS0,115200 initrd=0x90000000 root=/dev/ram0 rw init=init ramdisk_size=10000000 earlycon panic=-1 loglevel=8; mmc info; fatload mmc 0:1 0x86000000 Image; fatload mmc 0:1 0x8c000000 socfpga_agilex5_socdk_a0.dtb; fatload mmc 0:1 0x90000000 initramfs.cpio; booti 0x86000000 0x90000000:\${filesize} 0x8c000000"
 CONFIG_CMD_FAT=y
 CONFIG_CMD_FS_GENERIC=y
 CONFIG_DOS_PARTITION=y
@@ -229,7 +229,7 @@ EOF
 make defconfig
 ./scripts/kconfig/merge_config.sh -O ./ ./.config ./config-fragment-agilex5
 make oldconfig
-make -j "${JOBS}" Image && make intel/socfpga_agilex5_socdk.dtb
+make -j "${JOBS}" Image && make intel/socfpga_agilex5_socdk_a0.dtb
 
 cd ..
 
@@ -281,7 +281,7 @@ echo "[STEP] Creating SD card image..."
 # Write an empty SD card image
 dd if=/dev/zero of=sdcard.img bs=1M count=64
 
-echo "Creating SD card image with files: u-boot.itb, Image, socfpga_agilex5_socdk.dtb, initramfs.cpio"
+echo "Creating SD card image with files: u-boot.itb, Image, socfpga_agilex5_socdk_a0.dtb, initramfs.cpio"
 
 # Format the SD card image with FAT32 partition
 mformat -i sdcard.img :: -F
@@ -289,7 +289,7 @@ mformat -i sdcard.img :: -F
 # Copy U-Boot, Kernel Image, DTB and Toybox Root CPIO to the SD card image
 mcopy -i sdcard.img ${UBOOT_DIR}/u-boot.itb ::
 mcopy -i sdcard.img ${LINUX_DIR}/arch/arm64/boot/Image ::
-mcopy -i sdcard.img ${LINUX_DIR}/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk.dtb ::
+mcopy -i sdcard.img ${LINUX_DIR}/arch/arm64/boot/dts/intel/socfpga_agilex5_socdk_a0.dtb ::
 mcopy -i sdcard.img initramfs.cpio ::
 
 if [[ $? -eq 0 ]]; then
@@ -305,7 +305,7 @@ if [[ $? -eq 0 ]]; then
     echo "  sdcard.img                   - SD card image (write to SD card)"
     echo "  u-boot.itb                   - U-Boot bootloader"
     echo "  Image                        - Linux kernel"
-    echo "  socfpga_agilex5_socdk.dtb    - Device tree"
+    echo "  socfpga_agilex5_socdk_a0.dtb    - Device tree"
     echo "  initramfs.cpio               - Root filesystem (initramfs)"
     echo ""
     echo "To write SD card image:"

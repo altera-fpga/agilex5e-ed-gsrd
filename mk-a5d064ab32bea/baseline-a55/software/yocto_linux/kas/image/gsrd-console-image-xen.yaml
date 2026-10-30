@@ -1,0 +1,6 @@
+header:
+  version: 17
+
+target:
+  - gsrd-console-image
+  - xen-image-minimal

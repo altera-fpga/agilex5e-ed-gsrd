@@ -52,7 +52,7 @@ config CORE_IMAGE_EXTRA_INSTALL
 
 config FPGA_RBF_FILE
     string "Core RBF configuration bitstream filename"
-    default "baseline_a55_hps_debug.core.rbf"
+    default "baseline_a55.core.rbf"
     depends on FPGA_ENABLE_CORE_PGM_CONFIG
     help
       Specify the .rbf file for FPGA programming. It's expected that the RBF file is located under meta-custom/recipes-fpga/fpga-bitstream/files/.

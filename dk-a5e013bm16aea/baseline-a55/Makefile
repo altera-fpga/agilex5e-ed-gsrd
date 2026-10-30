@@ -3,7 +3,8 @@ THIS_MK_ABSPATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 THIS_MK_DIR := $(dir $(THIS_MK_ABSPATH))
 
 # Enable pipefail for all commands
-SHELL=/bin/bash -o pipefail
+SHELL := /bin/bash
+.SHELLFLAGS := -o pipefail -c
 
 # Enable second expansion
 .SECONDEXPANSION:
@@ -39,6 +40,9 @@ $(error PROJECT_NAME is not defined in project_config.mk)
 endif
 ifeq ($(REVISION_NAMES),)
 $(error REVISION_NAMES is not defined in project_config.mk)
+endif
+ifeq ($(BASE_REVISION),)
+$(error BASE_REVISION is not defined in project_config.mk)
 endif
 
 # Set defaults
@@ -110,7 +114,7 @@ $(strip $(1))-generate-design :
 
 $(strip $(1))-package-design : $(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip
 
-$(strip $(1))-build : output_files/$(strip $(1)).sof
+$(strip $(1))-build : output_files/$(strip $(1)).sof output_files/$(strip $(1)).core.rbf
 
 $(strip $(1))-build-sw :
 
@@ -120,8 +124,9 @@ $(strip $(1))-install-sw: | $(INSTALL_ROOT_BINARIES)
 
 $(strip $(1))-install: $(strip $(1))-install-sof $(strip $(1))-install-rpt $(strip $(1))-install-sw
 
-$(strip $(1))-install-sof : output_files/$(strip $(1)).sof | $(INSTALL_ROOT_BINARIES)
+$(strip $(1))-install-sof : output_files/$(strip $(1)).sof output_files/$(strip $(1)).core.rbf | $(INSTALL_ROOT_BINARIES)
 	cp output_files/$(strip $(1)).sof $(INSTALL_ROOT_BINARIES)/$(strip $(1)).sof
+	cp output_files/$(strip $(1)).core.rbf $(INSTALL_ROOT_BINARIES)/$(strip $(1)).core.rbf
 
 $(strip $(1))-install-rpt: output_files/$(strip $(1))-install-rpt.done
 
@@ -134,6 +139,45 @@ endef
 
 # Create all targets
 $(foreach revision,$(REVISION_NAMES),$(eval $(call create_targets_on_revisions,$(revision))))
+
+-include $(THIS_MK_DIR)/swbuild_config.mk
+
+# SW targets:
+define create_sw_targets_on_projects
+ALL_SW_TARGET_STEM_NAMES += software-$(strip $(1))
+
+.PHONY: software-$(1)-clean-sw
+software-$(1)-clean-sw:
+	$$(MAKE) --no-print-directory -f software/$(1).mk \
+		REVISION=$(strip $(2)) \
+		INSTALL_ROOT_BINARIES=$$(INSTALL_ROOT_BINARIES) \
+		INSTALL_ROOT_ARTIFACTS=$$(INSTALL_ROOT_ARTIFACTS) \
+		RESTORE_INSTALL=$$(RESTORE_INSTALL) \
+		clean-sw
+
+clean-sw: software-$(1)-clean-sw
+
+.PHONY: software-$(1)-build-sw
+software-$(1)-build-sw: $(if $(filter $(1),ryo_linux_sd baremetal_qspi ryo_optee_sd),,output_files/$(strip $(2)).sof output_files/$(strip $(2)).core.rbf)
+	$$(MAKE) --no-print-directory -f software/$(1).mk \
+		REVISION=$(strip $(2)) \
+		INSTALL_ROOT_BINARIES=$$(INSTALL_ROOT_BINARIES) \
+		INSTALL_ROOT_ARTIFACTS=$$(INSTALL_ROOT_ARTIFACTS) \
+		RESTORE_INSTALL=$$(RESTORE_INSTALL) \
+		build-sw
+
+.PHONY: software-$(1)-install-sw
+software-$(1)-install-sw: $(if $(filter $(1),ryo_linux_sd baremetal_qspi ryo_optee_sd),,output_files/$(strip $(2)).sof output_files/$(strip $(2)).core.rbf) | $$(INSTALL_ROOT_BINARIES) $$(INSTALL_ROOT_ARTIFACTS)
+	$$(MAKE) --no-print-directory -f software/$(1).mk \
+		REVISION=$(strip $(2)) \
+		INSTALL_ROOT_BINARIES=$$(INSTALL_ROOT_BINARIES) \
+		INSTALL_ROOT_ARTIFACTS=$$(INSTALL_ROOT_ARTIFACTS) \
+		RESTORE_INSTALL=$$(RESTORE_INSTALL) \
+		install-sw
+endef
+
+# Create on all SW project
+$(foreach SW_PRJ,$(SW_PROJECT_LIST),$(eval $(call create_sw_targets_on_projects,$(SW_PRJ), $(BASE_REVISION))))
 
 ###############################################################################
 #                          UTILITY TARGETS
@@ -156,15 +200,18 @@ output_files/prep-%.done: output_files/pre-prep.done | output_files
 .PHONY: pre-prep
 pre-prep: output_files/pre-prep.done
 
-$(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip: pre-prep | $(INSTALL_ROOT_DESIGNS)
- 	# Validate metadata in the README.md
+.PHONY: validate-readme-metadata
+validate-readme-metadata:
+ 	# Validate QP_INFO metadata in design README.md (run via style-check-readme-metadata in CI)
 ifneq ($(NO_ENFORCE_README_VALIDATION),1)
 	quartus_sh --validate_metadata -file README.md -strict
 else
 	quartus_sh --validate_metadata -file README.md
 endif
-	rm validate_metadata_log.txt
-	# Add root README.md first so quartus_sh create_metadata always picks it up before any nested README.md files.
+	rm -f validate_metadata_log.txt
+
+$(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip: pre-prep | $(INSTALL_ROOT_DESIGNS)
+ 	# Add root README.md first so quartus_sh create_metadata always picks it up before any nested README.md files.
 	zip $@ README.md
 	zip -r -g $@ * -x .gitignore "output_files/*" "qdb/*" "dni/*" "tmp-clearbox/*" "README.md"
 
@@ -189,13 +236,24 @@ ifneq ($(USE_ELAB_ONLY_FLOW),1)
 	quartus_asm $(PROJECT_NAME) -c $*
 	quartus_pow $(PROJECT_NAME) -c $*
 	mv $*.qpta output_files/$*.qpta
-	@test -f $@ && echo "$@ found after eLab flow!" || (echo "Error: $@ not found after eLab flow!" && exit 1)
+	@test -f $@ && echo "$@ found after compile flow!" || (echo "Error: $@ not found after compile flow!" && exit 1)
 else
 	quartus_syn $(PROJECT_NAME) -c $* --quick_elab
 	touch $@
 endif
+output_files/%.core.rbf: output_files/%.sof
+ifneq ($(USE_ELAB_ONLY_FLOW),1)
+	quartus_pfg -c $< $@ -o hps=ON -o hps_core_only=ON
+else
+	touch $@
+endif
 else
 output_files/%.sof: $(INSTALL_ROOT_BINARIES)/%.sof
+	mkdir -p $(dir $@)
+	cp $< $@
+	@test -f $@ && echo "$@ found after restore!" || (echo "Error: $@ not found after restore!" && exit 1)
+
+output_files/%.core.rbf: $(INSTALL_ROOT_BINARIES)/%.core.rbf
 	mkdir -p $(dir $@)
 	cp $< $@
 	@test -f $@ && echo "$@ found after restore!" || (echo "Error: $@ not found after restore!" && exit 1)
@@ -236,14 +294,15 @@ install : $(ALL_INSTALL_TARGETS)
 print-targets:
 	$(info $(ALL_TARGET_STEM_NAMES))
 
-# Run script to upgrade IP and QSYS files
+# Run qsys-script only when a top-level Qsys system exists (VDS-only designs omit *_top.qsys)
 ip-upgrade-helper:
+ifneq ($(wildcard *_top.qsys),)
 	qsys-script --qpf=$(PROJECT_NAME) --script=qsys_update.tcl --system-file=$(wildcard *_top.qsys) --search-path="custom_ip/**/*, $$"
+endif
 
 ###############################################################################
 #                           SW Build Targets
 ###############################################################################
--include $(THIS_MK_DIR)/swbuild_config.mk
 ALL_SW_BUILD_TARGETS += $(addsuffix -build-sw, $(ALL_SW_TARGET_STEM_NAMES))
 ALL_SW_CLEAN_TARGETS += $(addsuffix -clean-sw, $(ALL_SW_TARGET_STEM_NAMES))
 ALL_SW_INSTALL_TARGETS += $(addsuffix -install-sw, $(ALL_SW_TARGET_STEM_NAMES))

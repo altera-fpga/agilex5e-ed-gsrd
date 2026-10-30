@@ -104,7 +104,7 @@ S = "${WORKDIR}/git"
 ```
 inherit module
 
-RPROVIDES:${PN} += "kernel-module-gpio_interrupt"
+RPROVIDES:${PN} += "kernel-module-gpio-interrupt"
 ```
 
 #### Add Makefile for out-of-tree kernel module

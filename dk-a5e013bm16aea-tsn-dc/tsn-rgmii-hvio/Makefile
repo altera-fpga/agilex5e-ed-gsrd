@@ -1,0 +1,336 @@
+
+THIS_MK_ABSPATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+THIS_MK_DIR := $(dir $(THIS_MK_ABSPATH))
+
+# Enable pipefail for all commands
+SHELL := /bin/bash
+.SHELLFLAGS := -o pipefail -c
+
+# Enable second expansion
+.SECONDEXPANSION:
+
+# Clear all built in suffixes
+.SUFFIXES:
+
+NOOP :=
+SPACE := $(NOOP) $(NOOP)
+COMMA := ,
+HOSTNAME := $(shell hostname)
+export PATH := $(PATH):/usr/sbin
+
+##############################################################################
+# Environment check
+##############################################################################
+
+
+##############################################################################
+# Configuration
+##############################################################################
+PROJECT_DIR_ABS := $(abspath $(THIS_MK_DIR))
+
+# Name of all the revisions
+PROJECT_NAME :=
+REVISION_NAMES :=
+
+SIM_ENABLED := 0
+
+include $(THIS_MK_DIR)/project_config.mk
+ifeq ($(PROJECT_NAME),)
+$(error PROJECT_NAME is not defined in project_config.mk)
+endif
+ifeq ($(REVISION_NAMES),)
+$(error REVISION_NAMES is not defined in project_config.mk)
+endif
+ifeq ($(BASE_REVISION),)
+$(error BASE_REVISION is not defined in project_config.mk)
+endif
+
+# Set defaults
+INSTALL_ROOT_BINARIES ?= $(THIS_MK_DIR)/install/binaries
+INSTALL_ROOT_DESIGNS ?= $(THIS_MK_DIR)/install/designs
+INSTALL_ROOT_ARTIFACTS ?= $(THIS_MK_DIR)/install/artifacts
+ARCHIVE_NAME ?= $(PROJECT_NAME)
+
+# Set constants
+INSTALL_RPT_NAMES := ipgen.rpt
+ifneq ($(USE_ELAB_ONLY_FLOW),1)
+INSTALL_RPT_NAMES += \
+	syn.rpt \
+	fit.rpt \
+	sta.rpt \
+	asm.rpt \
+	pow.rpt \
+	flow.rpt \
+	tq.drc.signoff.rpt
+endif
+
+##############################################################################
+# Set default goal before any targets. The default goal here is "test"
+##############################################################################
+DEFAULT_TARGET := test
+
+.DEFAULT_GOAL := default
+.PHONY: default
+default: $(DEFAULT_TARGET)
+
+
+##############################################################################
+# Makefile starts here
+##############################################################################
+
+# Initialize variables
+ALL_TARGET_STEM_NAMES =
+ALL_SW_TARGET_STEM_NAMES =
+ALL_PREP_TARGETS =
+ALL_IP_UPGRADE_TARGETS =
+ALL_BUILD_TARGETS =
+ALL_SW_BUILD_TARGETS =
+ALL_SW_CLEAN_TARGETS =
+ALL_SW_INSTALL_TARGETS =
+ALL_TEST_TARGETS =
+ALL_INSTALL_TARGETS =
+
+# Define function to create targets
+define create_targets_on_revisions
+ALL_TARGET_STEM_NAMES += $(strip $(1))
+ALL_PREP_TARGETS += $(addsuffix -prep,$(strip $(1)))
+ALL_IP_UPGRADE_TARGETS += $(addsuffix -ip-upgrade,$(strip $(1)))
+ALL_BUILD_TARGETS += $(addsuffix -build,$(strip $(1)))
+ALL_TEST_TARGETS += $(addsuffix -test,$(strip $(1)))
+ALL_INSTALL_TARGETS += $(addsuffix -install,$(strip $(1)))
+
+$(strip $(1))-prep : output_files/prep-$(strip $(1)).done
+
+$(strip $(1))-qsys-ip-file-upgrade: pre-prep
+	$(MAKE) --no-print-directory ip-upgrade-helper
+	quartus_sh --ip_upgrade $(PROJECT_NAME) -revision $(strip $(1)) -mode all
+
+$(strip $(1))-ip-upgrade: pre-prep | output_files
+	chmod a-w $(strip $(1)).qsf
+	flock --verbose output_files/ipupgrade.lock $(MAKE) $(strip $(1))-qsys-ip-file-upgrade
+	chmod +w $(strip $(1)).qsf
+
+$(strip $(1))-generate-design :
+
+$(strip $(1))-package-design : $(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip
+
+$(strip $(1))-build : output_files/$(strip $(1)).sof output_files/$(strip $(1)).core.rbf
+
+$(strip $(1))-build-sw :
+
+$(strip $(1))-test : $(strip $(1))-build
+
+$(strip $(1))-install-sw: | $(INSTALL_ROOT_BINARIES)
+
+$(strip $(1))-install: $(strip $(1))-install-sof $(strip $(1))-install-rpt $(strip $(1))-install-sw
+
+$(strip $(1))-install-sof : output_files/$(strip $(1)).sof output_files/$(strip $(1)).core.rbf | $(INSTALL_ROOT_BINARIES)
+	cp output_files/$(strip $(1)).sof $(INSTALL_ROOT_BINARIES)/$(strip $(1)).sof
+	cp output_files/$(strip $(1)).core.rbf $(INSTALL_ROOT_BINARIES)/$(strip $(1)).core.rbf
+
+$(strip $(1))-install-rpt: output_files/$(strip $(1))-install-rpt.done
+
+output_files/$(strip $(1))-install-rpt.done : | $(INSTALL_ROOT_ARTIFACTS) output_files
+	cp -f $(addprefix output_files/$(strip $(1))., $(INSTALL_RPT_NAMES)) $(INSTALL_ROOT_ARTIFACTS)/
+	gzip $(addprefix $(INSTALL_ROOT_ARTIFACTS)/$(strip $(1))., $(INSTALL_RPT_NAMES))
+	touch $$@
+
+endef
+
+# Create all targets
+$(foreach revision,$(REVISION_NAMES),$(eval $(call create_targets_on_revisions,$(revision))))
+
+-include $(THIS_MK_DIR)/swbuild_config.mk
+
+# SW targets:
+define create_sw_targets_on_projects
+ALL_SW_TARGET_STEM_NAMES += software-$(strip $(1))
+
+.PHONY: software-$(1)-clean-sw
+software-$(1)-clean-sw:
+	$$(MAKE) --no-print-directory -f software/$(1).mk \
+		REVISION=$(strip $(2)) \
+		INSTALL_ROOT_BINARIES=$$(INSTALL_ROOT_BINARIES) \
+		INSTALL_ROOT_ARTIFACTS=$$(INSTALL_ROOT_ARTIFACTS) \
+		RESTORE_INSTALL=$$(RESTORE_INSTALL) \
+		clean-sw
+
+clean-sw: software-$(1)-clean-sw
+
+.PHONY: software-$(1)-build-sw
+software-$(1)-build-sw: $(if $(filter $(1),ryo_linux_sd baremetal_qspi ryo_optee_sd),,output_files/$(strip $(2)).sof output_files/$(strip $(2)).core.rbf)
+	$$(MAKE) --no-print-directory -f software/$(1).mk \
+		REVISION=$(strip $(2)) \
+		INSTALL_ROOT_BINARIES=$$(INSTALL_ROOT_BINARIES) \
+		INSTALL_ROOT_ARTIFACTS=$$(INSTALL_ROOT_ARTIFACTS) \
+		RESTORE_INSTALL=$$(RESTORE_INSTALL) \
+		build-sw
+
+.PHONY: software-$(1)-install-sw
+software-$(1)-install-sw: $(if $(filter $(1),ryo_linux_sd baremetal_qspi ryo_optee_sd),,output_files/$(strip $(2)).sof output_files/$(strip $(2)).core.rbf) | $$(INSTALL_ROOT_BINARIES) $$(INSTALL_ROOT_ARTIFACTS)
+	$$(MAKE) --no-print-directory -f software/$(1).mk \
+		REVISION=$(strip $(2)) \
+		INSTALL_ROOT_BINARIES=$$(INSTALL_ROOT_BINARIES) \
+		INSTALL_ROOT_ARTIFACTS=$$(INSTALL_ROOT_ARTIFACTS) \
+		RESTORE_INSTALL=$$(RESTORE_INSTALL) \
+		install-sw
+endef
+
+# Create on all SW project
+$(foreach SW_PRJ,$(SW_PROJECT_LIST),$(eval $(call create_sw_targets_on_projects,$(SW_PRJ), $(BASE_REVISION))))
+
+###############################################################################
+#                          UTILITY TARGETS
+###############################################################################
+
+output_files $(INSTALL_ROOT_BINARIES) $(INSTALL_ROOT_DESIGNS) $(INSTALL_ROOT_ARTIFACTS):
+	mkdir -p $@
+
+output_files/pre-prep.done: | output_files
+ 	# Write protect QPF so it doesn't get modified when switching revisions
+	chmod a-w $(PROJECT_NAME).qpf
+	touch $@
+
+output_files/prep-%.done: output_files/pre-prep.done | output_files
+	chmod a-w $(PROJECT_NAME).qpf
+	flock --verbose output_files/ipgenerate.lock quartus_ipgenerate $(PROJECT_NAME) -c $* --simulation=verilog --synthesis=verilog --simulator=modelsim,vcsmx,riviera,xcelium --clear_ip_generation_dirs |& tee output_files/$*.ipgen.rpt
+	ip-setup-simulation --quartus-project=$(PROJECT_NAME) --revision=$* --output-directory=sim_setup_$* --simulator=modelsim,vcsmx,riviera,xcelium |& tee -a output_files/$*.ipgen.rpt
+	touch $@
+
+.PHONY: pre-prep
+pre-prep: output_files/pre-prep.done
+
+.PHONY: validate-readme-metadata
+validate-readme-metadata:
+ 	# Validate QP_INFO metadata in design README.md (run via style-check-readme-metadata in CI)
+ifneq ($(NO_ENFORCE_README_VALIDATION),1)
+	quartus_sh --validate_metadata -file README.md -strict
+else
+	quartus_sh --validate_metadata -file README.md
+endif
+	rm -f validate_metadata_log.txt
+
+$(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip: pre-prep | $(INSTALL_ROOT_DESIGNS)
+ 	# Add root README.md first so quartus_sh create_metadata always picks it up before any nested README.md files.
+	zip $@ README.md
+	zip -r -g $@ * -x .gitignore "output_files/*" "qdb/*" "dni/*" "tmp-clearbox/*" "README.md"
+
+.PHONY: package-design
+package-design: $(INSTALL_ROOT_DESIGNS)/$(ARCHIVE_NAME).zip
+
+.PHONY: generate-design
+generate-design: pre-prep
+
+.PHONY: ip-upgrade
+ip-upgrade: $(ALL_IP_UPGRADE_TARGETS)
+
+.PHONY: prep
+prep: $(ALL_PREP_TARGETS)
+
+# Support restoring the SOF from the install directory to support
+# building the SW outside of building the FPGA design
+ifneq ($(RESTORE_INSTALL),1)
+output_files/%.sof: output_files/prep-%.done
+ifneq ($(USE_ELAB_ONLY_FLOW),1)
+	quartus_sh --flow compile $(PROJECT_NAME) -c $*
+	quartus_asm $(PROJECT_NAME) -c $*
+	quartus_pow $(PROJECT_NAME) -c $*
+	mv $*.qpta output_files/$*.qpta
+	@test -f $@ && echo "$@ found after compile flow!" || (echo "Error: $@ not found after compile flow!" && exit 1)
+else
+	quartus_syn $(PROJECT_NAME) -c $* --quick_elab
+	touch $@
+endif
+output_files/%.core.rbf: output_files/%.sof
+ifneq ($(USE_ELAB_ONLY_FLOW),1)
+	quartus_pfg -c $< $@ -o hps=ON -o hps_core_only=ON
+else
+	touch $@
+endif
+else
+output_files/%.sof: $(INSTALL_ROOT_BINARIES)/%.sof
+	mkdir -p $(dir $@)
+	cp $< $@
+	@test -f $@ && echo "$@ found after restore!" || (echo "Error: $@ not found after restore!" && exit 1)
+
+output_files/%.core.rbf: $(INSTALL_ROOT_BINARIES)/%.core.rbf
+	mkdir -p $(dir $@)
+	cp $< $@
+	@test -f $@ && echo "$@ found after restore!" || (echo "Error: $@ not found after restore!" && exit 1)
+endif
+
+# Clean all files
+.PHONY: clean
+clean : clean-sw
+	rm -rf output_files qdb tmp-clearbox dni
+
+# Deep clean using git
+.PHONY: dev-clean
+dev-clean : clean
+	git clean -dfx .
+
+# Build all revisions
+.PHONY: build
+build : $(ALL_BUILD_TARGETS)
+
+# Functional simulation
+.PHONY: sim
+sim : prep
+	cd sim && ./runvcs.sh
+
+# Run all tests
+.PHONY: test
+test : $(ALL_TEST_TARGETS)
+
+.PHONY: sim-enabled
+sim-enabled:
+	@echo $(SIM_ENABLED)
+
+# Install binaries and designs
+.PHONY: install
+install : $(ALL_INSTALL_TARGETS)
+
+.PHONY: print-targets
+print-targets:
+	$(info $(ALL_TARGET_STEM_NAMES))
+
+# Run qsys-script only when a top-level Qsys system exists (VDS-only designs omit *_top.qsys)
+ip-upgrade-helper:
+ifneq ($(wildcard *_top.qsys),)
+	qsys-script --qpf=$(PROJECT_NAME) --script=qsys_update.tcl --system-file=$(wildcard *_top.qsys) --search-path="custom_ip/**/*, $$"
+endif
+
+###############################################################################
+#                           SW Build Targets
+###############################################################################
+ALL_SW_BUILD_TARGETS += $(addsuffix -build-sw, $(ALL_SW_TARGET_STEM_NAMES))
+ALL_SW_CLEAN_TARGETS += $(addsuffix -clean-sw, $(ALL_SW_TARGET_STEM_NAMES))
+ALL_SW_INSTALL_TARGETS += $(addsuffix -install-sw, $(ALL_SW_TARGET_STEM_NAMES))
+
+# Build all SW projects
+.PHONY: build-sw
+build-sw : $(ALL_SW_BUILD_TARGETS)
+
+.PHONY: clean-sw
+clean-sw: $(ALL_SW_CLEAN_TARGETS)
+
+.PHONY: install-sw
+install-sw: $(ALL_SW_INSTALL_TARGETS)
+
+.PHONY: print-sw-targets
+print-sw-targets:
+	$(info $(ALL_SW_TARGET_STEM_NAMES))
+
+
+###############################################################################
+#                                HELP
+###############################################################################
+.PHONY: help
+help:
+	$(info GHRD Build)
+	$(info    Project Directory         : $(PROJECT_DIR_ABS))
+	$(info    Prep Targets              : $(ALL_PREP_TARGETS))
+	$(info    Build Targets             : $(ALL_BUILD_TARGETS))
+	$(info    Install Targets           : $(ALL_INSTALL_TARGETS))
+	$(info    Software Build Targets    : $(ALL_SW_BUILD_TARGETS))
+	$(info    Software Install Targets  : $(ALL_SW_INSTALL_TARGETS))

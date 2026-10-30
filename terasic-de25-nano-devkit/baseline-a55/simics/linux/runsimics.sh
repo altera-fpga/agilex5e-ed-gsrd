@@ -42,8 +42,8 @@ if [[ "$COMMAND" == "clean" ]]; then
             rootfs.ubifs \
             hps.bin \
             flash_image.jic \
-            flash_image_jic.map \
-            flash_image_jic.rpd
+            qspi_boot.map \
+            qspi_boot.rpd
     )
 
     # Remove project files
@@ -84,7 +84,7 @@ if [[ "$BOOTMODE" == "sdmmc" ]]; then
 
     # Define image file paths
     UBOOT_FILE="$BINARIES_PATH/u-boot-spl-dtb.bin"
-    SDMMC_IMAGE_FILE="$BINARIES_PATH/gsrd-console-image-agilex5e.rootfs.wic"
+    SDMMC_IMAGE_FILE="$BINARIES_PATH/gsrd-console-image-agilex5e_de25.rootfs.wic"
 
     # Log setup
     echo "[INFO] Simics scenario: $SIMICS_SCENARIO"
@@ -112,7 +112,7 @@ elif [[ "$BOOTMODE" == "qspi" ]]; then
 
     # Define image file paths
     UBOOT_FILE="$BINARIES_PATH/u-boot-spl-dtb.bin"
-    QSPI_IMAGE_FILE="$BINARIES_PATH/flash_image_jic.rpd"
+    QSPI_IMAGE_FILE="$BINARIES_PATH/qspi_boot.rpd"
 
     # Get absolute path to BOOTDIR
     BOOTDIR_ABS="$(readlink -f "$BOOTDIR")"

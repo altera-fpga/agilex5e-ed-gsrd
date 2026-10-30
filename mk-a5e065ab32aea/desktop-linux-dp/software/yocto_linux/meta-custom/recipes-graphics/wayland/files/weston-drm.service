@@ -1,0 +1,34 @@
+[Unit]
+Description=Weston Wayland compositor (DRM/Pixman) for Agilex5 DisplayPort
+Documentation=man:weston(1)
+# Start once basic userspace and the kernel modules (including the
+# altera-vvp-dp KMS driver) are up.  Deliberately NOT tied to
+# graphical.target so it runs on a headless multi-user default target.
+After=systemd-user-sessions.service systemd-modules-load.service
+
+[Service]
+Type=simple
+User=root
+# Replaces the manual 'export XDG_RUNTIME_DIR=/run/user/0; mkdir -p /run/user/0;
+# chmod 700 /run/user/0'.  systemd creates /run/user/0 (mode 0700) and removes
+# it on stop, which also clears any stale wayland-* sockets.
+RuntimeDirectory=user/0
+RuntimeDirectoryMode=0700
+Environment=XDG_RUNTIME_DIR=/run/user/0
+# Use libseat's built-in backend: running as root, Weston opens the DRM device
+# and becomes master directly, without needing a logind graphical session.
+Environment=LIBSEAT_BACKEND=builtin
+# Wait (briefly) for the DRM device to appear before launching; harmless if it
+# is already present.
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 20); do [ -e /dev/dri/card0 ] && break; sleep 0.5; done; exit 0'
+# weston.ini already forces renderer=pixman and idle-time=0; the flags below
+# mirror the known-good manual command line for the DP demo.
+ExecStart=/usr/bin/weston --backend=drm --renderer=pixman --idle-time=0 --log=/var/log/weston.log
+StandardInput=null
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

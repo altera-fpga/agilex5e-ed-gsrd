@@ -1,198 +1,158 @@
-# Agilex 5 E-Series Quartus Design Agent Guide
+# Agilex 5 E-Series Baseline Hardware Reference Design — Agent Guide
 
-## Purpose
+Concise guidance for AI agents and local developers working in this repository: how to find
+designs, run builds, and edit safely.
 
-- Provide concise, actionable guidance for agents working on the Agilex 5 E‑Series Quartus Design workspace.
-- Focus on build flows, environment setup, safe edits, and common operations.
+**Human customers** should start with [README.md](README.md). This file ships with external
+releases and must stand alone when internal-only directories are stripped.
 
-## Quick Start (CLI)
+## Checkout variant
 
-- Ensure Quartus tools are on `PATH` (see Environment Setup).
-- Sanity check the toolchain:
+External releases remove `.github/` and `not_shipped/` (`rm -rf .github not_shipped` on publish).
+If a path referenced below does not exist in your checkout, skip it — do not treat that as an error.
+
+| Path | Shipped | Purpose |
+|------|---------|---------|
+| `dk-*`, `mk-*`, `terasic-*` | Yes | Platform folders containing Baseline Hardware Reference Designs |
+| [platform_config.mk](platform_config.mk) | Yes | Platforms in the root build matrix |
+| [README.md](README.md) | Yes | Product overview, devkit index, build quick start |
+| `.github/` | No | CI/CD workflows and automation (YAML + workflow docs) |
+| `.cursor/` | No | Cursor agent rules (excluded from public publish rsync) |
+| `not_shipped/` | No | Regtest, legacy designs, extended dev guides |
+
+## Find a design
+
+Use this flow to index any design in the repo (no static list required):
+
+1. [platform_config.mk](platform_config.mk) — authoritative list of shipped platform folders
+2. [README.md](README.md) `#designs` — devkit-oriented index with links to designs
+3. `<platform>/README.md` — designs on that platform (when present)
+4. `<platform>/<design>/README.md` — functional description, metadata, software links
+5. `<platform>/<design>/software/*/README.md` — Yocto, HPS debug, FreeRTOS, etc.
+
+Discover make targets:
+
+```bash
+make help
+make -C <platform> print-targets
+make -C <platform>/<design> print-sw-targets
+```
+
+## Documentation map (shipped tree)
+
+| Tier | Location | Use when |
+|------|----------|----------|
+| 1 | [README.md](README.md) | Repository overview, dependencies, `#designs` index |
+| 2 | `<platform>/README.md` | Devkit context; design index for that platform |
+| 3 | `<platform>/<design>/README.md` | Design features, QP_INFO metadata, software links |
+| 4 | `<design>/software/*/README.md` | Build and usage for a software stack |
+| 5 | Yocto `meta-custom/**/README.md` | Recipe-specific edits only (optional leaf) |
+
+Design READMEs contain Markdown metadata for `quartus_sh --validate_metadata`. Do not remove or break
+that structure.
+
+### Design package (zip) — editing customer READMEs
+
+Customers often receive **only one design `.zip`**, not the full repository. When editing design or
+software READMEs, they must work standalone: no upward links and **no prose references** to the
+repository root or platform README. Document **design-directory** `Makefile` targets the zip ships
+and Altera tests (e.g. `make prep`, `make sim`). See
+[not_shipped/docs/guides/USER_FACING_README.md](not_shipped/docs/guides/USER_FACING_README.md) (internal
+checkout) for full policy.
+
+## Quick start
 
 ```bash
 quartus_sh -v
-which quartus_sh
+make dk-a5e065ab32aea-enablement-baseline-a55-all
 ```
 
-- Build one design from the repo root (pick a target from [README.md](README.md)):
+Outputs under `install/`; intermediates under `work/` and `<design>/output_files/`.
 
-```bash
-make dk-a5e065bb32aes1-enablement-baseline-a55-all
+## Makefile hierarchy
+
+```
+Makefile → <platform>/Makefile → <design>/Makefile → software/*.mk
 ```
 
-- Outputs land under `install/` (see Artifacts Layout). Intermediate build products land under `work/`.
+| Level | Example target |
+|-------|----------------|
+| Repo root | `make dk-a5e065ab32aea-enablement-baseline-a55-all` |
+| Platform dir | `make baseline-a55-build` |
+| Software | `make software-yocto_linux_sd-build-sw` |
 
-## Scope
+Root `...-all` runs: `pre-prep` → `generate-design` → `package-design` → `prep` → `build` →
+`functional-sim` → `test` → `install` → default SW build/install. Default SW target depends on
+platform suffix (`-emmc`, `-nand`, or SD Yocto).
 
-- This repo hosts Golden Hardware Reference Designs (Quartus Design) for Agilex 5 E‑Series SoC FPGA.
-- Designs live under platform folders (e.g., a5ed065es‑premium‑devkit‑oobe/, a5ed013‑devkit‑oobe/) with variants like `baseline-a55`, `baseline-a76`, and legacy designs.
-- Use Quartus Prime Pro for hardware builds; optional Python tooling for CLI orchestration.
+Prefer **root-level** `make <platform>-<design>-<stage>` targets from the repository root.
 
-## Environment Setup
+## Environment setup
 
-- Required tools: Altera Quartus Prime Pro, Python 3.11.5.
-- Linux is the supported build OS; SUSE Linux Enterprise Server 15 SP4 tested.
-- Minimal environment to enable CLI builds:
-  - Set `QUARTUS_ROOTDIR` to your Quartus Prime Pro installation.
-  - Add Quartus and related tool bins to `PATH`.
+- Quartus Prime Pro **26.3**, Python **3.11.5**, Linux (SLES 15 SP4 tested).
+- **Internal checkout (Altera dev hosts):** Quartus is provided through **ARC**, not a manual
+  `PATH` export. Wrap Quartus-dependent commands (including
+  `make -j style-check-readme-metadata` after README edits):
+
+  ```bash
+  arc shell --no-inherit $(cat .github/arc_resource.txt) -- $COMMAND
+  ```
+
+  See [not_shipped/docs/AGENTS.md](not_shipped/docs/AGENTS.md) for ARC syntax, examples, and
+  exceptions. Skip this block when `.github/` or `not_shipped/` is absent (external release).
+- **External / local Quartus install:** set `QUARTUS_ROOTDIR` and extend `PATH`:
 
 ```bash
-# Example environment (adjust for installation path/version)
-export QUARTUS_ROOTDIR=~/alteraFPGA_pro/26.1.1/quartus
+export QUARTUS_ROOTDIR=~/alteraFPGA_pro/26.3/quartus
 export PATH="$QUARTUS_ROOTDIR/bin:$QUARTUS_ROOTDIR/../qsys/bin:$QUARTUS_ROOTDIR/../niosv/bin:$QUARTUS_ROOTDIR/sopc_builder/bin:$QUARTUS_ROOTDIR/../questa_fe/bin:$QUARTUS_ROOTDIR/../syscon/bin:$QUARTUS_ROOTDIR/../riscfree/RiscFree:$PATH"
 ```
 
-## Sanity Checks
+Verify: `quartus_sh -v` and `make print-env`.
 
-- Confirm the Quartus install is reachable:
+- `make venv` creates the Python environment from [requirements.txt](requirements.txt).
 
-```bash
-quartus_sh -v
-```
+## Software builds (summary)
 
-- If `quartus_sh` is missing, re-check `QUARTUS_ROOTDIR` and `PATH`.
+Designs with modular software use `swbuild_config.mk` and `software/<project>.mk` (`clean-sw`,
+`build-sw`, `install-sw`). Reference layout: `dk-a5e065ab32aea-enablement/baseline-a55/`.
 
-## Python Virtualenv
+- SW-only when a bitstream already exists: `RESTORE_INSTALL=1`
+- Modular SW port work: see `not_shipped/docs/projects/sw-build-refactor/AGENTS.md` (checklist, `repo-files-check` Makefile sync groups, VDS `ip-upgrade-helper` policy).
 
-- The top‑level Makefile will create a local venv and install dependencies from [requirements.txt](requirements.txt) when building.
-- The venv directory is `venv/` by default.
-- To prepare tools explicitly:
+## Safe editing
 
-```bash
-make venv
-```
+- Keep changes minimal and design-scoped; do not alter unrelated platforms.
+- Do not rename public make targets or edit [platform_config.mk](platform_config.mk) unless required.
+- Do not add license headers unless requested.
+- Avoid regenerating Qsys/Quartus outputs unless necessary.
+- Do not commit artifacts under `install/` or `work/`.
+- Do not mix GUI and CLI builds in the same working tree; run `make clean` if switching methods.
 
-- If you need to use a specific Python:
-
-```bash
-make PYTHON3=/path/to/python3.11 venv
-```
-
-## Repo Structure & Targets
-
-- Top‑level aggregation Makefile orchestrates per‑platform sub‑targets listed in [platform_config.mk](platform_config.mk).
-- Each platform folder has its own Makefile and per‑design targets.
-- Common top‑level phony targets:
-  - `pre-prep`, `prep`, `ip-upgrade`, `generate-designs`, `package-designs`, `build`, `test`, `install`, `build-sw`, `install-sw`, `all`.
-- The `all` target chains the full flow across all configured platforms/designs.
-
-## Target Discovery
-
-- Use the root [README.md](README.md) “Designs” section for the canonical `make <platform>-<design>-all` targets.
-- Platform and design folders typically also provide a help/listing:
-
-```bash
-make -C dk-a5e065bb32aes1-enablement help
-make -C dk-a5e065bb32aes1-enablement print-targets
-```
-
-## What `...-all` Does
-
-- The root `make <platform>-<design>-all` meta target runs the standard pipeline in order:
-  `pre-prep` → `generate-design` → `package-design` → `prep` → `build` → `test` → `install` → `build-sw` → `install-sw`.
-
-## Typical Build Flow (CLI)
-
-- Run design‑specific meta targets from the repo root; outputs go under `install/`.
-- Examples from [README.md](README.md):
-
-```bash
-# Premium Devkit ES, Baseline-A55
-make dk-a5e065bb32aes1-enablement-baseline-a55-all
-
-# Premium Devkit ES, Baseline-A76
-make dk-a5e065bb32aes1-enablement-baseline-a76-all
-
-# Legacy TSN CFG2 (Premium Devkit ES)
-make dk-a5e065bb32aes1-enablement-legacy-tsn-cfg2-all
-
-# TSN RGMII HVIO baseline (Premium Devkit ES)
-make dk-a5e065bb32aes1-enablement-tsn-rgmii-hvio-all
-
-# Debug2 / EMMC / Modular / 013 Devkit legacy designs
-make dk-a5e065bb32aes1-test-legacy-baseline-all
-make dk-a5e065bb32aes1-emmc-legacy-baseline-all
-make mk-a5e065bb32aes1-legacy-baseline-all
-make dk-a5e013bm16aea-legacy-baseline-all
-```
-
-## Quartus GUI Flow
-
-- Open `.qpf` in the target design folder (e.g., a premium devkit baseline project) and compile from the GUI. Compiled `.sof` appears in the project `output_files`.
-
-- Avoid mixing GUI and CLI builds in the same working tree. If you switch methods, do a clean first:
-
-```bash
-make clean
-```
-
-## Artifacts Layout
-
-- After builds:
-  - Zipped project archives under `install/designs/`.
-  - Bitstreams and software under `install/binaries/<platform>/<design>/`.
-  - Additional artifacts under `install/artifacts/`.
-
-- Intermediate build outputs are under `work/` (safe to delete via `make clean`).
-
-## Coding/Formatting
-
-- Python: Black (line length 88) and Flake8 settings in [pyproject.toml](pyproject.toml).
-- SystemVerilog formatting: see [verible-format.txt](verible-format.txt).
-- Avoid mixing GUI and CLI builds in the same working tree; it can break generated filesets.
-
-## Safe Editing Guidelines
-
-- Keep changes minimal and design‑scoped; do not alter unrelated platforms.
-- Respect existing Makefile contracts and variable names; avoid changing public target names.
-- Avoid editing [platform_config.mk](platform_config.mk) unless the task explicitly requires changing which platforms/designs are included.
-- Do not add license headers unless explicitly requested.
-- For shell/Make variables controlling parallelism, prefer using `nproc` safely:
-  - Example: `JOBS ?= $(shell nproc)` in Makefiles or `NUM_JOBS="${NUM_JOBS:-$(nproc)}"` in shell.
-- When editing QSYS/Quartus TCL, follow pattern‑safe filtering and avoid noisy `puts` unless gated by intent.
-
-- Avoid re-generating Qsys/Quartus outputs unless required; it can introduce large diffs and break reproducibility.
-
-## Common Tasks
-
-- Print environment:
+## Common commands
 
 ```bash
 make print-env
+make clean
+make venv
 ```
 
-- Update workspace:
+## Troubleshooting
 
-```bash
-make dev-update
-```
+| Issue | Action |
+|-------|--------|
+| Missing Quartus | Check `QUARTUS_ROOTDIR` and `PATH` |
+| Python errors | `make venv`, confirm Python 3.11 |
+| GUI/CLI conflict | `make clean`, use one flow per session |
+| Missing SW targets | Check `swbuild_config.mk` and `SW_PROJECT_LIST` in the design Makefile |
+| Metadata validation failure | Fix Project Details / Documentations blocks in the design README |
 
-- Clean builds:
+## Extended docs (internal checkout only)
 
-```bash
-make clean       # removes build outputs (keeps venv)
-make dev-clean   # deeper clean; removes install/work and untracked files
-```
+If these paths **exist**, read them for additional depth. They are removed on external release.
 
-## Design Navigation
-
-- Per‑platform design docs live inside platform folders, e.g., see [dk-a5e013bm16aea/baseline-a55/README.md](dk-a5e013bm16aea/baseline-a55/README.md) for features and subsystem details.
-
-## Do/Don’t
-
-- Do verify the Quartus toolchain is active via `quartus_sh -v` before building.
-- Do use top‑level `make <platform>-<design>-all` when unsure; it runs the full pipeline.
-- Don’t commit outputs under `install/` unless release workflow requires; treat as build artifacts.
-- Don’t modify `.github/` or `not_shipped/` for agent work unless explicitly tasked; these are out of scope.
-
-## Troubleshooting Notes
-
-- If builds fail due to environment: re‑export `QUARTUS_ROOTDIR` and verify `PATH` includes Quartus and Qsys tools.
-- If Python tooling errors: re‑run `make venv` and ensure Python 3.11 is available.
-- If GUI vs CLI conflicts: perform a clean (`make clean`) and stick to one method per session.
-
-## Contact/Docs
-
-- Refer to the root [README.md](README.md) for quick‑start and platform‑specific make invocations.
-- External documentation links in platform READMEs cover HPS, EMIF, bridges, and Yocto software guidance.
+| Path | Read when |
+|------|-----------|
+| [not_shipped/docs/GETTING_STARTED.md](not_shipped/docs/GETTING_STARTED.md) | Internal doc hub — active projects, onboarding |
+| [not_shipped/docs/AGENTS.md](not_shipped/docs/AGENTS.md) | ARC shell, internal agent rules, CI doc pointers |
+| [not_shipped/docs/DEVELOPMENT.md](not_shipped/docs/DEVELOPMENT.md) | Full Makefile matrix, regtest, formatting, submodule setup |
+| [not_shipped/docs/guides/USER_FACING_README.md](not_shipped/docs/guides/USER_FACING_README.md) | Rules for editing customer README navigation and metadata |

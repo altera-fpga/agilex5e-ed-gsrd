@@ -401,11 +401,20 @@ build_optee() {
     git clone https://github.com/BenjaminLimJL/optee_os.git
     (cd optee_os && git checkout socfpga_agilex5_optee)
   fi
+  # Apply platform patches, the OS build below uses PLATFORM=agilex5.
+  local plat_patch="$SCRIPT_DIR/patches/0001-optee_platform_agilex5.patch"
+  echo "Applying Agilex5 platform patch..."
+  (cd optee_os && git apply -p1 --numstat "$plat_patch" | awk '{print $3}' | xargs -r rm -f)
+  (cd optee_os && git apply -p1 "$plat_patch")
+  # Apply SDM Services PTA patch (skip if already applied)
+  (cd optee_os && git apply -p2 --reverse --check $SCRIPT_DIR/patches/0001-svc-pta-Add-OP-TEE-OS_sdm_svc_pta.patch 2>/dev/null \
+    || git apply -p2 $SCRIPT_DIR/patches/0001-svc-pta-Add-OP-TEE-OS_sdm_svc_pta.patch)
   # Build OP-TEE OS for Agilex5
   (cd optee_os && \
-    make PLATFORM=altera \
+    make PLATFORM=agilex5 \
       ARCH=arm \
       CROSS_COMPILE64="${CROSS_COMPILE}" \
+      CFG_SDM_SVC_PTA=y \
       CFG_WITH_PAGER=n \
       CFG_CORE_DYN_SHM=y \
       CFG_SHMEM_START=0x80000000 \
@@ -457,6 +466,70 @@ build_optee() {
     make)
   [[ -f optee_examples/hello_world/host/optee_example_hello_world ]] || die "hello_world host binary missing"
   [[ -f optee_examples/hello_world/ta/8aaaf200-2450-11e4-abe2-0002a5d5c51b.ta ]] || die "hello_world TA missing"
+
+  # Apply Agilex5 SDM example patches
+  local ex_patches="$SCRIPT_DIR/patches/optee_examples_agilex5"
+  apply_ex_patch() {
+    local name; name="$(basename "$1")"
+    # Always overwrite: drop the patch's target files (from the clone or a prior run),
+    # then apply so the patched version is what lands.
+    (cd optee_examples && git apply -p2 --numstat "$1" | awk '{print $3}' | xargs -r rm -f)
+    (cd optee_examples && git apply -p2 "$1")
+    log "Applied example patch (overwrite): $name"
+  }
+  apply_ex_patch "$ex_patches/optee_sdm_cert_auth_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_chip_id_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_crypt_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_disable_owned_entry_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_efuse_reload_cache_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_efuse_write_disable_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_fuse_prog_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_fuse_read_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_get_idcode_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_get_prov_data_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_get_random_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_ns_allowed_list_deactivate_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_ns_allowed_list_remove_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_prog_pubkey_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_security_op_example.patch"
+  apply_ex_patch "$ex_patches/optee_sdm_send_cert_example.patch"
+
+  # Build the SDM examples (host binary + TA). Non-fatal per example so one bad
+  # example does not abort the whole build; missing outputs are flagged at install time.
+  local TEEC_EXPORT_DIR TA_DEV_KIT
+  TEEC_EXPORT_DIR="$(realpath optee_client/install)"
+  TA_DEV_KIT="$(realpath optee_os/out/agilex5/export-ta_arm64)"
+  build_sdm_example() {
+    local ex="$1"
+    # Build host application explicitly with the cross compiler (same as hello_world).
+    # The example Makefile uses "CC ?= $(CROSS_COMPILE)gcc", but make pre-defines CC=cc,
+    # so ?= never overrides it and it would otherwise build with the host cc.
+    (cd "optee_examples/$ex/host" && \
+      "${CROSS_COMPILE}gcc" -Wall -I../ta/include -I"${TEEC_EXPORT_DIR}/include" -c main.c -o main.o && \
+      "${CROSS_COMPILE}gcc" -o "$ex" main.o -lteec -L"${TEEC_EXPORT_DIR}/lib64") \
+      || warn "SDM example host build failed: $ex"
+    # Build Trusted Application (TA) via the OP-TEE dev kit
+    (cd "optee_examples/$ex/ta" && \
+      make CROSS_COMPILE="${CROSS_COMPILE}" TA_DEV_KIT_DIR="$TA_DEV_KIT") \
+      || warn "SDM example TA build failed: $ex"
+  }
+  build_sdm_example sdm_cert_auth
+  build_sdm_example sdm_chip_id
+  build_sdm_example sdm_crypt
+  build_sdm_example sdm_disable_owned_entry
+  build_sdm_example sdm_efuse_reload_cache
+  build_sdm_example sdm_efuse_write_disable
+  build_sdm_example sdm_fuse_prog
+  build_sdm_example sdm_fuse_read
+  build_sdm_example sdm_get_idcode
+  build_sdm_example sdm_get_prov_data
+  build_sdm_example sdm_get_random
+  build_sdm_example sdm_ns_allowed_list_deactivate
+  build_sdm_example sdm_ns_allowed_list_remove
+  build_sdm_example sdm_prog_pubkey
+  build_sdm_example sdm_security_op
+  build_sdm_example sdm_send_cert
+
   log "OP-TEE build complete"
 }
 
@@ -470,6 +543,7 @@ build_atf_bl31() {
     git clone https://github.com/altera-fpga/arm-trusted-firmware
     cd arm-trusted-firmware
     # git am $SCRIPT_DIR/patches/0001-feat-intel-initial-optee-enablement_atf.patch
+    git am $SCRIPT_DIR/patches/0002-feat-altera-intel-NJP-support-for-ATF.patch
     cd $SCRIPT_DIR
   fi
 
@@ -726,6 +800,43 @@ build_sd_image() {
     else
         echo "WARNING: hello_world TA not found - OP-TEE examples may not have been built"
     fi
+
+    # Install Agilex5 SDM examples (host binary + TA); warn if not built
+    install_sdm_example() {
+        local ex="$1"
+        # Install host application
+        if [ -f "$SCRIPT_DIR/optee_examples/$ex/host/$ex" ]; then
+            fakeroot cp "$SCRIPT_DIR/optee_examples/$ex/host/$ex" files_ext3/usr/bin/
+            fakeroot chmod +x "files_ext3/usr/bin/$ex"
+            echo "Installed $ex"
+        else
+            echo "WARNING: $ex host binary not found - OP-TEE examples may not have been built"
+        fi
+        # Install Trusted Application (TA)
+        if ls "$SCRIPT_DIR/optee_examples/$ex/ta/"*.ta >/dev/null 2>&1; then
+            fakeroot mkdir -p files_ext3/lib/optee_armtz
+            fakeroot cp "$SCRIPT_DIR/optee_examples/$ex/ta/"*.ta files_ext3/lib/optee_armtz/
+            echo "Installed $ex TA to /lib/optee_armtz/"
+        else
+            echo "WARNING: $ex TA not found - OP-TEE examples may not have been built"
+        fi
+    }
+    install_sdm_example sdm_cert_auth
+    install_sdm_example sdm_chip_id
+    install_sdm_example sdm_crypt
+    install_sdm_example sdm_disable_owned_entry
+    install_sdm_example sdm_efuse_reload_cache
+    install_sdm_example sdm_efuse_write_disable
+    install_sdm_example sdm_fuse_prog
+    install_sdm_example sdm_fuse_read
+    install_sdm_example sdm_get_idcode
+    install_sdm_example sdm_get_prov_data
+    install_sdm_example sdm_get_random
+    install_sdm_example sdm_ns_allowed_list_deactivate
+    install_sdm_example sdm_ns_allowed_list_remove
+    install_sdm_example sdm_prog_pubkey
+    install_sdm_example sdm_security_op
+    install_sdm_example sdm_send_cert
 
   # Add init script for tee-supplicant (sysvinit)
   fakeroot mkdir -p files_ext3/etc/init.d

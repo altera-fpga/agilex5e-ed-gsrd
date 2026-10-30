@@ -1,0 +1,81 @@
+amp_bao: fix Bao self-coloring boot hang (I-cache coherency on relocate)
+
+Enabling hypervisor self-coloring (config.hyp.colors, BAO_HYP_COLORING=1)
+hangs Bao before any UART output, while guest-only coloring works. Root
+cause: the EL2 self-relocation resumes execution from a freshly relocated
+copy of .text without any instruction-cache coherency.
+
+mem_color_hypervisor() -> copy_space() relocates the hypervisor image with a
+data-side memcpy only, then switch_space() swaps TTBR0_EL2 and returns into
+the copied image. On a system with caches enabled this violates the ARM
+self-modifying/relocated-code contract: the copied instructions may still be
+in the D-cache (not yet at the PoU/PoC) and stale I-cache lines for the
+colored physical pages may be present, so the post-switch fetch executes
+garbage and hangs. The only existing maintenance, cache_flush_range() after
+switch_space(), is both too late (execution already resumed) and D-side only
+(dc civac, no ic).
+
+Fix, split across the two relocation stages:
+  - mem.c: CPU_MASTER cleans the freshly copied image to the PoC (via the
+    temporary copy VA) right after copy_space(), before the sync barrier and
+    the TTBR switch, so the relocated instructions are in memory.
+  - relocate.S: each PE invalidates its I-cache (ic iallu) in switch_space()
+    just before writing TTBR0_EL2, so the resume fetches the fresh image.
+
+No effect on default builds: mem_color_hypervisor() only runs when
+config.hyp.colors is set (HYP_COLORS=0 => all_clrs() => not invoked). This is
+one of the two required functional fixes for hyp self-coloring (the other is
+0009); the optional g_hyp_color_stage breadcrumb that helped confirm it on
+hardware now lives in the standalone debug patch 0010.
+
+diff --git a/src/arch/armv8/armv8-a/aarch64/relocate.S b/src/arch/armv8/armv8-a/aarch64/relocate.S
+index cf45a2a..54aaa7c 100644
+--- a/src/arch/armv8/armv8-a/aarch64/relocate.S
++++ b/src/arch/armv8/armv8-a/aarch64/relocate.S
+@@ -90,6 +90,20 @@ switch_space:
+     dsb ish
+     isb
+ 
++    /**
++     * Invalidate the instruction cache before resuming from the relocated
++     * image. switch_space() returns into the recolored copy of .text: the same
++     * VAs are about to map to the colored physical pages. That copy was made by
++     * a data-side memcpy in copy_space() and cleaned to the PoC by
++     * mem_color_hypervisor() before this call, so the bytes are in memory; here
++     * each PE drops any stale I-cache lines for those physical pages so the
++     * post-switch fetch hits the freshly relocated instructions. Without this
++     * the resume fetches stale instructions and hangs before any UART output.
++     */
++    ic iallu
++    dsb ish
++    isb
++
+     /**
+      * Update TTBR
+      */
+diff --git a/src/core/mmu/mem.c b/src/core/mmu/mem.c
+index 7145786..2b1cca6 100644
+--- a/src/core/mmu/mem.c
++++ b/src/core/mmu/mem.c
+@@ -804,7 +804,20 @@ void mem_color_hypervisor(const paddr_t load_addr, struct mem_region* root_regio
+      * to access it.
+      */
+     if (cpu_is_master()) {
+-        copy_space(&_image_start, image_size, &p_image);
++        void* image_cpy = copy_space(&_image_start, image_size, &p_image);
++        /*
++         * copy_space() relocates the hypervisor image (including .text) with a
++         * data-side memcpy only. Clean the freshly written copy to the PoC so
++         * the relocated instructions are visible to instruction fetch once
++         * switch_space() repoints TTBR0_EL2 at these colored pages; otherwise
++         * the post-switch resume fetches stale memory and hangs before
++         * console_init(). Flush via the temporary copy VA because the linked VA
++         * still maps to the old image at this point. CPU_MASTER-only is enough:
++         * the PoC is system-wide, and the per-PE I-cache invalidate lives in
++         * switch_space(). (The existing flush after switch_space() runs too late
++         * — execution has already resumed from these pages.)
++         */
++        cache_flush_range((vaddr_t)image_cpy, image_size);
+         va = mem_alloc_vpage(&cpu_new->as, SEC_HYP_IMAGE, (vaddr_t)&_image_start,
+             NUM_PAGES(image_size));
+ 

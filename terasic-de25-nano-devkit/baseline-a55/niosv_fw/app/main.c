@@ -38,7 +38,7 @@ static inline addr_span_extender_windowed_slave_t split_address_span_extender(ui
 {
     uint64_t offset_mask;
 
-    offset_mask = ((1 << window_size) - 1);
+    offset_mask = (window_size >= 64u) ? UINT64_MAX : ((1ULL << window_size) - 1ULL);
     addr_span_extender_windowed_slave_t r = { 0 };
 
     /* Data bus offset (lower window_size) */

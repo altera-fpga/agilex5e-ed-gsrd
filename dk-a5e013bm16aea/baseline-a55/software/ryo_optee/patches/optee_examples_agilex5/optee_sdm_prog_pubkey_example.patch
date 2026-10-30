@@ -1,0 +1,1083 @@
+diff --git a/optee_examples/sdm_prog_pubkey/Android.mk b/optee_examples/sdm_prog_pubkey/Android.mk
+new file mode 100644
+index 000000000000..62f3c749de02
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-prog-pubkey ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_prog_pubkey
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_prog_pubkey/CMakeLists.txt b/optee_examples/sdm_prog_pubkey/CMakeLists.txt
+new file mode 100644
+index 000000000000..8ef58a2f5ae2
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_prog_pubkey C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_prog_pubkey/Makefile b/optee_examples/sdm_prog_pubkey/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_prog_pubkey/host/Makefile b/optee_examples/sdm_prog_pubkey/host/Makefile
+new file mode 100644
+index 000000000000..af2b94e7418d
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_prog_pubkey
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_prog_pubkey/host/main.c b/optee_examples/sdm_prog_pubkey/host/main.c
+new file mode 100644
+index 000000000000..ac2c3da9ba2d
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/host/main.c
+@@ -0,0 +1,420 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_prog_pubkey - Linux host that drives the sdm_prog_pubkey TA.
++ *
++ * Flow:
++ *   host -> sdm_prog_pubkey TA -> PTA_SDM_SVC -> ATF (FCS_PROGRAM_OWNER_PUBKEY)
++ *
++ * Reads 1..SDM_PUBKEY_MAX_HASHES_PER_CALL (5) raw owner-root key-hash
++ * binary files given via repeated -i options, concatenates them into a
++ * single contiguous buffer, opens a session to the sdm_prog_pubkey TA,
++ * validates the combined buffer strictly through the TA, then invokes
++ * TA_SDM_PROG_PUBKEY_CMD_SET ONCE with the whole batch.  The TA/PTA/ATF
++ * program all hashes in one SDM mailbox EFUSE_PUBKEY_PROGRAM command.
++ *
++ * Input sizing rules
++ * -------------------
++ *   - A single -i may be 48 bytes (SHA-384) or 32 bytes (SHA-256).
++ *   - Multiple -i (2..5) must each be exactly 48 bytes (SHA-384); they
++ *     are concatenated in the order given, with no gaps.  SHA-256 is
++ *     not supported for multi-key batches (the SDM's batched
++ *     EFUSE_PUBKEY_PROGRAM command only accepts SECP384R1 sets).
++ *
++ * The TA enforces:
++ *   - each file size is exactly 48 (SHA-384) or 32 (SHA-256);
++ *   - no chunk of the buffer is all-0x00 / all-0xFF (uninitialized
++ *     sentinels);
++ *   - host flags are within the supported mask;
++ *   - TOC-TOU snapshot before forwarding to the PTA.
++ *
++ * hash_type dispatch
++ * ------------------
++ * The PTA derives hash_type from the input size:
++ *   - 32 bytes                     → SECP256R1 (SHA-256), single hash
++ *   - multiple of 48 bytes (1..5)  → SECP384R1 (SHA-384), batched
++ *
++ * Default mode is test/cache-only (SDM "T" flag set, x2 bit[31]=1).
++ * --non-volatile clears T (T=0) and has the SDM permanently burn the
++ * physical eFuse for every hash in the batch - this is irreversible.
++ *
++ * Usage:
++ *   sdm_prog_pubkey -i <hash_file> [-i <hash_file> ...] [--non-volatile]
++ *
++ * Exit status:
++ *   0 - SDM accepted the batch
++ *   1 - SDM rejected the batch, or error
++ */
++
++#include <err.h>
++#include <errno.h>
++#include <getopt.h>
++#include <inttypes.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_prog_pubkey_ta.h>
++
++#define SDM_PROG_PUBKEY_MAX_KEYS	SDM_PUBKEY_MAX_HASHES_PER_CALL
++
++static void usage(const char *prog, int exit_code)
++{
++	FILE *fp = (exit_code == 0) ? stdout : stderr;
++
++	fprintf(fp,
++		"Usage: %s -i <hash_file> [-i <hash_file> ...] [--non-volatile]\n"
++		"\n"
++		"  -i, --input <file>   raw binary key-hash file; repeatable up to\n"
++		"                       %u times.  A single -i may be %u bytes\n"
++		"                       (SHA-256 / secp256r1) or %u bytes\n"
++		"                       (SHA-384 / secp384r1).  Two or more -i\n"
++		"                       must each be exactly %u bytes (SHA-384);\n"
++		"                       they are concatenated, in order, into one\n"
++		"                       batch programmed in a single SDM call.\n"
++		"                       At least one -i is required.\n"
++		"      --non-volatile   *** PERMANENTLY BURN THE PHYSICAL eFUSE ***\n"
++		"                       Clears the SDM test bit (T=0); once\n"
++		"                       written the owner-root key hash(es) CANNOT\n"
++		"                       be erased or changed.  Default (omit)\n"
++		"                       is test/cache-only (T=1, virtual fuse).\n"
++		"  -h, --help           show this help and exit\n"
++		"\n"
++		"SMC flags word (x2) layout, built by the PTA:\n"
++		"  bit[31]    T (test/cache-only)  1 = default, 0 = --non-volatile\n"
++		"  bit[30]    S (skip cancel)      always 0\n"
++		"  bits[15:8] key-set count        (number of -i inputs) - 1\n"
++		"  bits[1:0]  hash_type            1 = secp256r1 (single 32-byte input)\n"
++		"                                  2 = secp384r1 (1..%u batched 48-byte inputs)\n"
++		"\n"
++		"Examples:\n"
++		"  %s -i root0.qky.hash.bin --non-volatile\n"
++		"  %s -i root0.qky.hash.bin -i root1.qky.hash.bin -i root2.qky.hash.bin\n"
++		"\n"
++		"Exit status: 0 = accepted, 1 = rejected or error,\n"
++		"             2 = --non-volatile burn done but phase-2 did not finalize\n",
++		prog, SDM_PROG_PUBKEY_MAX_KEYS, SDM_PUBKEY_HASH_SIZE_SHA256,
++		SDM_PUBKEY_HASH_SIZE_SHA384, SDM_PUBKEY_HASH_SIZE_SHA384,
++		SDM_PROG_PUBKEY_MAX_KEYS, prog, prog);
++	exit(exit_code);
++}
++
++/*
++ * probe_hash_file_size - return the size in bytes of `path` without
++ * reading its contents.  Used to decide, for a single -i, whether it's
++ * a 32-byte SHA-256 or 48-byte SHA-384 hash.
++ */
++static long probe_hash_file_size(const char *path)
++{
++	FILE *fp = fopen(path, "rb");
++	long len = 0;
++
++	if (!fp)
++		err(1, "open %s", path);
++
++	if (fseek(fp, 0, SEEK_END) != 0)
++		err(1, "fseek %s", path);
++	len = ftell(fp);
++	if (len < 0)
++		err(1, "ftell %s", path);
++
++	fclose(fp);
++	return len;
++}
++
++/*
++ * read_hash_chunk - read exactly `expected` bytes from `path` into
++ * `buf`.  Errors out on any size mismatch or I/O failure.
++ */
++static void read_hash_chunk(const char *path, uint8_t *buf, size_t expected)
++{
++	FILE *fp = fopen(path, "rb");
++	long len = 0;
++	size_t got = 0;
++
++	if (!fp)
++		err(1, "open %s", path);
++
++	if (fseek(fp, 0, SEEK_END) != 0)
++		err(1, "fseek %s", path);
++	len = ftell(fp);
++	if (len < 0)
++		err(1, "ftell %s", path);
++	if ((size_t)len != expected)
++		errx(1, "%s: hash file is %ld bytes (expected exactly %zu)",
++		     path, len, expected);
++
++	rewind(fp);
++	got = fread(buf, 1, expected, fp);
++	if (got != expected)
++		err(1, "fread %s (got %zu of %zu bytes)",
++		    path, got, expected);
++
++	fclose(fp);
++}
++
++static void print_hash(const uint8_t *buf, size_t size)
++{
++	size_t i = 0;
++
++	for (i = 0; i < size; i++) {
++		printf("%02x", buf[i]);
++		if ((i & 0xF) == 0xF && i != size - 1)
++			printf("\n  ");
++	}
++	printf("\n");
++}
++
++int main(int argc, char *argv[])
++{
++	static const struct option long_opts[] = {
++		{ "input",        required_argument, NULL, 'i' },
++		{ "non-volatile", no_argument,       NULL,  1  },
++		{ "help",         no_argument,       NULL, 'h' },
++		{ NULL,           0,                 NULL,  0  },
++	};
++
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_SharedMemory hash_shm = { };
++	TEEC_UUID uuid = TA_SDM_PROG_PUBKEY_UUID;
++	uint32_t err_origin = 0;
++	const char *input_paths[SDM_PROG_PUBKEY_MAX_KEYS] = { };
++	unsigned int num_inputs = 0;
++	uint8_t *hash_buf = NULL;
++	size_t hash_size = 0;
++	uint32_t sdm_resp = 0;
++	uint32_t smc_hdr = 0;
++	uint32_t phase2 = 0;
++	uint32_t submitted = 0;
++	uint32_t host_flags = 0;
++	bool non_volatile = false;
++	bool is_sha256 = false;
++	int opt = 0;
++	unsigned int i = 0;
++	int exit_code = 1;
++
++	while ((opt = getopt_long(argc, argv, "i:h", long_opts, NULL)) != -1) {
++		switch (opt) {
++		case 'i':
++			if (num_inputs >= SDM_PROG_PUBKEY_MAX_KEYS) {
++				fprintf(stderr,
++					"%s: too many -i (max %u)\n",
++					argv[0], SDM_PROG_PUBKEY_MAX_KEYS);
++				usage(argv[0], 1);
++			}
++			input_paths[num_inputs++] = optarg;
++			break;
++		case 1:		/* --non-volatile */
++			non_volatile = true;
++			break;
++		case 'h':
++			usage(argv[0], 0);
++			break;
++		default:
++			usage(argv[0], 1);
++		}
++	}
++
++	if (optind != argc) {
++		fprintf(stderr, "%s: unexpected argument: %s\n",
++			argv[0], argv[optind]);
++		usage(argv[0], 1);
++	}
++	if (num_inputs == 0) {
++		fprintf(stderr, "%s: at least one -i <hash_file> is required\n",
++			argv[0]);
++		usage(argv[0], 1);
++	}
++
++	/*
++	 * Build one contiguous buffer:
++	 *   - a single -i may be 32 (SHA-256) or 48 (SHA-384) bytes.
++	 *   - multiple -i must each be exactly 48 bytes (SHA-384); they are
++	 *     concatenated in the order given, with no gaps.
++	 */
++	if (num_inputs == 1) {
++		long len = probe_hash_file_size(input_paths[0]);
++
++		if (len == (long)SDM_PUBKEY_HASH_SIZE_SHA256) {
++			hash_size = SDM_PUBKEY_HASH_SIZE_SHA256;
++			is_sha256 = true;
++		} else if (len == (long)SDM_PUBKEY_HASH_SIZE_SHA384) {
++			hash_size = SDM_PUBKEY_HASH_SIZE_SHA384;
++		} else {
++			errx(1, "%s: hash file is %ld bytes (expected %u or %u)",
++			     input_paths[0], len, SDM_PUBKEY_HASH_SIZE_SHA256,
++			     SDM_PUBKEY_HASH_SIZE_SHA384);
++		}
++
++		hash_buf = malloc(hash_size);
++		if (!hash_buf)
++			err(1, "malloc(%zu)", hash_size);
++
++		read_hash_chunk(input_paths[0], hash_buf, hash_size);
++	} else {
++		hash_size = (size_t)num_inputs * SDM_PUBKEY_HASH_SIZE_SHA384;
++
++		hash_buf = malloc(hash_size);
++		if (!hash_buf)
++			err(1, "malloc(%zu)", hash_size);
++
++		for (i = 0; i < num_inputs; i++)
++			read_hash_chunk(input_paths[i],
++					hash_buf + (size_t)i *
++						SDM_PUBKEY_HASH_SIZE_SHA384,
++					SDM_PUBKEY_HASH_SIZE_SHA384);
++	}
++
++	if (non_volatile) {
++		host_flags |= SDM_PUBKEY_HOST_FLAG_NON_VOLATILE;
++		fprintf(stderr,
++			"\n"
++			"  ************************************************************\n"
++			"  *  WARNING: --non-volatile selected.                       *\n"
++			"  *  The SDM will PERMANENTLY burn %u owner-root key hash(es)*\n"
++			"  *  into the physical eFuse (T=0).                          *\n"
++			"  *  This action is IRREVERSIBLE.                            *\n"
++			"  ************************************************************\n"
++			"\n",
++			num_inputs);
++	} else {
++		fprintf(stderr,
++			"\n"
++			"  ************************************************************\n"
++			"  *                     ***** Virtual *****                  *\n"
++			"  *  Default mode: SDM test bit T=1 (x2 bit[31]).            *\n"
++			"  *  %u owner-root key hash(es) written to the virtual /     *\n"
++			"  *  cache-only fuse.  No physical eFuse burned.             *\n"
++			"  *  Re-run with --non-volatile to PERMANENTLY burn.         *\n"
++			"  ************************************************************\n"
++			"\n",
++			num_inputs);
++	}
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_OpenSession: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_ctx;
++	}
++
++	hash_shm.buffer = hash_buf;
++	hash_shm.size   = hash_size;
++	hash_shm.flags  = TEEC_MEM_INPUT;
++	res = TEEC_RegisterSharedMemory(&ctx, &hash_shm);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_RegisterSharedMemory: 0x%x\n", res);
++		goto out_sess;
++	}
++
++	/*
++	 * Invoke TA_SDM_PROG_PUBKEY_CMD_SET:
++	 *   param[0] MEMREF_INPUT  concatenated key hash(es) (32, or 48*k)
++	 *   param[1] VALUE_INPUT   .a = host control flags
++	 *   param[2] VALUE_OUTPUT  .a = SDM response, .b = SMC response header
++	 *   param[3] VALUE_OUTPUT  .a = SDM_PHASE2_STATUS_*, .b = hashes submitted
++	 */
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_WHOLE,
++					 TEEC_VALUE_INPUT,
++					 TEEC_VALUE_OUTPUT,
++					 TEEC_VALUE_OUTPUT);
++	op.params[0].memref.parent = &hash_shm;
++	op.params[0].memref.size   = hash_size;
++	op.params[1].value.a       = host_flags;
++	op.params[1].value.b       = 0;
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_PROG_PUBKEY_CMD_SET,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr,
++			"TA_SDM_PROG_PUBKEY_CMD_SET: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_shm;
++	}
++
++	sdm_resp  = op.params[2].value.a;
++	smc_hdr   = op.params[2].value.b;
++	phase2    = op.params[3].value.a;
++	submitted = op.params[3].value.b;
++
++	printf("\nSDM owner-root key programming (%s):\n",
++	       non_volatile ? "NON-VOLATILE / eFuse burn (T=0)"
++			    : "***** Virtual ***** / cache-only (T=1)");
++	printf("  hash type     : %s\n",
++	       is_sha256 ? "SHA-256 / secp256r1" : "SHA-384 / secp384r1");
++	printf("  keys in batch : %u\n", num_inputs);
++	for (i = 0; i < num_inputs; i++) {
++		size_t unit = is_sha256 ? SDM_PUBKEY_HASH_SIZE_SHA256
++					: SDM_PUBKEY_HASH_SIZE_SHA384;
++
++		printf("  [%u] %s (%zu bytes):\n  ", i, input_paths[i], unit);
++		print_hash(hash_buf + i * unit, unit);
++	}
++	printf("  SDM response  : 0x%08" PRIx32 "\n", sdm_resp);
++	printf("  SMC resp hdr  : 0x%08" PRIx32 "\n", smc_hdr);
++	printf("  phase2 status : 0x%08" PRIx32 "\n", phase2);
++	printf("  keys submitted: %" PRIu32 "\n", submitted);
++
++	if (sdm_resp == 0) {
++		/*
++		 * A permanent burn is only complete once phase-2 finalizes it
++		 * (Soft POR).  Phase-1 succeeding on its own leaves the fuses
++		 * blown but the device un-finalized, so that must not be
++		 * reported as success.  Virtual runs are unaffected: the SDM
++		 * answers phase-2 with NOP, and a firmware that lacks the
++		 * phase-2 mailbox command cannot damage anything in T=1.
++		 */
++		bool phase2_ok = (phase2 == SDM_PHASE2_STATUS_SUCCESS) ||
++				 (phase2 == SDM_PHASE2_STATUS_NOP);
++
++		if (non_volatile && !phase2_ok) {
++			printf("  Result        : INCOMPLETE"
++			       " (eFuse burned, phase-2 did NOT finalize)\n\n");
++			fprintf(stderr,
++				"  ************************************************************\n"
++				"  *  WARNING: the %u owner-root key hash(es) WERE burned     *\n"
++				"  *  into the physical eFuse, but phase-2 finalize failed    *\n"
++				"  *  (phase2 status 0x%08" PRIx32 ").  No Soft POR was triggered,  *\n"
++				"  *  so the device is NOT finalized.  Verify the SDM         *\n"
++				"  *  firmware implements EFUSE_PUBKEY_PROGRAM_PHASE2         *\n"
++				"  *  (mailbox cmd 0x79) before relying on this device.       *\n"
++				"  ************************************************************\n\n",
++				num_inputs, phase2);
++			exit_code = 2;
++		} else {
++			printf("  Result        : ACCEPTED%s\n\n",
++			       non_volatile ? " (eFuse permanently burned)"
++					    : " (virtual / cache-only)");
++			exit_code = 0;
++		}
++	} else {
++		fprintf(stderr,
++			"  Result        : REJECTED "
++			"(sdm_resp=0x%08" PRIx32 " smc_hdr=0x%08" PRIx32 ")\n\n",
++			sdm_resp, smc_hdr);
++		exit_code = 1;
++	}
++
++out_shm:
++	TEEC_ReleaseSharedMemory(&hash_shm);
++out_sess:
++	TEEC_CloseSession(&sess);
++out_ctx:
++	TEEC_FinalizeContext(&ctx);
++	free(hash_buf);
++	return exit_code;
++}
+diff --git a/optee_examples/sdm_prog_pubkey/ta/Android.mk b/optee_examples/sdm_prog_pubkey/ta/Android.mk
+new file mode 100644
+index 000000000000..d4be239370b5
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := ec384000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_prog_pubkey/ta/Makefile b/optee_examples/sdm_prog_pubkey/ta/Makefile
+new file mode 100644
+index 000000000000..9e52ec05b806
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_PROG_PUBKEY_UUID in include/sdm_prog_pubkey_ta.h
++BINARY=ec384000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_prog_pubkey/ta/include/sdm_prog_pubkey_ta.h b/optee_examples/sdm_prog_pubkey/ta/include/sdm_prog_pubkey_ta.h
+new file mode 100644
+index 000000000000..9fc7feace6cf
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/ta/include/sdm_prog_pubkey_ta.h
+@@ -0,0 +1,112 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_prog_pubkey TA - public interface shared with the host.
++ *
++ * Wraps PTA_CMD_SDM_PROG_PUBKEY with strict input validation:
++ *
++ *   - hash file is exactly 48 bytes (SHA-384 / secp384r1) **or**
++ *     exactly 32 bytes (SHA-256 / secp256r1) - any other size rejected
++ *     with TEE_ERROR_BAD_PARAMETERS,
++ *   - source buffer is genuinely readable for `size` bytes
++ *     (TEE_CheckMemoryAccessRights),
++ *   - sanity check: all-zero or all-0xFF inputs are rejected (a real
++ *     SHA hash is statistically never these; treat as caller bug),
++ *   - host flag bits are validated against SDM_PUBKEY_HOST_FLAGS_VALID_MASK
++ *     so unknown flags never reach the PTA / SDM,
++ *   - TOC-TOU: snapshot the hash into TA-local memory before forwarding
++ *     to the PTA,
++ *   - zeroize the TA-local snapshot before TEE_Free (hygiene; the hash
++ *     of a public key is not secret but treating it as such defends
++ *     against future code changes).
++ *
++ * hash_type dispatch
++ * ------------------
++ * `PTA_CMD_SDM_PROG_PUBKEY` (in optee_os/core/pta/sdm_svc.c) selects
++ * the SMC `flags` word's hash_type field from the input size:
++ *   - memref.size = SDM_PUBKEY_HASH_SIZE_SHA256 (32) → SECP256R1
++ *   - memref.size = SDM_PUBKEY_HASH_SIZE_SHA384 (48) → SECP384R1
++ * Both paths are now routed end-to-end.
++ *
++ * Default mode is test/cache-only (SDM T bit = 1).  The host opts in
++ * to the irreversible physical eFuse burn by setting
++ * SDM_PUBKEY_HOST_FLAG_NON_VOLATILE in param[1].value.a; the PTA then
++ * clears T (T=0) before submitting the SMC.
++ */
++
++#ifndef TA_SDM_PROG_PUBKEY_H
++#define TA_SDM_PROG_PUBKEY_H
++
++#include <stdint.h>
++
++/*
++ * TA UUID.  Mnemonic "EC384" = elliptic curve / SHA-384 owner-root key
++ * (the only hash currently routed by the PTA).
++ */
++#define TA_SDM_PROG_PUBKEY_UUID \
++	{ 0xec384000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_PROG_PUBKEY_CMD_SET - program owner-root key hash(es).
++ *
++ * param[0] (in memref)  raw hash bytes.  Either exactly 32 (single
++ *                       SHA-256) or a multiple of 48 (SHA-384) up to
++ *                       SDM_PUBKEY_MAX_HASHES_PER_CALL (5) contiguous
++ *                       hashes, for batched multi-key programming.
++ *                       All-zero / all-0xFF chunks are rejected.
++ * param[1] (in value)
++ *   .a = host control flags
++ *        (currently only SDM_PUBKEY_HOST_FLAG_NON_VOLATILE).
++ *        Any unknown bit -> TEE_ERROR_BAD_PARAMETERS.
++ *   .b = unused (must be 0).
++ * param[2] (out value)  forwarded from PTA:
++ *   .a = SDM response status (0 = accepted, non-zero = SDM error)
++ *   .b = SMC response header word.
++ * param[3] (out value)  forwarded from PTA:
++ *   .a = SDM_PHASE2_STATUS_*
++ *   .b = number of hashes actually submitted to the SDM.
++ *
++ * Result:
++ *   TEE_SUCCESS                  - PTA path completed; inspect param[2]/[3]
++ *   TEE_ERROR_BAD_PARAMETERS     - wrong param types / null / bad size /
++ *                                  unknown flag bit / sentinel buffer
++ *                                  (all-zero or all-0xFF)
++ *   TEE_ERROR_ACCESS_DENIED      - NW source buffer not readable
++ *   TEE_ERROR_OUT_OF_MEMORY      - TA-local snapshot alloc failed
++ *   TEE_ERROR_GENERIC / BUSY     - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_PROG_PUBKEY_CMD_SET	0
++
++/*
++ * Valid hash sizes.  Re-exported from pta_sdm_svc.h so NW callers don't
++ * need OP-TEE OS internals; the `__PTA_SDM_SVC_H` guard prevents
++ * redefinition when both headers are visible to the TA.
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_PUBKEY_HASH_SIZE_SHA384	48U
++#define SDM_PUBKEY_HASH_SIZE_SHA256	32U
++#define SDM_PUBKEY_HOST_FLAG_NON_VOLATILE	(1U << 0)
++#define SDM_PUBKEY_HOST_FLAGS_VALID_MASK	SDM_PUBKEY_HOST_FLAG_NON_VOLATILE
++#define SDM_PUBKEY_MAX_HASHES_PER_CALL	5U
++/* param[3].a values, so NW callers can tell a finalized burn from a stuck one */
++#define SDM_PHASE2_STATUS_SUCCESS	0U
++#define SDM_PHASE2_STATUS_NOP		1U
++#define SDM_PHASE2_STATUS_SKIPPED	2U
++#define SDM_PHASE2_STATUS_FAILED	3U
++#else
++/*
++ * pta_sdm_svc.h does not currently expose SDM_PUBKEY_HASH_SIZE_SHA256;
++ * the PTA hardcodes SECP384R1 today.  Define it here so the TA can
++ * validate the 32-byte input case symmetrically.
++ */
++#ifndef SDM_PUBKEY_HASH_SIZE_SHA256
++#define SDM_PUBKEY_HASH_SIZE_SHA256	32U
++#endif
++#ifndef SDM_PUBKEY_MAX_HASHES_PER_CALL
++#define SDM_PUBKEY_MAX_HASHES_PER_CALL	5U
++#endif
++#endif
++
++#endif /* TA_SDM_PROG_PUBKEY_H */
+diff --git a/optee_examples/sdm_prog_pubkey/ta/sdm_prog_pubkey_ta.c b/optee_examples/sdm_prog_pubkey/ta/sdm_prog_pubkey_ta.c
+new file mode 100644
+index 000000000000..eae5148b8533
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/ta/sdm_prog_pubkey_ta.c
+@@ -0,0 +1,360 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_prog_pubkey Trusted Application.
++ *
++ * Wraps PTA_CMD_SDM_PROG_PUBKEY with strict input validation:
++ *
++ *   1. GP-TEE parameter types match
++ *      (MEMREF_INPUT, VALUE_INPUT, VALUE_OUTPUT, VALUE_OUTPUT).
++ *   2. memref.buffer != NULL.
++ *   3. memref.size is **exactly** 32 (single SHA-256 / secp256r1), OR a
++ *      multiple of 48 (SHA-384 / secp384r1) up to
++ *      SDM_PUBKEY_MAX_HASHES_PER_CALL (5) contiguous hashes, for batched
++ *      multi-key programming.  Any other size is rejected.
++ *   4. NW source memref is genuinely readable for `size` bytes
++ *      (TEE_CheckMemoryAccessRights).
++ *   5. host_flags (param[1].value.a) has only bits within
++ *      SDM_PUBKEY_HOST_FLAGS_VALID_MASK set.  param[1].value.b must be 0.
++ *   6. Sentinel-buffer check: hash is neither all-0x00 nor all-0xFF.
++ *      A real SHA-256/SHA-384 hash is statistically never these patterns
++ *      (~2^-256 / 2^-384), so an all-zero/all-FF input almost certainly
++ *      means the caller passed an uninitialized buffer or wrong file -
++ *      reject loudly rather than program garbage.
++ *   7. Snapshot the hash into TA-local memory before forwarding so a
++ *      malicious NW thread cannot mutate it between our checks and the
++ *      PTA's read (TOC-TOU protection).
++ *   8. Forward to PTA_CMD_SDM_PROG_PUBKEY.  The PTA derives hash_type
++ *      from the input size (32 → SECP256R1, 48 → SECP384R1), so both
++ *      paths are routed without TA-side branching.
++ *   9. Zeroize the snapshot before TEE_Free.  The hash of a public key
++ *      is not secret, but treating it as such defends against future
++ *      code changes (e.g. storing the buffer pointer somewhere else).
++ *
++ * NON_VOLATILE escalation
++ * -----------------------
++ * The host flag SDM_PUBKEY_HOST_FLAG_NON_VOLATILE makes the SDM
++ * permanently burn the owner-root key hash into the physical eFuse -
++ * this is **irreversible**.  The PTA already emits an EMSG audit log;
++ * the TA emits an additional warning so audit trails capture both
++ * layers.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_prog_pubkey_ta.h>
++
++struct pubkey_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_prog_pubkey TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_prog_pubkey TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct pubkey_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_prog_pubkey TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct pubkey_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_prog_pubkey TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * Helpers
++ * ---------------------------------------------------------------------------
++ */
++
++/* Reject the two cheapest "uninitialized buffer" sentinels: all-0x00,
++ * all-0xFF.  A real SHA-256/384 hash hits one of these only by
++ * astronomical accident (~2^-256 / 2^-384), so they almost certainly
++ * mean a caller bug (forgot to read the file, wrong file, zero-init'd
++ * but never populated).
++ */
++static bool hash_is_sentinel(const uint8_t *buf, size_t size)
++{
++	uint8_t and_all = 0xFF;
++	uint8_t or_all  = 0x00;
++	size_t i = 0;
++
++	for (i = 0; i < size; i++) {
++		and_all &= buf[i];
++		or_all  |= buf[i];
++	}
++	/* all-0x00 -> or_all == 0; all-0xFF -> and_all == 0xFF */
++	return (or_all == 0x00) || (and_all == 0xFF);
++}
++
++/*
++ * validate_multi_hash_size - classify an input buffer as either a single
++ * SHA-256 hash, or a batch of 1..SDM_PUBKEY_MAX_HASHES_PER_CALL contiguous
++ * SHA-384 hashes (as produced by the host when multiple -i files are
++ * concatenated for a single batched PROG_PUBKEY call).
++ *
++ * On success, *unit_size is the size of one hash chunk (32 or 48) and
++ * *hash_count is the number of hashes packed into in_size.
++ */
++static bool validate_multi_hash_size(size_t in_size, size_t *unit_size,
++				     size_t *hash_count)
++{
++	if (in_size == SDM_PUBKEY_HASH_SIZE_SHA256) {
++		*unit_size  = SDM_PUBKEY_HASH_SIZE_SHA256;
++		*hash_count = 1;
++		return true;
++	}
++
++	if (in_size != 0 &&
++	    (in_size % SDM_PUBKEY_HASH_SIZE_SHA384) == 0 &&
++	    (in_size / SDM_PUBKEY_HASH_SIZE_SHA384) <=
++		    SDM_PUBKEY_MAX_HASHES_PER_CALL) {
++		*unit_size  = SDM_PUBKEY_HASH_SIZE_SHA384;
++		*hash_count = in_size / SDM_PUBKEY_HASH_SIZE_SHA384;
++		return true;
++	}
++
++	return false;
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate input, snapshot, forward, wipe
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_prog_pubkey(struct pubkey_sess_ctx *ctx,
++				 uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
++						TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_VALUE_OUTPUT,
++						TEE_PARAM_TYPE_VALUE_OUTPUT);
++	void *ns_in = NULL;
++	size_t in_size = 0;
++	size_t unit_size = 0;
++	size_t hash_count = 0;
++	size_t k = 0;
++	uint32_t host_flags = 0;
++	uint8_t *local_hash = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	ns_in   = params[0].memref.buffer;
++	in_size = params[0].memref.size;
++
++	if (!ns_in) {
++		EMSG("input memref buffer is NULL");
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Accept either a single SHA-256 hash, or a batch of
++	 * 1..SDM_PUBKEY_MAX_HASHES_PER_CALL contiguous SHA-384 hashes (the
++	 * host concatenates multiple -i files into one buffer for a
++	 * single batched PROG_PUBKEY call).
++	 */
++	if (!validate_multi_hash_size(in_size, &unit_size, &hash_count)) {
++		EMSG("invalid hash size %zu (expected %u=SHA-256, or a "
++		     "multiple of %u=SHA-384 up to %ux)",
++		     in_size, SDM_PUBKEY_HASH_SIZE_SHA256,
++		     SDM_PUBKEY_HASH_SIZE_SHA384,
++		     SDM_PUBKEY_MAX_HASHES_PER_CALL);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	host_flags = params[1].value.a;
++	if (params[1].value.b != 0) {
++		EMSG("param[1].value.b must be 0 (got 0x%08x)",
++		     params[1].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++	if (host_flags & ~SDM_PUBKEY_HOST_FLAGS_VALID_MASK) {
++		EMSG("unknown host flag bits 0x%08x", host_flags);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_in, in_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("input memref not readable: buf=%p size=%zu res=0x%08x",
++		     ns_in, in_size, res);
++		return res;
++	}
++
++	/* Snapshot first, then sanity-check the snapshot (not the NW
++	 * buffer) so the sentinel test cannot be raced. */
++	local_hash = TEE_Malloc(in_size, 0);
++	if (!local_hash) {
++		EMSG("alloc local_hash (%zu) failed", in_size);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++	TEE_MemMove(local_hash, ns_in, in_size);
++
++	/* Every hash chunk in the batch must independently pass the
++	 * sentinel check - one all-0x00/all-0xFF chunk means at least one
++	 * of the host's -i files is bogus, even if the others are fine. */
++	for (k = 0; k < hash_count; k++) {
++		if (hash_is_sentinel(local_hash + k * unit_size, unit_size)) {
++			EMSG("hash #%zu of %zu is all-0x00 or all-0xFF - rejecting",
++			     k + 1, hash_count);
++			res = TEE_ERROR_BAD_PARAMETERS;
++			goto wipe_and_free;
++		}
++	}
++
++	if (host_flags & SDM_PUBKEY_HOST_FLAG_NON_VOLATILE)
++		EMSG("sdm_prog_pubkey TA: NON_VOLATILE requested "
++		     "(hash=%s, count=%zu) - PTA will permanently burn "
++		     "the owner-root key eFuse(s)",
++		     unit_size == SDM_PUBKEY_HASH_SIZE_SHA256 ? "secp256r1"
++							      : "secp384r1",
++		     hash_count);
++	else
++		IMSG("sdm_prog_pubkey TA: ***** Virtual ***** "
++		     "(hash=%s, count=%zu, T=1, cache-only)",
++		     unit_size == SDM_PUBKEY_HASH_SIZE_SHA256 ? "secp256r1"
++							      : "secp384r1",
++		     hash_count);
++
++	pta_params[0].memref.buffer = local_hash;
++	pta_params[0].memref.size   = in_size;
++	pta_params[1].value.a       = host_flags;
++	pta_params[1].value.b       = 0;
++	/* params[2]/[3] populated by PTA */
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_PROG_PUBKEY, exp_pt,
++				  pta_params, &pta_origin);
++
++	/* Always propagate the PTA's response values back to the host -
++	 * even on PTA failure the SDM may have left meaningful status in
++	 * param[2]/[3] (e.g. SDM rejected the hash). */
++	params[2].value.a = pta_params[2].value.a;
++	params[2].value.b = pta_params[2].value.b;
++	params[3].value.a = pta_params[3].value.a;
++	params[3].value.b = pta_params[3].value.b;
++
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_PROG_PUBKEY failed: 0x%08x (origin 0x%x), "
++		     "sdm_resp=0x%08x phase2=0x%08x",
++		     res, pta_origin,
++		     params[2].value.a, params[3].value.a);
++		goto wipe_and_free;
++	}
++
++	DMSG("sdm_prog_pubkey: PTA returned ok (sdm_resp=0x%08x phase2=0x%08x "
++	     "submitted=%u)",
++	     params[2].value.a, params[3].value.a, params[3].value.b);
++
++wipe_and_free:
++	TEE_MemFill(local_hash, 0, in_size);
++	TEE_Free(local_hash);
++	return res;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct pubkey_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_PROG_PUBKEY_CMD_SET:
++		return do_prog_pubkey(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_prog_pubkey/ta/sub.mk b/optee_examples/sdm_prog_pubkey/ta/sub.mk
+new file mode 100644
+index 000000000000..aeca62fd748f
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_prog_pubkey_ta.c
+diff --git a/optee_examples/sdm_prog_pubkey/ta/user_ta_header_defines.h b/optee_examples/sdm_prog_pubkey/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..a44442ffa369
+--- /dev/null
++++ b/optee_examples/sdm_prog_pubkey/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_prog_pubkey_ta.h>
++
++#define TA_UUID			TA_SDM_PROG_PUBKEY_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM owner-root pubkey hash programming wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_prog_pubkey.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Programs SDM owner-root SHA-384 pubkey hash via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

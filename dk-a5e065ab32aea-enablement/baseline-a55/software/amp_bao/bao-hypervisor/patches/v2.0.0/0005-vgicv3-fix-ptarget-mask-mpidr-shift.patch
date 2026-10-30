@@ -1,0 +1,93 @@
+From 5555555555555555555555555555555555555555 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Sat, 23 May 2026 13:30:00 +0800
+Subject: [PATCH] arch/armv8: vgicv3: fix MPIDR-as-shift in
+ vgic_int_ptarget_mask
+
+vgic_int_ptarget_mask() returns the bitmap of physical CPUs that should
+receive a VGIC_ROUTE IPI when an interrupt is routed.  For non-broadcast
+SPIs the original code computed:
+
+	return (uint8_t)(1U << interrupt->phys.route);
+
+interrupt->phys.route is set by vgic_int_set_route() above to
+
+	cpu_id_to_mpidr(tvcpu->phys_id) & MPIDR_AFF_MSK
+
+i.e. it is the AArch64 MPIDR_EL1 affinity field of the target physical
+CPU, NOT a CPU index.  On a multi-cluster topology (Aff1 != 0) the LSL
+instruction silently truncates the shift count to its bottom 5 bits, so
+
+	1U << 0x100 (= cluster 1, core 0)  ==  1U << 0  ==  pCPU 0
+
+The IPI is then misrouted to pCPU 0, which on a heterogeneous AMP
+deployment (e.g. Bao co-hosting Linux on the A76 cluster + FreeRTOS on
+the A55 cluster of an Intel Agilex5e) is a CPU running a *different*
+guest VM.  When that pCPU receives the VGIC_ROUTE message it looks up
+the interrupt in its own VM's vgicd state, fails to find the owner
+vCPU, and prints
+
+	"received vgic3 msg target to another vcpu"
+
+before silently dropping the IRQ.  The kick (SPI 52, the bao-rproc /
+OpenAMP rpmsg notify line) is then never delivered to Linux even
+though the firmware already wrote the NS_ANNOUNCE buffer + advanced
+vring0.used.idx in shared memory.  Reproduces 100% of the time when
+Linux's GIC driver pins the IRQ to a single A76 pCPU (IRM = 0,
+GICD_IROUTER aff = 0x100 / 0x101).
+
+Fix: invert the MPIDR -> phys_id mapping with a linear scan over
+platform.cpu_num before forming the bitmask.  The scan is on the IPI
+fan-out hot path only (per-interrupt route, not per-instruction) and
+platform.cpu_num is small in practice (4 on Agilex5e); cost is well
+below the cost of a single cpu_send_msg() that follows.
+
+Same shift bug exists for the broadcast path's "exclude current pCPU"
+mask -- (1U << cpu()->vcpu->phys_id) -- but that is fed an actual
+phys_id (not an MPIDR) so the original arithmetic is correct there;
+left untouched.
+
+vgicv2.c is unaffected: GICv2 does not have a multi-affinity router
+register and vgic_int_ptarget_mask there reads the GICD_ITARGETSR
+target byte (already a CPU bitmap) directly.
+
+Tested on Agilex5e SoCDK with the hps-amp project's
+agilex5-linux+freertos config: after this patch /proc/interrupts
+shows the b0000000.bao-rproc IRQ counter incrementing on every kick
+and /dev/rpmsg0 appears as soon as the peer firmware sends NS_ANNOUNCE.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+--- a/src/arch/armv8/vgicv3.c	2026-05-23 13:44:45.941261128 +0800
++++ b/src/arch/armv8/vgicv3.c	2026-05-23 13:44:59.133261625 +0800
+@@ -35,7 +35,29 @@
+     if (vgic_broadcast(vcpu, interrupt)) {
+         return (uint8_t)(cpu()->vcpu->vm->cpus & ~(1U << cpu()->vcpu->phys_id));
+     } else {
+-        return (uint8_t)(1U << interrupt->phys.route);
++        /*
++         * interrupt->phys.route is the AArch64 MPIDR (Aff[3:0]) of the
++         * target physical CPU, set by vgic_int_set_route() via
++         * cpu_id_to_mpidr(tvcpu->phys_id) & MPIDR_AFF_MSK.  Feeding it
++         * straight into "1U << ..." is wrong: AArch64 LSL truncates the
++         * shift count to its bottom 5 bits, so an MPIDR like 0x100
++         * (cluster 1, core 0) collapses to (1U << 0) = pCPU 0 -- on a
++         * heterogeneous AMP deployment that is a CPU running a
++         * different guest VM, and the VGIC_ROUTE IPI is silently
++         * misrouted (target prints "received vgic3 msg target to
++         * another vcpu" and drops the IRQ).
++         *
++         * Map MPIDR back to a phys_id with a linear scan; the scan is
++         * only on the IPI fan-out hot path and platform.cpu_num is
++         * small in practice (<= 8 on every supported SoC).
++         */
++        for (cpuid_t pcpu = 0; pcpu < platform.cpu_num; pcpu++) {
++            if ((cpu_id_to_mpidr(pcpu) & MPIDR_AFF_MSK) ==
++                (uint64_t)interrupt->phys.route) {
++                return (uint8_t)(1U << pcpu);
++            }
++        }
++        return 0;
+     }
+ }
+ 

@@ -1,5 +1,4 @@
 `timescale 1 ps / 1 ps
-//
 `default_nettype none
 
 module baseline_a55 (
@@ -107,6 +106,7 @@ module baseline_a55 (
     // Clock and Reset
     wire sys_clk_100;
     wire sys_clk_100_reset_n;
+
     wire [31:0] niosv_pio_in;
     // Set this bit to enable the NiosV firmware. Disabled by default.
     wire nios_enable = 1'b0;

@@ -1,0 +1,1512 @@
+diff --git a/optee_examples/sdm_send_cert/Android.mk b/optee_examples/sdm_send_cert/Android.mk
+new file mode 100644
+index 000000000000..99649aaf8a36
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-send-cert ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_send_cert
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_send_cert/CMakeLists.txt b/optee_examples/sdm_send_cert/CMakeLists.txt
+new file mode 100644
+index 000000000000..79ffabc9fa94
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_send_cert C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_send_cert/Makefile b/optee_examples/sdm_send_cert/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_send_cert/host/Makefile b/optee_examples/sdm_send_cert/host/Makefile
+new file mode 100644
+index 000000000000..fe3b0db4ab53
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_send_cert
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_send_cert/host/main.c b/optee_examples/sdm_send_cert/host/main.c
+new file mode 100644
+index 000000000000..c09257078ca3
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/host/main.c
+@@ -0,0 +1,235 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_send_cert - Linux host that drives the sdm_send_cert TA, which
++ * validates and forwards any SDM certificate type listed in
++ * docs/security_mailbox_certificate_types.md to the SDM via
++ * PTA_SDM_SVC / ATF SiP ALTERA_SIP_SMC_ASYNC_FCS_SEND_CERTIFICATE.
++ *
++ * Flow:
++ *   1. Read the certificate binary from disk into a host buffer.
++ *   2. Open a session to the sdm_send_cert TA.
++ *   3. Register the host buffer as TEEC shared memory (TEEC_MEM_INPUT)
++ *      and pass it to the TA via TEEC_MEMREF_WHOLE.
++ *   4. The TA validates the common header, dispatches on cert_type
++ *      to a per-type sanity check, then forwards to the PTA.  The SDM
++ *      mailbox status comes back via the VALUE_OUTPUT param.
++ *
++ * Usage:
++ *   sdm_send_cert <cert_file>
++ *
++ *   cert_file : path to the SDM certificate binary
++ *               (max SDM_CERT_MAX_SIZE bytes, 4-byte aligned size)
++ *
++ * Exit status:
++ *   0 - certificate accepted by SDM
++ *   1 - certificate rejected by SDM, or TA / TEE error
++ */
++
++#include <err.h>
++#include <errno.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_send_cert_ta.h>
++
++static const char *cert_type_name(uint32_t cert_type)
++{
++	switch (cert_type) {
++	case SDM_CERT_TYPE_ENGINEERING:		return "ENGINEERING (0x01)";
++	case SDM_CERT_TYPE_USER_AES_ROOT_KEY:	return "USER_AES_ROOT_KEY (0x02)";
++	case SDM_CERT_TYPE_RMA:			return "RMA (0x03)";
++	case SDM_CERT_TYPE_DEBUG:		return "DEBUG (0x04)";
++	case SDM_CERT_TYPE_COUNTER_SET:		return "COUNTER_SET (0x05)";
++	case SDM_CERT_TYPE_VAB_SRC:		return "VAB_SRC (0x06)";
++	case SDM_CERT_TYPE_PR_OWNER_PUBKEY:	return "PR_OWNER_PUBKEY (0x07)";
++	case SDM_CERT_TYPE_KILL_PERMIT:		return "KILL_PERMIT (0x08)";
++	case SDM_CERT_TYPE_OWNER_PUBKEY_LATE:	return "OWNER_PUBKEY_LATE (0x09)";
++	case SDM_CERT_TYPE_DECOMMISSION:	return "DECOMMISSION (0x0A)";
++	case SDM_CERT_TYPE_CANCEL_SDOS_SRK:	return "CANCEL_SDOS_SRK (0x0B)";
++	case SDM_CERT_TYPE_PROVISION_SDOS_SRK:	return "PROVISION_SDOS_SRK (0x0C)";
++	case SDM_CERT_TYPE_CANCEL_USER_AES:	return "CANCEL_USER_AES (0x0D)";
++	case SDM_CERT_TYPE_OWNERSHIP_XFER_FROM:	return "OWNERSHIP_XFER_FROM (0x0E)";
++	case SDM_CERT_TYPE_OWNERSHIP_XFER_TO:	return "OWNERSHIP_XFER_TO (0x0F)";
++	case SDM_CERT_TYPE_BETA_PREVIEW:	return "BETA_PREVIEW";
++	case SDM_CERT_TYPE_BETA_LOCAL:		return "BETA_LOCAL";
++	default:				return "UNKNOWN";
++	}
++}
++
++static void usage(const char *prog)
++{
++	fprintf(stderr,
++		"Usage: %s <cert_file>\n"
++		"\n"
++		"  cert_file  SDM certificate binary (max %u bytes,\n"
++		"             4-byte aligned size, well-formed header)\n"
++		"\n"
++		"Supported cert_type values (offset 0x0C):\n"
++		"  0x01 ENGINEERING        0x02 USER_AES_ROOT_KEY\n"
++		"  0x03 RMA                0x04 DEBUG\n"
++		"  0x05 COUNTER_SET        0x06 VAB_SRC\n"
++		"  0x07 PR_OWNER_PUBKEY    0x08 KILL_PERMIT\n"
++		"  0x09 OWNER_PUBKEY_LATE  0x0A DECOMMISSION\n"
++		"  0x0B CANCEL_SDOS_SRK    0x0C PROVISION_SDOS_SRK\n"
++		"  0x0D CANCEL_USER_AES    0x0E OWNERSHIP_XFER_FROM\n"
++		"  0x0F OWNERSHIP_XFER_TO\n"
++		"  0x42444350 BETA_PREVIEW 0x4244434C BETA_LOCAL\n"
++		"\n"
++		"Exit status: 0 = accepted, 1 = rejected or error\n",
++		prog, SDM_CERT_MAX_SIZE);
++	exit(1);
++}
++
++static uint8_t *read_cert(const char *path, size_t *out_len)
++{
++	FILE *fp = fopen(path, "rb");
++	long len = 0;
++	uint8_t *buf = NULL;
++
++	if (!fp)
++		err(1, "open %s", path);
++
++	if (fseek(fp, 0, SEEK_END) != 0)
++		err(1, "fseek");
++	len = ftell(fp);
++	if (len <= 0)
++		errx(1, "certificate file is empty or unreadable");
++	if ((size_t)len > SDM_CERT_MAX_SIZE)
++		errx(1, "certificate too large: %ld bytes (max %u)",
++		     len, SDM_CERT_MAX_SIZE);
++	if ((size_t)len & 0x3U)
++		errx(1, "certificate size %ld is not 4-byte aligned", len);
++	if ((size_t)len < VAB_CERT_MIN_SIZE)
++		errx(1, "certificate size %ld < minimum (%u bytes)",
++		     len, (unsigned)VAB_CERT_MIN_SIZE);
++
++	rewind(fp);
++	buf = malloc((size_t)len);
++	if (!buf)
++		err(1, "malloc");
++
++	if (fread(buf, 1, (size_t)len, fp) != (size_t)len)
++		err(1, "fread");
++
++	fclose(fp);
++	*out_len = (size_t)len;
++	return buf;
++}
++
++/*
++ * Peek at the common header purely for the host-side log line.  The TA
++ * does its own (authoritative) validation against the TA-local copy.
++ */
++static void log_cert_header(const uint8_t *buf, size_t len)
++{
++	const struct sdm_cert_hdr *hdr = (const struct sdm_cert_hdr *)buf;
++
++	if (len < sizeof(*hdr))
++		return;
++
++	printf("sdm_send_cert: cert_magic=0x%08" PRIx32
++	       " cert_data_sz=%u cert_ver=%u cert_type=%s\n",
++	       hdr->cert_magic_num, hdr->cert_data_sz, hdr->cert_ver,
++	       cert_type_name(hdr->cert_type));
++}
++
++int main(int argc, char *argv[])
++{
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_SharedMemory cert_shm = { };
++	TEEC_UUID uuid = TA_SDM_SEND_CERT_UUID;
++	uint32_t err_origin = 0;
++	uint8_t *cert_buf = NULL;
++	size_t cert_size = 0;
++	uint32_t mbox_err = 0;
++	uint32_t resp_detail = 0;
++	int exit_code = 1;
++
++	if (argc != 2)
++		usage(argv[0]);
++
++	cert_buf = read_cert(argv[1], &cert_size);
++	log_cert_header(cert_buf, cert_size);
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_OpenSession: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_ctx;
++	}
++
++	/*
++	 * Register the certificate as shared memory.
++	 *
++	 * Using TEEC_RegisterSharedMemory + TEEC_MEMREF_WHOLE (rather than
++	 * a TEEC_MEMREF_TEMP_INPUT) explicitly hands an NW-owned buffer
++	 * to the TEE driver up front, which can then map it once for the
++	 * subsequent invocation - the right pattern for kilobyte-sized
++	 * inputs like an SDM certificate.  TEEC_MEM_INPUT marks the TEE
++	 * mapping read-only as far as the TA is concerned; the TA
++	 * additionally copies the bytes into its own heap before
++	 * validating them (TOC-TOU protection).
++	 */
++	cert_shm.buffer = cert_buf;
++	cert_shm.size   = cert_size;
++	cert_shm.flags  = TEEC_MEM_INPUT;
++	res = TEEC_RegisterSharedMemory(&ctx, &cert_shm);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_RegisterSharedMemory: 0x%x\n", res);
++		goto out_sess;
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_WHOLE,
++					 TEEC_VALUE_OUTPUT,
++					 TEEC_NONE, TEEC_NONE);
++	op.params[0].memref.parent = &cert_shm;
++	op.params[0].memref.size   = cert_size;
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_SEND_CERT_CMD_SEND,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr,
++			"TA_SDM_SEND_CERT_CMD_SEND: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_shm;
++	}
++
++	mbox_err    = op.params[1].value.a;
++	resp_detail = op.params[1].value.b;
++
++	if (mbox_err == 0) {
++		printf("Certificate submission: PASS\n");
++		exit_code = 0;
++	} else {
++		fprintf(stderr,
++			"Certificate submission: FAIL "
++			"(mbox_err=0x%08x detail=0x%08x)\n",
++			mbox_err, resp_detail);
++		exit_code = 1;
++	}
++
++out_shm:
++	TEEC_ReleaseSharedMemory(&cert_shm);
++out_sess:
++	TEEC_CloseSession(&sess);
++out_ctx:
++	TEEC_FinalizeContext(&ctx);
++	free(cert_buf);
++	return exit_code;
++}
+diff --git a/optee_examples/sdm_send_cert/ta/Android.mk b/optee_examples/sdm_send_cert/ta/Android.mk
+new file mode 100644
+index 000000000000..554f100241a7
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := 5ec71000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_send_cert/ta/Makefile b/optee_examples/sdm_send_cert/ta/Makefile
+new file mode 100644
+index 000000000000..1d126b13a532
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_SEND_CERT_UUID in include/sdm_send_cert_ta.h
++BINARY=5ec71000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_send_cert/ta/include/sdm_send_cert_ta.h b/optee_examples/sdm_send_cert/ta/include/sdm_send_cert_ta.h
+new file mode 100644
+index 000000000000..fa26caf78743
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/ta/include/sdm_send_cert_ta.h
+@@ -0,0 +1,277 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_send_cert TA - public interface shared with the host.
++ *
++ * General-purpose wrapper around PTA_CMD_SDM_SEND_CERT.  Adds
++ * type-aware defensive validation of any of the 17 SDM certificate
++ * types described in docs/security_mailbox_certificate_types.md
++ * (CERTIFICATE mailbox command 0x0B).
++ *
++ * Compared to sdm_cert_auth (which only inspects the VAB_SRC_CERT
++ * shape used for HPS image authentication, cert_type == 0x06), this
++ * TA recognises every cert_type listed in the doc and verifies:
++ *
++ *   - the common header (offsets 0x00..0x0C) is well-formed;
++ *   - cert_data_sz fits inside the supplied buffer;
++ *   - cert_ver matches the table for that cert_type;
++ *   - the type-specific magic at offset 0x10 (when one is defined)
++ *     matches the expected value for the type.
++ *
++ * After validation the TA copies the certificate into TA-local
++ * memory (TOC-TOU protection) and forwards it to PTA_CMD_SDM_SEND_CERT.
++ *
++ * Layout reference:
++ *   - common header  : docs/security_mailbox_certificate_types.md
++ *                      (offsets 0x00..0x0F, identical across all types)
++ *   - per-type bits  : same doc, "Per-Type Details" section
++ *   - C layout       : ATF plat/intel/soc/common/include/socfpga_vab.h
++ *                      (struct fcs_hps_vab_certificate_header for type 0x06)
++ */
++
++#ifndef TA_SDM_SEND_CERT_H
++#define TA_SDM_SEND_CERT_H
++
++#include <stdint.h>
++
++/*
++ * UUID for the sdm_send_cert Trusted Application.
++ * "5ec71000" is a mnemonic sibling of sdm_cert_auth's 5ec70000 — same
++ * crypto/cert family ("SECT"), distinct first hextet.
++ */
++#define TA_SDM_SEND_CERT_UUID \
++	{ 0x5ec71000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_SEND_CERT_CMD_SEND - validate and submit any SDM certificate.
++ *
++ * param[0] (in memref)  raw certificate binary (size > 0,
++ *                       <= SDM_CERT_MAX_SIZE, 4-byte aligned)
++ * param[1] (out value)  .a = SDM mailbox error code
++ *                            0 = certificate accepted,
++ *                            non-zero = rejected (or TA validation
++ *                            failed before reaching the SDM; in that
++ *                            case the TA returns a TEE_ERROR_* and
++ *                            .a / .b are 0)
++ *                       .b = SDM response detail word (when .a != 0)
++ * param[2..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS                  - SDM processed cert; inspect param[1].a
++ *   TEE_ERROR_BAD_PARAMETERS     - bad param types / null / unaligned size
++ *   TEE_ERROR_BAD_FORMAT         - common header or per-type sanity check
++ *                                  failed (magic / version / data_sz)
++ *   TEE_ERROR_ACCESS_DENIED      - NW source memref not readable
++ *   TEE_ERROR_OUT_OF_MEMORY      - TA-local copy allocation failed
++ *   TEE_ERROR_GENERIC / BUSY     - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_SEND_CERT_CMD_SEND	0
++
++/* -------------------------------------------------------------------------
++ * SDM / VAB certificate limits, re-exported from the PTA header
++ * (pta_sdm_svc.h) so NW callers do not need to pull in OP-TEE OS
++ * internals.  Suppressed when pta_sdm_svc.h is also visible (TA build)
++ * via its include guard.
++ * -------------------------------------------------------------------------
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_CERT_MAX_SIZE		4096U
++#endif
++
++/* Common header constants (apply to every cert_type) */
++#define SDM_CERT_MAGIC_NUM		0x25D04E7FU
++#define VAB_CERT_HEADER_SIZE		0x50U	/* keychain starts at 0x50 */
++#define VAB_CERT_MIN_SIZE		0x14U	/* hdr + 1 word at 0x10 */
++
++/* -------------------------------------------------------------------------
++ * Certificate type identifiers - the value stored at offset 0x0C.
++ *
++ * Values 0x01..0x0F come from the per-type table in the doc.  The two
++ * Beta types use ASCII-encoded discriminators (4 bytes BE).
++ * -------------------------------------------------------------------------
++ */
++#define SDM_CERT_TYPE_ENGINEERING		0x01U
++#define SDM_CERT_TYPE_USER_AES_ROOT_KEY		0x02U
++#define SDM_CERT_TYPE_RMA			0x03U
++#define SDM_CERT_TYPE_DEBUG			0x04U
++#define SDM_CERT_TYPE_COUNTER_SET		0x05U
++#define SDM_CERT_TYPE_VAB_SRC			0x06U
++#define SDM_CERT_TYPE_PR_OWNER_PUBKEY		0x07U
++#define SDM_CERT_TYPE_KILL_PERMIT		0x08U
++#define SDM_CERT_TYPE_OWNER_PUBKEY_LATE		0x09U
++#define SDM_CERT_TYPE_DECOMMISSION		0x0AU
++#define SDM_CERT_TYPE_CANCEL_SDOS_SRK		0x0BU
++#define SDM_CERT_TYPE_PROVISION_SDOS_SRK	0x0CU
++#define SDM_CERT_TYPE_CANCEL_USER_AES		0x0DU
++#define SDM_CERT_TYPE_OWNERSHIP_XFER_FROM	0x0EU
++#define SDM_CERT_TYPE_OWNERSHIP_XFER_TO		0x0FU
++#define SDM_CERT_TYPE_BETA_PREVIEW		0x42444350U	/* "BDCP" */
++#define SDM_CERT_TYPE_BETA_LOCAL		0x4244434CU	/* "BDCL" */
++
++/* -------------------------------------------------------------------------
++ * Type-specific magic words at offset 0x10 (a.k.a. "2nd magic").
++ *
++ * Not every cert_type has one — the table below records "None" for
++ * 0x05 (SDM 1.5 removed it), 0x09 (no 2nd magic by design), and the
++ * Beta cert types.  For 0x06 / 0x07 the 2nd magic differs between SDM
++ * 1.2 (FM) and SDM 1.5 (SM); see the validation table below.
++ * -------------------------------------------------------------------------
++ */
++#define SDM_CERT_TYPE_ENGR_RMA_DBG_MAGIC	0x97566593U	/* 0x01, 0x03, 0x04 */
++#define SDM_CERT_TYPE_AES_ROOT_MAGIC		0xD0850CAAU	/* 0x02 */
++/* 0x05 COUNTER_SET_CERT: no 2nd magic (SDM 1.5 removed it) */
++#define SDM_CERT_TYPE_VAB_SRC_15_MAGIC		0x52619311U	/* 0x06, SM */
++/* 0x06 VAB_SRC_CERT, FM: 2nd magic == SDM_CERT_MAGIC_NUM (legacy) */
++#define SDM_CERT_TYPE_PR_OWNER_PK_MAGIC		0x88171010U	/* 0x07, SM */
++/* 0x07, FM: no 2nd magic */
++#define SDM_CERT_TYPE_KILL_PERMIT_MAGIC		0x4B696C6CU	/* 0x08 "Kill" */
++/* 0x09 Owner Pubkey Late Prov: no 2nd magic */
++#define SDM_CERT_TYPE_DECOMMISSION_MAGIC	0x6465636FU	/* 0x0A "deco" */
++#define SDM_CERT_TYPE_CANCEL_SDOS_MAGIC		0x62977477U	/* 0x0B */
++#define SDM_CERT_TYPE_PROV_SDOS_MAGIC		0x13099605U	/* 0x0C */
++/*
++ * 0x0D: doc lists "0x187072118" which has 9 hex digits and cannot fit
++ * in a uint32_t.  Interpret as a typo for the low 32 bits 0x87072118
++ * (high nibble dropped).  Logged at validation time so a future doc
++ * fix can be reconciled without code change.
++ */
++#define SDM_CERT_TYPE_CANCEL_AES_MAGIC		0x87072118U	/* 0x0D */
++#define SDM_CERT_TYPE_OWN_XFER_FROM_MAGIC	0x71776691U	/* 0x0E */
++#define SDM_CERT_TYPE_OWN_XFER_TO_MAGIC		0x38142061U	/* 0x0F */
++/* Beta types: no 2nd magic */
++
++/* -------------------------------------------------------------------------
++ * Common header (offsets 0x00..0x0F) - identical to the first four
++ * words of struct fcs_hps_vab_certificate_header in ATF.  Used as a
++ * generic discriminator for any certificate type.
++ * -------------------------------------------------------------------------
++ */
++struct sdm_cert_hdr {
++	uint32_t cert_magic_num;	/* 0x00 : SDM_CERT_MAGIC_NUM */
++	uint32_t cert_data_sz;		/* 0x04 : "data" size; excludes keychain */
++	uint32_t cert_ver;		/* 0x08 : per-type, see table */
++	uint32_t cert_type;		/* 0x0C : SDM_CERT_TYPE_* */
++};
++
++/* -------------------------------------------------------------------------
++ * Type-specific structures.
++ *
++ * Each struct starts with the common header so the host can simply
++ * cast its certificate buffer and read the discriminator.  Fields
++ * beyond offset 0x10 are documented per-type in
++ * docs/security_mailbox_certificate_types.md; only the bytes that the
++ * TA actively checks are named here.  The remainder (signing keychain,
++ * type-private payload) is opaque to the TA - the SDM enforces it.
++ * -------------------------------------------------------------------------
++ */
++
++/* 0x01 Engineering / 0x03 RMA / 0x04 Debug -- shared format */
++struct sdm_cert_engr_rma_dbg {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_ENGR_RMA_DBG_MAGIC */
++	uint32_t rsvd_14[8];		/* 0x14..0x33 */
++	uint32_t flags;			/* 0x34 : ENABLE_RMA / CANCEL_ALL_RMA /
++					 *        Engineering / *_DEBUG / *_TAP */
++};
++
++/* 0x02 User AES Root Key */
++struct sdm_cert_aes_root_key {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_AES_ROOT_MAGIC */
++	uint32_t storage_type;		/* 0x14 b7:0 : 0=BBRAM 1=eFuse 2=off-chip */
++	uint32_t wrap_select;		/* 0x18 b7:0 : 0=NoWrap 1=Internal
++					 *             2=IID_PUF 3=Intel_PUF */
++};
++
++/* 0x05 COUNTER_SET_CERT -- no 2nd magic (SDM 1.5) */
++struct sdm_cert_counter_set {
++	struct sdm_cert_hdr hdr;
++	uint8_t  counter_type;		/* 0x10 b7:0 : 0..6 or 255 */
++	uint8_t  rsvd_11[3];
++	uint32_t counter_value;		/* 0x14 : -1 = pre-auth (types 1..6) */
++};
++
++/* 0x06 VAB_SRC_CERT (HPS image authentication) */
++struct sdm_cert_vab_src {
++	struct sdm_cert_hdr hdr;
++	uint32_t vab_cert_magic_num;	/* 0x10 : SDM_CERT_MAGIC_NUM (FM) or
++					 *        SDM_CERT_TYPE_VAB_SRC_15_MAGIC (SM) */
++	uint32_t flags;			/* 0x14 */
++	uint8_t  rsvd0_1[8];		/* 0x18..0x1F */
++	uint8_t  fcs_sha384[48];	/* 0x20..0x4F */
++	/* 0x50 : measurement attributes (SDM 1.5) + keychain */
++};
++
++/* 0x07 Secondary (PR) Owner PUBKEY Auth */
++struct sdm_cert_pr_owner_pubkey {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_PR_OWNER_PK_MAGIC (SM)
++					 *        ; 0 / unused (FM) */
++	uint32_t flags;			/* 0x14 b15:0 cancel-slot, b16 PR root,
++					 *        b17 ext-auth root, ... */
++};
++
++/* 0x08 Kill Permit */
++struct sdm_cert_kill_permit {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_KILL_PERMIT_MAGIC */
++};
++
++/* 0x09 Owner Pubkey Late Provisioning */
++struct sdm_cert_owner_pubkey_late {
++	struct sdm_cert_hdr hdr;
++	uint8_t  rsvd_10[16];		/* 0x10..0x1F */
++	uint8_t  root_hash[48];		/* 0x20..0x4F : one new root hash */
++};
++
++/* 0x0A Decommission */
++struct sdm_cert_decommission {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_DECOMMISSION_MAGIC */
++};
++
++/* 0x0B Cancel Old SDOS Service Root Key */
++struct sdm_cert_cancel_sdos_srk {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_CANCEL_SDOS_MAGIC */
++	uint32_t flags;			/* 0x14 b29:30 FIPS mode selector */
++};
++
++/* 0x0C Provision SDOS Service Root Key */
++struct sdm_cert_provision_sdos_srk {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_PROV_SDOS_MAGIC */
++	uint32_t flags;			/* 0x14 b3:0 entropy words, b29:30 FIPS
++					 *        b30 SDOS test (FM), b31 virtual */
++};
++
++/* 0x0D Cancel Old User AES Root Key */
++struct sdm_cert_cancel_user_aes {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_CANCEL_AES_MAGIC */
++	uint32_t flags;			/* 0x14 b0 : 0=cancel one, 1=cancel all */
++};
++
++/* 0x0E Ownership Transfer (From) */
++struct sdm_cert_ownership_xfer_from {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_OWN_XFER_FROM_MAGIC */
++	uint32_t flags;			/* 0x14 */
++};
++
++/* 0x0F Ownership Transfer (To) */
++struct sdm_cert_ownership_xfer_to {
++	struct sdm_cert_hdr hdr;
++	uint32_t type_magic;		/* 0x10 : SDM_CERT_TYPE_OWN_XFER_TO_MAGIC */
++	uint32_t flags;			/* 0x14 */
++};
++
++/* Beta Preview (0x42444350) / Local (0x4244434C) -- no 2nd magic */
++struct sdm_cert_beta {
++	struct sdm_cert_hdr hdr;
++	uint32_t beta_cycle;		/* 0x10 : Beta cycle counter value */
++};
++
++#endif /* TA_SDM_SEND_CERT_H */
+diff --git a/optee_examples/sdm_send_cert/ta/sdm_send_cert_ta.c b/optee_examples/sdm_send_cert/ta/sdm_send_cert_ta.c
+new file mode 100644
+index 000000000000..2f4c571b65ed
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/ta/sdm_send_cert_ta.c
+@@ -0,0 +1,803 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_send_cert Trusted Application.
++ *
++ * General-purpose wrapper around PTA_CMD_SDM_SEND_CERT.  Unlike
++ * sdm_cert_auth (which only validates VAB_SRC_CERT, type 0x06), this
++ * TA recognises every cert_type listed in
++ * docs/security_mailbox_certificate_types.md and performs:
++ *
++ *   1. GP-TEE parameter-type and size sanity.
++ *   2. TEE_CheckMemoryAccessRights against the NW source buffer.
++ *   3. TOC-TOU snapshot of the certificate into TA-local memory.
++ *   4. Common-header sanity (magic, cert_data_sz fits in buffer).
++ *   5. cert_type-aware decode:
++ *        - validate cert_ver against the per-type allowed value(s);
++ *        - validate the type-specific magic at offset 0x10 (when one
++ *          is defined for the type);
++ *        - log a per-type audit line so the TF-A / OP-TEE log
++ *          records exactly which certificate class was submitted.
++ *   6. Forward the TA-local copy to PTA_CMD_SDM_SEND_CERT via
++ *      TEE_PARAM_TYPE_MEMREF_INPUT.
++ *   7. Propagate SDM mailbox result back to the host.
++ *   8. Wipe the TA-local copy before TEE_Free (certificate carries
++ *      RSA signatures / key material; don't leak via recycled heap).
++ *
++ * The SDM is still the authoritative judge of the certificate; the
++ * checks in this TA are there to (a) reject obvious garbage before
++ * burning a mailbox transaction, (b) reject the wrong cert_ver for a
++ * given cert_type before any non-reversible state changes, and (c)
++ * produce a deterministic audit trail.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_send_cert_ta.h>
++
++struct cert_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_send_cert TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_send_cert TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct cert_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_send_cert TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct cert_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_send_cert TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * Per-type decode + sanity check
++ *
++ * Every helper reads only the TA-local copy of the certificate (the
++ * snapshot taken before validation) so a hostile NW thread cannot
++ * mutate fields between the check and the eventual forward to the PTA.
++ * ---------------------------------------------------------------------------
++ */
++
++/*
++ * 0x01 Engineering / 0x03 RMA / 0x04 Debug -- shared format.
++ * cert_ver: 0 (SDM 1.2) or 1 (SDM 1.5).  2nd magic mandatory.
++ */
++static TEE_Result check_engr_rma_dbg(const void *cert, size_t cert_size,
++				     const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_engr_rma_dbg *c =
++		(const struct sdm_cert_engr_rma_dbg *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("engr/rma/dbg: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("engr/rma/dbg: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_ENGR_RMA_DBG_MAGIC) {
++		EMSG("engr/rma/dbg: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_ENGR_RMA_DBG_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: %s ver=%u flags=0x%08x",
++	     (hdr->cert_type == SDM_CERT_TYPE_ENGINEERING) ? "ENGR" :
++	     (hdr->cert_type == SDM_CERT_TYPE_RMA) ? "RMA" : "DEBUG",
++	     hdr->cert_ver, c->flags);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x02 User AES Root Key.  cert_ver must be 0; 2nd magic mandatory.
++ * Storage / wrap fields are sanity-checked against the doc's table.
++ */
++static TEE_Result check_aes_root_key(const void *cert, size_t cert_size,
++				     const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_aes_root_key *c =
++		(const struct sdm_cert_aes_root_key *)cert;
++	uint32_t storage = 0;
++	uint32_t wrap = 0;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("aes_root: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver != 0) {
++		EMSG("aes_root: bad cert_ver %u (allowed: 0)", hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_AES_ROOT_MAGIC) {
++		EMSG("aes_root: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_AES_ROOT_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	storage = c->storage_type & 0xFFU;
++	wrap    = c->wrap_select  & 0xFFU;
++	if (storage > 2U) {
++		EMSG("aes_root: bad storage_type %u (allowed: 0..2)", storage);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (wrap > 3U) {
++		EMSG("aes_root: bad wrap_select %u (allowed: 0..3)", wrap);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	/* Off-chip storage rejects "Internal" wrap per the doc table */
++	if (storage == 2U && wrap == 1U) {
++		EMSG("aes_root: off-chip storage + internal wrap is invalid");
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: AES_ROOT_KEY ver=0 storage=%u wrap=%u",
++	     storage, wrap);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x05 COUNTER_SET_CERT.  SDM 1.5 removed the 2nd magic; the doc
++ * keeps cert_ver in {0, 1}.  Counter type byte must be 0..6 or 255.
++ */
++static TEE_Result check_counter_set(const void *cert, size_t cert_size,
++				    const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_counter_set *c =
++		(const struct sdm_cert_counter_set *)cert;
++	uint8_t counter_type = 0;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("counter_set: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("counter_set: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	counter_type = c->counter_type;
++	if (counter_type > 6U && counter_type != 255U) {
++		EMSG("counter_set: bad counter_type %u "
++		     "(allowed: 0..6 or 255)", counter_type);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: COUNTER_SET ver=%u counter_type=%u value=%d",
++	     hdr->cert_ver, counter_type, (int32_t)c->counter_value);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x06 VAB_SRC_CERT - same shape sdm_cert_auth validates, but the
++ * 2nd magic is version-sensitive (SDM 1.2 uses SDM_CERT_MAGIC_NUM
++ * legacy; SDM 1.5 uses SDM_CERT_TYPE_VAB_SRC_15_MAGIC).
++ */
++static TEE_Result check_vab_src(const void *cert, size_t cert_size,
++				const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_vab_src *c =
++		(const struct sdm_cert_vab_src *)cert;
++	uint32_t want_magic = 0;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("vab_src: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("vab_src: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	want_magic = (hdr->cert_ver == 1) ? SDM_CERT_TYPE_VAB_SRC_15_MAGIC
++					  : SDM_CERT_MAGIC_NUM;
++	if (c->vab_cert_magic_num != want_magic) {
++		EMSG("vab_src: bad 2nd magic 0x%08x (expected 0x%08x for ver=%u)",
++		     c->vab_cert_magic_num, want_magic, hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: VAB_SRC ver=%u flags=0x%08x",
++	     hdr->cert_ver, c->flags);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x07 Secondary (PR) Owner PUBKEY Auth.  cert_ver: 0 (FM) or 1 (SM).
++ * Only SM specifies a 2nd magic; FM passes through unchecked.
++ */
++static TEE_Result check_pr_owner_pubkey(const void *cert, size_t cert_size,
++					const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_pr_owner_pubkey *c =
++		(const struct sdm_cert_pr_owner_pubkey *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("pr_owner_pk: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("pr_owner_pk: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver == 1 &&
++	    c->type_magic != SDM_CERT_TYPE_PR_OWNER_PK_MAGIC) {
++		EMSG("pr_owner_pk: bad 2nd magic 0x%08x (expected 0x%08x for SM)",
++		     c->type_magic, SDM_CERT_TYPE_PR_OWNER_PK_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: PR_OWNER_PUBKEY ver=%u flags=0x%08x",
++	     hdr->cert_ver, c->flags);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x08 Kill Permit.  2nd magic == 0x4B696C6C ("Kill" ASCII).
++ */
++static TEE_Result check_kill_permit(const void *cert, size_t cert_size,
++				    const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_kill_permit *c =
++		(const struct sdm_cert_kill_permit *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("kill_permit: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("kill_permit: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_KILL_PERMIT_MAGIC) {
++		EMSG("kill_permit: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_KILL_PERMIT_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: KILL_PERMIT ver=%u", hdr->cert_ver);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x09 Owner Pubkey Late Provisioning.  cert_ver == 0; no 2nd magic.
++ * The 48-byte root_hash at offset 0x20 must fit inside the buffer.
++ */
++static TEE_Result check_owner_pubkey_late(const void *cert, size_t cert_size,
++					  const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_owner_pubkey_late *c =
++		(const struct sdm_cert_owner_pubkey_late *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("owner_pk_late: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver != 0) {
++		EMSG("owner_pk_late: bad cert_ver %u (allowed: 0)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	(void)c;
++	IMSG("cert OK: OWNER_PUBKEY_LATE ver=0");
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x0A Decommission.  2nd magic == 0x6465636F ("deco" ASCII).
++ */
++static TEE_Result check_decommission(const void *cert, size_t cert_size,
++				     const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_decommission *c =
++		(const struct sdm_cert_decommission *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("decommission: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("decommission: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_DECOMMISSION_MAGIC) {
++		EMSG("decommission: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_DECOMMISSION_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: DECOMMISSION ver=%u", hdr->cert_ver);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x0B Cancel Old SDOS Service Root Key.  cert_ver must be 1.
++ */
++static TEE_Result check_cancel_sdos_srk(const void *cert, size_t cert_size,
++					const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_cancel_sdos_srk *c =
++		(const struct sdm_cert_cancel_sdos_srk *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("cancel_sdos_srk: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver != 1) {
++		EMSG("cancel_sdos_srk: bad cert_ver %u (allowed: 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_CANCEL_SDOS_MAGIC) {
++		EMSG("cancel_sdos_srk: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_CANCEL_SDOS_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: CANCEL_SDOS_SRK ver=1 fips_sel=0x%x",
++	     (c->flags >> 29) & 0x3U);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x0C Provision SDOS Service Root Key.  cert_ver in {0, 1}.
++ */
++static TEE_Result check_provision_sdos_srk(const void *cert,
++					   size_t cert_size,
++					   const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_provision_sdos_srk *c =
++		(const struct sdm_cert_provision_sdos_srk *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("prov_sdos_srk: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver > 1) {
++		EMSG("prov_sdos_srk: bad cert_ver %u (allowed: 0, 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_PROV_SDOS_MAGIC) {
++		EMSG("prov_sdos_srk: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_PROV_SDOS_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: PROVISION_SDOS_SRK ver=%u entropy_words=%u virt=%u",
++	     hdr->cert_ver, c->flags & 0xFU,
++	     (c->flags >> 31) & 0x1U);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x0D Cancel Old User AES Root Key.  cert_ver must be 2.  The doc
++ * lists the 2nd magic as "0x187072118" (9 hex digits) -- we treat the
++ * low 32 bits as authoritative and log the doc discrepancy.
++ */
++static TEE_Result check_cancel_user_aes(const void *cert, size_t cert_size,
++					const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_cancel_user_aes *c =
++		(const struct sdm_cert_cancel_user_aes *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("cancel_user_aes: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver != 2) {
++		EMSG("cancel_user_aes: bad cert_ver %u (allowed: 2)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_CANCEL_AES_MAGIC) {
++		EMSG("cancel_user_aes: bad 2nd magic 0x%08x "
++		     "(expected 0x%08x; doc shows '0x187072118' "
++		     "with 9 hex digits -- low 32 bits used)",
++		     c->type_magic, SDM_CERT_TYPE_CANCEL_AES_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: CANCEL_USER_AES ver=2 cancel_all=%u",
++	     c->flags & 0x1U);
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x0E Ownership Transfer (From) and 0x0F Ownership Transfer (To).
++ * cert_ver must be 1.  Each side has its own 2nd magic.
++ */
++static TEE_Result check_ownership_xfer_from(const void *cert,
++					    size_t cert_size,
++					    const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_ownership_xfer_from *c =
++		(const struct sdm_cert_ownership_xfer_from *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("own_xfer_from: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver != 1) {
++		EMSG("own_xfer_from: bad cert_ver %u (allowed: 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_OWN_XFER_FROM_MAGIC) {
++		EMSG("own_xfer_from: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_OWN_XFER_FROM_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: OWNERSHIP_XFER_FROM ver=1");
++	return TEE_SUCCESS;
++}
++
++static TEE_Result check_ownership_xfer_to(const void *cert,
++					  size_t cert_size,
++					  const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_ownership_xfer_to *c =
++		(const struct sdm_cert_ownership_xfer_to *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("own_xfer_to: truncated (%zu < %zu)",
++		     cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (hdr->cert_ver != 1) {
++		EMSG("own_xfer_to: bad cert_ver %u (allowed: 1)",
++		     hdr->cert_ver);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	if (c->type_magic != SDM_CERT_TYPE_OWN_XFER_TO_MAGIC) {
++		EMSG("own_xfer_to: bad 2nd magic 0x%08x (expected 0x%08x)",
++		     c->type_magic, SDM_CERT_TYPE_OWN_XFER_TO_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: OWNERSHIP_XFER_TO ver=1");
++	return TEE_SUCCESS;
++}
++
++/*
++ * 0x42444350 Beta Preview / 0x4244434C Beta Local -- no 2nd magic,
++ * no cert_ver constraint in the doc.
++ */
++static TEE_Result check_beta(const void *cert, size_t cert_size,
++			     const struct sdm_cert_hdr *hdr)
++{
++	const struct sdm_cert_beta *c =
++		(const struct sdm_cert_beta *)cert;
++
++	if (cert_size < sizeof(*c)) {
++		EMSG("beta: truncated (%zu < %zu)", cert_size, sizeof(*c));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	IMSG("cert OK: %s ver=%u beta_cycle=%u",
++	     (hdr->cert_type == SDM_CERT_TYPE_BETA_PREVIEW) ? "BETA_PREVIEW"
++							    : "BETA_LOCAL",
++	     hdr->cert_ver, c->beta_cycle);
++	return TEE_SUCCESS;
++}
++
++/* ---------------------------------------------------------------------------
++ * Top-level validation: common header + type-specific dispatch.
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result validate_cert(const void *cert, size_t cert_size)
++{
++	const struct sdm_cert_hdr *hdr =
++		(const struct sdm_cert_hdr *)cert;
++	size_t max_data_sz = 0;
++
++	if (cert_size < sizeof(*hdr)) {
++		EMSG("cert: too small for common header (%zu < %zu)",
++		     cert_size, sizeof(*hdr));
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (hdr->cert_magic_num != SDM_CERT_MAGIC_NUM) {
++		EMSG("cert hdr: bad cert_magic_num 0x%08x (expected 0x%08x)",
++		     hdr->cert_magic_num, SDM_CERT_MAGIC_NUM);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	/*
++	 * cert_data_sz is the size of the "data" portion (magic word
++	 * through signed data) and must fit inside the supplied buffer.
++	 * For SDM 1.5 the keychain follows; we don't assume a fixed
++	 * keychain size here, so the cap is "buffer minus the byte
++	 * occupied by the data length field itself".
++	 */
++	if (hdr->cert_data_sz == 0) {
++		EMSG("cert hdr: cert_data_sz is 0");
++		return TEE_ERROR_BAD_FORMAT;
++	}
++	max_data_sz = cert_size;
++	if ((size_t)hdr->cert_data_sz > max_data_sz) {
++		EMSG("cert hdr: cert_data_sz %u > buffer total %zu",
++		     hdr->cert_data_sz, max_data_sz);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	DMSG("cert hdr: cert_data_sz=%u cert_ver=%u cert_type=0x%x",
++	     hdr->cert_data_sz, hdr->cert_ver, hdr->cert_type);
++
++	switch (hdr->cert_type) {
++	case SDM_CERT_TYPE_ENGINEERING:
++	case SDM_CERT_TYPE_RMA:
++	case SDM_CERT_TYPE_DEBUG:
++		return check_engr_rma_dbg(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_USER_AES_ROOT_KEY:
++		return check_aes_root_key(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_COUNTER_SET:
++		return check_counter_set(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_VAB_SRC:
++		return check_vab_src(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_PR_OWNER_PUBKEY:
++		return check_pr_owner_pubkey(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_KILL_PERMIT:
++		return check_kill_permit(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_OWNER_PUBKEY_LATE:
++		return check_owner_pubkey_late(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_DECOMMISSION:
++		return check_decommission(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_CANCEL_SDOS_SRK:
++		return check_cancel_sdos_srk(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_PROVISION_SDOS_SRK:
++		return check_provision_sdos_srk(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_CANCEL_USER_AES:
++		return check_cancel_user_aes(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_OWNERSHIP_XFER_FROM:
++		return check_ownership_xfer_from(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_OWNERSHIP_XFER_TO:
++		return check_ownership_xfer_to(cert, cert_size, hdr);
++	case SDM_CERT_TYPE_BETA_PREVIEW:
++	case SDM_CERT_TYPE_BETA_LOCAL:
++		return check_beta(cert, cert_size, hdr);
++	default:
++		/*
++		 * Unknown cert_type: reject with BAD_FORMAT.  Forwarding
++		 * an opaque cert_type to the SDM risks a mailbox
++		 * transaction whose intent the TA cannot describe in the
++		 * audit log.  Update the doc + this switch when a new
++		 * type is introduced.
++		 */
++		EMSG("cert hdr: unknown cert_type 0x%08x", hdr->cert_type);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate then forward to PTA_CMD_SDM_SEND_CERT
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_send_cert(struct cert_sess_ctx *ctx,
++			       uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
++						TEE_PARAM_TYPE_VALUE_OUTPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	void *ns_cert = NULL;
++	size_t cert_size = 0;
++	uint8_t *local_cert = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	/* Zero the host's output before any return; populated by the PTA */
++	params[1].value.a = 0;
++	params[1].value.b = 0;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	ns_cert   = params[0].memref.buffer;
++	cert_size = params[0].memref.size;
++
++	if (!ns_cert || cert_size == 0 || cert_size > SDM_CERT_MAX_SIZE) {
++		EMSG("bad cert memref: buf=%p size=%zu (max %u)",
++		     ns_cert, cert_size, SDM_CERT_MAX_SIZE);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (cert_size & 0x3U) {
++		EMSG("cert size %zu not 4-byte aligned", cert_size);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (cert_size < (size_t)VAB_CERT_MIN_SIZE) {
++		EMSG("cert size %zu < minimum (%u)",
++		     cert_size, (unsigned)VAB_CERT_MIN_SIZE);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	/*
++	 * Verify the NW source memref is genuinely readable for the full
++	 * size before we touch any byte through it.  Converts a hypothetical
++	 * "lying memref size / unmapped page" condition into a clean
++	 * TEE_ERROR_ACCESS_DENIED instead of a secure-world fault during
++	 * the copy below.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_cert, cert_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("cert memref not readable: buf=%p size=%zu res=0x%08x",
++		     ns_cert, cert_size, res);
++		return res;
++	}
++
++	/*
++	 * Copy the NW certificate into TA-local memory so the validation
++	 * below operates on bytes that the NW caller cannot mutate after
++	 * the fact (TOC-TOU protection).
++	 */
++	local_cert = TEE_Malloc(cert_size, 0);
++	if (!local_cert) {
++		EMSG("alloc local_cert (%zu) failed", cert_size);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	TEE_MemMove(local_cert, ns_cert, cert_size);
++
++	res = validate_cert(local_cert, cert_size);
++	if (res != TEE_SUCCESS) {
++		/* Wipe the rejected cert before returning the heap memory */
++		TEE_MemFill(local_cert, 0, cert_size);
++		TEE_Free(local_cert);
++		return res;
++	}
++
++	DMSG("sdm_send_cert: validated (%zu bytes), forwarding to PTA",
++	     cert_size);
++
++	/*
++	 * Forward to PTA_CMD_SDM_SEND_CERT.  We pass the TA-local copy as
++	 * a MEMREF_INPUT so the PTA reads from a buffer the NW cannot
++	 * change in flight; the PTA in turn places it into a TZDRAM
++	 * bounce buffer for the SDM mailbox.
++	 */
++	pta_params[0].memref.buffer = local_cert;
++	pta_params[0].memref.size   = cert_size;
++	/* pta_params[1] (VALUE_OUTPUT) is zero-initialised */
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_SEND_CERT, exp_pt,
++				  pta_params, &pta_origin);
++
++	/* Propagate SDM mailbox result to the host even on errors */
++	params[1].value.a = pta_params[1].value.a;
++	params[1].value.b = pta_params[1].value.b;
++
++	/*
++	 * Wipe local_cert before returning it to the heap.  A certificate
++	 * may carry RSA signatures and customer key material; don't leave
++	 * it sitting in recycled pages.
++	 */
++	TEE_MemFill(local_cert, 0, cert_size);
++	TEE_Free(local_cert);
++
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_SEND_CERT failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_send_cert: SDM response mbox_err=0x%08x detail=0x%08x",
++	     params[1].value.a, params[1].value.b);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct cert_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_SEND_CERT_CMD_SEND:
++		return do_send_cert(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_send_cert/ta/sub.mk b/optee_examples/sdm_send_cert/ta/sub.mk
+new file mode 100644
+index 000000000000..1c10ef6b580c
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_send_cert_ta.c
+diff --git a/optee_examples/sdm_send_cert/ta/user_ta_header_defines.h b/optee_examples/sdm_send_cert/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..fd78fda22b23
+--- /dev/null
++++ b/optee_examples/sdm_send_cert/ta/user_ta_header_defines.h
+@@ -0,0 +1,37 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_send_cert_ta.h>
++
++#define TA_UUID			TA_SDM_SEND_CERT_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++
++/*
++ * Heap must hold one TA-local copy of the certificate (max 4 KB) plus
++ * the session context and dev-kit overhead.  32 KB leaves comfortable
++ * headroom while staying frugal vs. the OP-TEE TA heap default.
++ */
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM multi-type certificate submission TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_send_cert.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Validates any SDM certificate type and forwards to PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

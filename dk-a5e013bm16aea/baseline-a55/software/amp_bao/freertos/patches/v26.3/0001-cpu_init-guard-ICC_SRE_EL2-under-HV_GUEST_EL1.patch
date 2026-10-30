@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 30 Oct 2026 15:00:00 +0800
+Subject: [PATCH 1/6] cpu_init: guard ICC_SRE_EL2 under HV_GUEST_EL1
+
+ICC_SRE_EL2 is an EL2/EL3-only system register. A hypervisor that lands
+its guest at EL1 (e.g. Bao) has already programmed ICC_SRE_EL2.SRE on the
+guest's behalf, so the MSR ICC_SRE_EL2 in _core_setup is UNDEFINED when
+executed from EL1 (not a trap to EL2 - the exception is taken right back
+into the guest's own sync-exception vector). On Bao that vector just
+spins, so the guest hangs before producing any output.
+
+Guard the write with #ifndef HV_GUEST_EL1. The currentEL dispatch that
+follows already handles an EL1 entry, and ICC_SRE_EL1 is still programmed
+so the guest's own GIC system-register access is set up as before.
+With HV_GUEST_EL1=OFF (the default) the emitted code is unchanged.
+
+Ported from patches/v26.1-SMP/0001; v26.3 reworked the comment style and
+register ordering around this MSR, so the original context no longer
+matched.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+diff --git a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+index d5f42c4..a4773f5 100644
+--- a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
++++ b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+@@ -167,7 +167,16 @@ _core_setup:
+     MOV x1, #1
+ 
+     ISB
++#ifndef HV_GUEST_EL1
++    /* ICC_SRE_EL2 is only accessible from EL2/EL3. When this image is built
++     * as a hypervisor guest that enters at EL1 (HV_GUEST_EL1=ON, e.g. for
++     * Bao), ICC_SRE_EL2.SRE has already been programmed by the hypervisor;
++     * executing this MSR from EL1 is UNDEFINED (not a trap to EL2 - the
++     * exception is taken right back into this guest's own sync-exception
++     * vector), and on Bao that vector just spins. Skip the write entirely -
++     * the currentEL fallthrough below handles the EL1 entry path. */
+     MSR ICC_SRE_EL2, x0
++#endif
+     ISB
+     /* SRE = 1, Enable the Ssystem register interface for the current security level. */
+     MSR ICC_SRE_EL1, x1
+-- 
+2.25.1
+

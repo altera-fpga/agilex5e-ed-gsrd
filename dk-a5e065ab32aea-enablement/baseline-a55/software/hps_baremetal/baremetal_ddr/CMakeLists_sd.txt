@@ -1,0 +1,139 @@
+cmake_minimum_required(VERSION 3.14...3.28)
+
+# ---------------------------------------------------------------------------
+# HPS Baremetal Hello World - SD boot example (DDR)
+#
+# With build.sh, produces baremetal.elf, a bootable SD image
+# (baremetal.hps.sd.img) and the JTAG-programmed SD FSBL SOF (fsbl_sd.sof):
+#   ATF BL2 (SD) -> BL31 -> application.
+# For QSPI boot see CMakeLists_qspi.txt; build.sh stages the selected file as
+# CMakeLists.txt via BOOT_SOURCE_TYPE.
+# ---------------------------------------------------------------------------
+
+# main.c lives in the example source tree; build.sh stages this file into the
+# build dir and passes -DEXAMPLE_ROOT. Default to this dir for a direct configure.
+if(NOT DEFINED EXAMPLE_ROOT)
+    set(EXAMPLE_ROOT "${CMAKE_CURRENT_LIST_DIR}")
+endif()
+
+# Baremetal config
+set(PLAT            "agilex5" CACHE STRING "Target platform")
+set(BUILD_MODE      "DDR"     CACHE STRING "Memory layout: OCRAM or DDR")
+
+# Fetch the baremetal repo
+include(FetchContent)
+FetchContent_Declare(
+    baremetal
+    GIT_REPOSITORY https://github.com/altera-fpga/baremetal-drivers.git
+    GIT_TAG        66bdcc347564c5698a8997169bce83a31647d618
+)
+FetchContent_MakeAvailable(baremetal)
+FetchContent_GetProperties(baremetal)
+
+# Add project
+project(hps_baremetal C ASM)
+
+add_executable(${PROJECT_NAME}.elf)
+
+# Build flags
+target_compile_options(${PROJECT_NAME}.elf PRIVATE
+    # Keep printf("...\n") from becoming puts() (no puts in -nostdlib build).
+    -fno-builtin-printf
+)
+
+# Generate .bin/.hex/.dump via the baremetal repo helper
+bm_generate_artifacts(${PROJECT_NAME}.elf)
+
+# Link baremetal. Mirror the km-hps ELF's own library set; --start-group/
+# --end-group resolves the cross-archive references between them. bm_app carries
+# the freestanding lib/ (string/printf/parse/time), i.e. memcpy, memset, cstrcmp,
+# lib_vprintf, parse_hex/parse_dec and clock_ticks/ticks_to_* used by bm_api.
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE
+    -Wl,--start-group
+    bm_app
+    platform
+    bm_api
+    -Wl,--end-group
+)
+
+# Sources
+target_sources(${PROJECT_NAME}.elf PRIVATE
+    "${EXAMPLE_ROOT}/main.c"
+    "${baremetal_SOURCE_DIR}/src/crt0.c"
+    "${baremetal_SOURCE_DIR}/src/startup.S"
+    "${baremetal_SOURCE_DIR}/src/vectors.S"
+    "${baremetal_SOURCE_DIR}/examples/hello/hello_selftest.c"
+)
+
+# hello_selftest.c pulls in examples/example_register.h and api/console/
+# console_api.h -> lib_parse.h. km-hps sets include/ and lib/ globally for its
+# own targets, but those don't propagate to this downstream target, so add them
+# here alongside examples/ (api/ and platform/ come via the linked libraries).
+target_include_directories(${PROJECT_NAME}.elf PRIVATE
+    "${baremetal_SOURCE_DIR}/examples"
+    "${baremetal_SOURCE_DIR}/lib"
+)
+
+# Link options. LD_SCRIPT is resolved from BUILD_MODE by the baremetal library.
+target_link_options(${PROJECT_NAME}.elf PRIVATE
+    -T "${LD_SCRIPT}"
+    -nostdlib
+    -no-pie
+    -Wl,-L${baremetal_SOURCE_DIR}
+    -Wl,-Map=${CMAKE_BINARY_DIR}/${PROJECT_NAME}.map
+)
+
+# ---------------------------------------------------------------------------
+# SD boot image (FIP)
+# Uses the SD-variant ATF (atf-bl2-bl31-sd, MMC_DEVICE_TYPE=SD) to build a
+# fip.bin. build.sh builds the generate-sd-fip target, then assembles the SD
+# card image and the SD FSBL SOF with the baremetal repo tools + quartus_pfg.
+# ---------------------------------------------------------------------------
+include("${baremetal_SOURCE_DIR}/cmake/bm_boot.cmake")
+
+set(SD_BINARIES_DIR "${CMAKE_BINARY_DIR}/sd_binaries")
+
+# Copy ATF SD bl2.bin/bl31.bin into sd_binaries (two single-output commands so
+# parallel (-j) consumers don't collide on a shared copy step).
+add_custom_command(
+    OUTPUT "${SD_BINARIES_DIR}/bl2.bin"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SD_BINARIES_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SD_ARTIFACTS_DIR}/bl2.bin"  "${SD_BINARIES_DIR}/bl2.bin"
+    DEPENDS atf-bl2-bl31-sd
+    COMMENT "Copying SD ATF bl2.bin to sd_binaries"
+)
+add_custom_command(
+    OUTPUT "${SD_BINARIES_DIR}/bl31.bin"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SD_BINARIES_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SD_ARTIFACTS_DIR}/bl31.bin" "${SD_BINARIES_DIR}/bl31.bin"
+    DEPENDS atf-bl2-bl31-sd
+    COMMENT "Copying SD ATF bl31.bin to sd_binaries"
+)
+
+# Convert the SD bl2.bin -> bl2.hex (for the SD FSBL SOF, assembled in build.sh).
+add_custom_command(
+    OUTPUT "${SD_BINARIES_DIR}/bl2.hex"
+    COMMAND ${CMAKE_OBJCOPY}
+            -I binary -O ihex --change-addresses 0x0
+            "${SD_BINARIES_DIR}/bl2.bin"
+            "${SD_BINARIES_DIR}/bl2.hex"
+    DEPENDS "${SD_BINARIES_DIR}/bl2.bin"
+    COMMENT "Generating SD bl2.hex"
+)
+
+# Package SD BL31 + the application .bin into fip.bin for SD boot.
+add_custom_command(
+    OUTPUT "${SD_BINARIES_DIR}/fip.bin"
+    COMMAND "${CMAKE_BINARY_DIR}/fiptool" create
+            --soc-fw "${SD_BINARIES_DIR}/bl31.bin"
+            --nt-fw  "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin"
+            "${SD_BINARIES_DIR}/fip.bin"
+    DEPENDS "${SD_BINARIES_DIR}/bl31.bin" atf-fiptool ${PROJECT_NAME}.elf
+    COMMENT "Generating SD fip.bin"
+)
+
+# Aggregate target built explicitly by build.sh (produces the SD fip + bl2.hex).
+add_custom_target(generate-sd-fip
+    DEPENDS "${SD_BINARIES_DIR}/fip.bin" "${SD_BINARIES_DIR}/bl2.hex")

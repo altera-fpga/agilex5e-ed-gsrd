@@ -28,10 +28,7 @@ module testbench ();
     // DUT signals
     logic fpga_reset_n;
     wire [1:0] fpga_led_pio;
-    logic [1-1:0] fpga_button_pio;
-
-    // Tie off inputs to HPS
-    assign fpga_button_pio = '0;
+    wire [1-1:0] fpga_button_pio = '0;
 
     // Test flag
     bit h2f_pass = 1;
@@ -520,7 +517,7 @@ module testbench ();
                 lwh2f_wr_tr.set_write_strobes(4'hf, 0);
                 `lwh2f_bfm_m.AXI4MAN.bfm.put_transaction(lwh2f_wr_tr);
                 `lwh2f_bfm_m.AXI4MAN.bfm.drive_transaction();
-                lwh2f_storeMessage("*************** END OF Second Write TEST ***************\n");
+                lwh2f_storeMessage("*************** END OF First Write TEST ***************\n");
 
                 /////////////////////////////////////////////////////////////////////////////////
 

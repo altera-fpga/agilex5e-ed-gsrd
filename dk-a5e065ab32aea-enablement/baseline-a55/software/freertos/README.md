@@ -1,5 +1,4 @@
 # Overview of FreeRTOS
-
 The FreeRTOS framework enables user to create real-time operating systems (RTOS)
 with deterministic behaviours and bounded response time. The Altera FreeRTOS framework
 provides software drivers for Agilex 5 HPS peripherals and a straightforward build

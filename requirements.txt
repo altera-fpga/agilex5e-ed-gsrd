@@ -10,3 +10,6 @@ pycodestyle~=2.12.1
 pyflakes~=3.2.0
 pytz~=2024.2
 smmap~=5.0.1
+clang-format~=22.1.5
+pathspec~=0.12.1
+PyGithub~=2.5.0

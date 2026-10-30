@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 30 Oct 2026 15:00:00 +0800
+Subject: [PATCH 3/6] uart-ll: skip clock/reset under HV_GUEST_NO_CLKMGR
+
+On a static-partitioning hypervisor the clock-manager and reset-manager
+MMIO windows are typically not mapped into the RTOS partition, because
+they are shared platform resources owned by another guest. Any access
+from this guest faults at stage 2 and aborts the VM.
+
+Compile out the clkmgr/rstmgr touches in the UART low-level driver and
+stub the divisor computation in uart_set_baud under HV_GUEST_NO_CLKMGR.
+The boot loader has already enabled the peripheral clock, released the
+UART from reset and configured 115200-8N1 before the guest is entered,
+so uart_init only needs to (re)configure the FIFO and uart_set_baud can
+honour the request silently.
+
+Ported from patches/v26.1-SMP/0003; v26.3 switched these functions from
+doxygen /** @brief */ headers to /* Function: ... */ blocks, so the
+original hunks no longer matched.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+diff --git a/drivers/uart/socfpga_uart_ll.c b/drivers/uart/socfpga_uart_ll.c
+index 35b8c92..358fadd 100644
+--- a/drivers/uart/socfpga_uart_ll.c
++++ b/drivers/uart/socfpga_uart_ll.c
+@@ -24,6 +24,13 @@
+ #include "socfpga_clk_mngr.h"
+ #include "socfpga_rst_mngr.h"
+ 
++#ifndef HV_GUEST_NO_CLKMGR
++/* On partitions where the clock-manager and reset-manager MMIO windows are
++ * NOT passed through to this guest (HV_GUEST_NO_CLKMGR=ON), these four helpers
++ * can never run -- the boot loader has already enabled the peripheral clock
++ * and brought the UART out of reset. Compile them out so -Werror=unused-function
++ * stays clean. */
++
+ /*
+     Function: uart_enable_clock
+ 
+@@ -77,6 +84,8 @@ static void uart_deassert_reset(uint32_t instance)
+     reset_inst = (instance == 1U) ? RST_UART1: RST_UART0;
+     (void)rstmgr_deassert_reset(reset_inst);
+ }
++#endif /* !HV_GUEST_NO_CLKMGR */
++
+ /*
+     Function: uart_init
+ 
+@@ -84,6 +93,15 @@ static void uart_deassert_reset(uint32_t instance)
+ */
+ void uart_init(uint32_t instance)
+ {
++#ifdef HV_GUEST_NO_CLKMGR
++    /* When this guest's partition does not own CLK_PERPLL / RST (typically a
++     * hypervisor / static-partitioning setup with HV_GUEST_NO_CLKMGR=ON), the
++     * boot loader has already enabled the peripheral clock and brought the
++     * UART out of reset before our entry, so we only need to (re)configure
++     * the FIFO here. Touching the clock or reset MMIO would cause a stage-2
++     * fault and abort the VM under Bao. */
++    uart_config_fifo(GET_UART_BASE_ADDRESS(instance));
++#else
+     volatile int32_t i = 0;
+     uart_enable_clock(instance);
+ 
+@@ -103,6 +121,7 @@ void uart_init(uint32_t instance)
+     }
+ 
+     uart_config_fifo(GET_UART_BASE_ADDRESS(instance));
++#endif
+ }
+ 
+ /*
+@@ -112,7 +131,13 @@ void uart_init(uint32_t instance)
+ */
+ void uart_deinit(uint32_t instance)
+ {
++#ifdef HV_GUEST_NO_CLKMGR
++    /* This partition does not own clock/reset; the guest must not touch
++     * CLK_PERPLL. */
++    (void)instance;
++#else
+     uart_disable_clock(instance);
++#endif
+ }
+ 
+ /*
+@@ -160,6 +185,14 @@ void uart_set_config(uint32_t base_address, uart_partity_t parity,
+ */
+ uint32_t uart_set_baud(uint32_t base_address, uint32_t baud)
+ {
++#ifdef HV_GUEST_NO_CLKMGR
++    /* The clock manager isn't passed through to this guest, so we cannot
++     * compute the divisor; the boot loader has already configured the UART
++     * for 115200-8N1. Honour the request silently and report success. */
++    (void)base_address;
++    (void)baud;
++    return 1U;
++#else
+     uint32_t peri_clk = 0U;
+     uint32_t lcr_var;
+     uint32_t val;
+@@ -194,6 +227,7 @@ uint32_t uart_set_baud(uint32_t base_address, uint32_t baud)
+     WR_REG32((base_address + UART_LCR), lcr_data);
+ 
+     return 1U;
++#endif
+ }
+ 
+ /*
+-- 
+2.25.1
+

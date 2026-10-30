@@ -1,0 +1,9 @@
+# Example override file -- copy to /tmp/docker-images-override.cfg on the build host.
+# If present, these values replace kconfig fragment settings when docker recipes are built
+#
+#   cp kas/virtualization/docker-images-override.cfg.example /tmp/docker-images-override.cfg
+#   # edit /tmp/docker-images-override.cfg
+#
+DOCKER_STATE_START_DAEMON="1"
+DOCKER_LIST_IMAGES="docker.io/library/alpine:3.19,docker.io/library/busybox:1.36,docker.io/library/hello-world:latest,file:///tmp/example-image.tar"
+DOCKER_LIST_RUN_ARGS="--name=alpine --network=host --restart=unless-stopped alpine:3.19#sleep infinity|yes,--name=busyhttp -d -v /www/pages:/www -p 8084:80 --restart=unless-stopped busybox:1.36#httpd -f -p 80 -h /www|yes,--name=hello|no,--name=localapp -v /data:/data myapp:latest|no"

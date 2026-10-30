@@ -64,6 +64,7 @@ ALL_PREP_TARGETS =
 ALL_IP_UPGRADE_TARGETS =
 ALL_GENERATE_DESIGN_TARGETS =
 ALL_PACKAGE_DESIGN_TARGETS =
+ALL_VALIDATE_README_METADATA_TARGETS =
 ALL_BUILD_TARGETS =
 ALL_TEST_TARGETS =
 ALL_FUNCTIONAL_SIM_TARGETS =
@@ -74,6 +75,7 @@ ALL_TARGET_ALL_NAMES =
 
 ALL_SW_TARGET_STEM_NAMES =
 ALL_SW_BUILD_TARGETS =
+ALL_SW_CLEAN_TARGETS =
 ALL_SW_INSTALL_TARGETS =
 
 # Define function to create targets
@@ -84,6 +86,7 @@ ALL_PREP_TARGETS += $(addsuffix -prep,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_IP_UPGRADE_TARGETS += $(addsuffix -ip-upgrade,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_GENERATE_DESIGN_TARGETS += $(addsuffix -generate-design,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_PACKAGE_DESIGN_TARGETS += $(addsuffix -package-design,$(addprefix $(strip $(1))-,$(strip $(3))))
+ALL_VALIDATE_README_METADATA_TARGETS += $(addsuffix -validate-readme-metadata,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_BUILD_TARGETS += $(addsuffix -build,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_TEST_TARGETS += $(addsuffix -test,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_INSTALL_TARGETS += $(addsuffix -install,$(addprefix $(strip $(1))-,$(strip $(3))))
@@ -110,14 +113,11 @@ $(strip $(1))-%-generate-design : venv
 $(strip $(1))-%-package-design :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-package-design INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
 
+$(strip $(1))-%-validate-readme-metadata :
+	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-validate-readme-metadata
+
 $(strip $(1))-%-build :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-build
-
-$(strip $(1))-%-build-sw :
-	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-build-sw
-
-$(strip $(1))-%-install-sw :
-	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-install-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
 
 $(strip $(1))-%-test :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-test
@@ -127,9 +127,6 @@ $(strip $(1))-%-install :
 
 $(strip $(1))-%-clean :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-clean
-
-$(strip $(1))-%-clean-sw :
-	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-clean-sw
 
 $(strip $(1))-%-dev-clean :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-dev-clean
@@ -152,10 +149,14 @@ endef
 define create_sw_targets_on_subdir
 ALL_SW_TARGET_STEM_NAMES += $(addprefix $(strip $(1))-,$(strip $(3)))
 ALL_SW_BUILD_TARGETS += $(addsuffix -build-sw,$(addprefix $(strip $(1))-,$(strip $(3))))
+ALL_SW_CLEAN_TARGETS += $(addsuffix -clean-sw,$(addprefix $(strip $(1))-,$(strip $(3))))
 ALL_SW_INSTALL_TARGETS += $(addsuffix -install-sw,$(addprefix $(strip $(1))-,$(strip $(3))))
 
 $(strip $(1))-%-build-sw :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-build-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
+
+$(strip $(1))-%-clean-sw :
+	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-clean-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
 
 $(strip $(1))-%-install-sw :
 	$(MAKE) --no-print-directory -C $(strip $(2)) $$*-install-sw INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT)/$(strip $(4))/designs INSTALL_ROOT_BINARIES=$(INSTALL_ROOT)/$(strip $(4))/binaries/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT)/artifacts/$(strip $(1))
@@ -174,7 +175,7 @@ endef
 dummy-build-sw:
 
 .PHONY: dummy-install-sw
-install-build-sw:
+dummy-install-sw:
 
 
 # Create rules for subdirs
@@ -254,6 +255,9 @@ generate-designs: $(ALL_GENERATE_DESIGN_TARGETS)
 .PHONY: package-designs
 package-designs: $(ALL_PACKAGE_DESIGN_TARGETS)
 
+.PHONY: validate-readme-metadata
+validate-readme-metadata: $(ALL_VALIDATE_README_METADATA_TARGETS)
+
 # Build options
 .PHONY: build
 build: $(ALL_BUILD_TARGETS)
@@ -271,6 +275,9 @@ install: $(ALL_INSTALL_TARGETS)
 
 .PHONY: install-sw
 install-sw: $(ALL_SW_INSTALL_TARGETS)
+
+.PHONY: clean-sw
+clean-sw: $(ALL_SW_CLEAN_TARGETS)
 
 .PHONY: all
 all: $(ALL_TARGET_ALL_NAMES)

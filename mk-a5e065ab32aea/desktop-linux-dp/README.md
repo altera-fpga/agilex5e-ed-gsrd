@@ -1,0 +1,343 @@
+# HPS Desktop Linux System Example Design for Agilex 5 FPGA E-Series 065A Modular Development Kit
+
+Desktop Linux System Example Design for Agilex 5 FPGA E-Series 065A Modular Development Kit.
+
+## Description
+
+<p>This design is a Desktop Linux System Example Design for Altera Agilex 5 System On Chip (SoC) FPGA.
+
+</p><p>This project provides the necessary files and collaterals to build a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications. Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/modular/gsrd/ug-gsrd-agx5e-modular/">Agilex 5 E-Series Modular Development Kit Baseline System Example Design user guide</a> for more information.
+</p><p>The design uses HPS First configuration mode.
+
+</p><h2>Features and Specifications
+</h2><p>This design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
+<ul><li>Hard Processor System (HPS) enablement and configuration
+<ul><li>Enable dual core Arm Cortex-A76 processor
+</li><li>Enable dual core Arm Cortex-A55 processor
+</li><li>HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
+</li><li>HPS Clock and Reset
+</li><li>HPS FPGA Bridge and Interrupt
+<ul><li>Note: The System MMU port in F2H and F2SDRAM bridges are disabled by default</li></ul>
+</li></ul><li>HPS EMIF configuration (ECC is enabled by default)
+</li><li>System integration with FPGA IPs
+<ul><li>Fabric subsystem that consists of NiosV subsystem, Video subsystem, DisplayPort subsystem, 256KB of FPGA On-Chip Memory, System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs.
+</li><li>NiosV subsystem that consists of JTAG Avalon Master Bridge IP and Address Span Extender IP to allow System-Console debug activity and FPGA content access through JTAG.
+</li></ul>
+</li><li>Support for the following output video interface
+<ul><li>Output: DisplayPort 1.4</li></ul>
+</li><li>Support for the following progressive video resolutions on the output interfaces
+<ul><li>Fixed: 1920x1080 60Hz (1080p)</li></ul>
+
+</li></ul></p><h3>Hardware Requirements
+</h3><p>
+<ul><li>Agilex 5 FPGA E-Series 065A Modular Development Kit
+</li><li>DP cable
+</li><li>USB-C JTAG Cable
+</li><li>1080p Monitor</li></ul>
+
+</p><h3>USB modes
+</h3><p>This design supports USB 3.1 in both host and device mode.<br>Once power up, the USB mode will remain and cannot be changed during runtime.
+
+</p><p>The linux device tree (dts) needs to be configured.<br>The dts can be set with &quot;dr_mode&quot;.
+
+</p><table border=\"1\" cellpadding=\"10\" ><tr><th>dr_mode value</th><th>Equivalent USB mode</th></tr>
+<tr><td>host</td><td>Host</td></tr>
+<tr><td>peripheral</td><td>Device</td></tr></table>
+
+## Project Details
+
+- **Family**: Agilex 5 E-Series
+- **Quartus Version**: 26.3
+- **Development Kit**: Agilex™ 5 FPGA and SoC E-Series 065A Modular Development Kit MK-A5E065AB32AEA
+- **Device Part**: A5ED065AB32AE1V
+- **Category**: HPS
+- **Source**: Quartus Prime Pro
+- **URL**: https://github.com/altera-fpga/agilex5-ed-hps-baseline
+- **Design Package**: mk-a5e065ab32aea-desktop-linux-dp.zip
+
+## Documentations
+
+- **Title**: HPS Desktop Linux System Example Design User Guide for the Agilex 5 E-Series Modular Development Kit
+**URL**: TBD
+
+## Software projects
+
+| Project | Description |
+|---------|-------------|
+| [Yocto Linux](software/yocto_linux/README.md) | Linux BSP build, boot, and Simics bring-up |
+| [HPS debug](software/hps_debug/README.md) | HPS content wipe utility for debug |
+
+## Design overview
+![Block Diagram desktop linux design overview](images/desktop-linux-overview.svg)
+
+## Hard Processor System (HPS)
+This design's HPS configuration matches the board schematic.
+Refer to [Agilex 5 Hard Processor System Technical Reference Manual](https://docs.altera.com/r/docs/814346/current) and [Hard Processor System Component Reference Manual: Agilex 5 SoCs](https://docs.altera.com/r/docs/813752/current) for more information on HPS configuration.
+
+## HPS External Memory Interfaces (EMIF) DDR
+This design's HPS EMIF DDR configuration matches the board schematic.
+Refer to [External Memory Interfaces (EMIF) IP User Guide: Agilex 5 FPGAs and SoCs](https://docs.altera.com/r/docs/817467/current) for more information on HPS EMIF configuration.
+
+## Bridges
+Bridges are used to move data between FPGA fabric and HPS logic.
+Refer to [HPS Bridges](https://docs.altera.com/r/docs/813752/26.3/hard-processor-system-component-reference-manual-agilex-5-socs/fpga-bridges).
+
+The HPS address map and the FPGA address map are the same for Agilex 5.
+Refer to [Total Address Map Graphical](https://docs.altera.com/r/docs/814346/26.3/hard-processor-system-technical-reference-manual-agilex-5-socs/total-address-map-graphical) for more information.
+
+Therefore, when accessing HPS logic in uboot or linux, the base address would be the same as, when using [NiosV Subsystem](#niosv-subsystem) from FPGA fabric.
+
+| Bridge   | Use Case |
+| :-- | :-- |
+| F2SDRAM  | move data from FPGA fabric to HPS logic (non-coherent). Can access HPS EMIF. |
+| F2S      | move data from FPGA fabric to HPS logic (coherent). Can access all HPS peripherial except the GIC. |
+| LWS2F    | move data from HPS logic to FPGA fabric. Access FPGA peripherial Control Status Register (CSR). |
+| H2F      | move data from HPS logic to FPGA fabric. Access FPGA Onchip Memory as scratch pad.    |
+
+## Fabric Subsystem
+
+### NiosV Subsystem
+In the NiosV subsystem, the JTAG Avalon Master Bridge IP interface allows access to the peripherals in the FPGA with System Console. This access does not rely on HPS software drivers. Refer to this [Guide](https://docs.altera.com/r/docs/683819/26.3/quartus-prime-pro-edition-user-guide/analyzing-and-debugging-designs-with-system-console) for information about system console.
+
+| NiosV                                | Attribute                    | Addresss Offset                           | Size (bytes)     |
+|:-------------------------------------|------------------------------|-------------------------------------------|:----------------:|
+| ocm                                  |  On-Chip Memory II           | 0x0                                       | 262144           |
+| jtag_uart                            |  JTAG UART                   | 0x0005_0040                               | 8                |
+| fpga2hps_address_<br>span_extender   | Address Span Extender        | 0x0005_0070 (cntl)<br>0x4000_0000 (slave) | 8<br>1073741824  |
+| pio_in                               | PIO (Parallel I/O) Inputs    | 0x0005_0050                               | 16               |
+| pio_out                              | PIO (Parallel I/O) Outputs   | 0x0005_0060                               | 16               |
+
+
+### SDRAM Access via Address Span Extender (F2H Bridge)
+
+#### Overview
+
+The PDK is equipped with **8 GB of SDRAM**, mapped across two physical address regions:
+
+| Region       | Global Address Range                 | Local Address Range                     |
+|--------------|--------------------------------------|-------------------------------------------|
+| Lower 2 GB   | `0x00_8000_0000` – `0x00_FFFF_FFFF`  | `0x0_0000_0000` – `0x0_7FFF_FFFF`        |
+| Upper 6 GB   | `0x08_8000_0000` – `0x09_FFFF_FFFF`   | `0x0_8000_0000` – `0x1_FFFF_FFFF`        |
+
+> *![Agilex 5 Address Mapping](images/agilex5-address-mapping.png)*
+
+> **Note:** System Console/Nios V operates in a **32-bit address space** and cannot directly access 64-bit SDRAM addresses. The address `0x9_0200_0000` is an example of a target address in the upper 6GB region.
+
+---
+
+#### Address Span Extender IP
+
+The **Address Span Extender IP (F2H Bridge)** resolves this limitation by using two control registers — **CSR_L** and **CSR_H** — to construct a full 64-bit physical SDRAM address from a 32-bit data address.
+
+| Register | Base Address          | Holds                                   |
+|----------|-----------------------|-----------------------------------------|
+| `CSR_L`  | `0x50070`(F2H)        | Bits `[31:0]` of 64-bit target address  |
+| `CSR_H`  | `0x50074`(F2H)        | Bits `[63:32]` of 64-bit target address |
+
+Together, **CSR_H** and **CSR_L** define the physical SDRAM region that the 32-bit data address window points to.
+
+#### How the Address Span Extender Works — The "Sliding Window" Concept
+
+Think of the Address Span Extender like a **sliding window** cut into a wall:
+
+- The **wall** represents the full 8 GB SDRAM — too large to see all at once.
+- The **window** is a fixed **1 GB opening** (`0x0` to `0x4000_0000` in internal offset) that you can look through at any one time.
+- The **CSR registers** are the handle you use to **slide the window** to point at any part of the 8 GB SDRAM.
+
+In this design, the 1 GB window (windowed_slave) is placed at address from `0x4000_0000` to `0x7fff_ffff` (F2H) in the address_span_extender IP, covering exactly 2²⁸ × 4 = **1 GB** of addressable space through a 28-bit word address.
+
+#### Sliding the Window — When to Shift CSR_L
+
+For F2H as example, `CSR_L` is set to `0x4000_0000`, which anchors the window at `0x4000_0000` and allows System Console to read addresses from `0x4000_0000` to `0x7FFF_FFFF`. If your target SDRAM address exceeds this 1 GB window (i.e. the lower 32 bits of your target address is greater than `0x7FFF_FFFF`), you need to **slide the window** by updating `CSR_L` to the next 1 GB aligned boundary. Set `CSR_L` to `0x8000_0000`, which shifts the window to cover `0x8000_0000` to `0xBFFF_FFFF`. The System Console read address then starts from `0x8000_0000` onwards for that new window.
+
+---
+
+#### How to Perform a Read via System Console
+
+**Step 1 — Set the CSR registers** before reading:
+- Write the **lower 32 bits** of the target SDRAM address to `CSR_L` at `0x50070` (F2H).
+- Write the **upper 32 bits** of the target SDRAM address to `CSR_H` at `0x50074` (F2H).
+
+**Step 2 — Compute the data address:**
+
+Compute_address = F2H Address Span Extender IP window slave address (0x4000_0000) + offset from target address
+
+**Step 3 — Read from the computed data address** in System Console.
+
+---
+
+#### Example Target Address
+
+> *![F2H Lower Part Example](../../images/f2h-lower-part-example.png)*
+> *Figure 3: F2H Lower 2GB Example*
+
+| Target Address | CSR_H | CSR_L       | F2H address span extender window slave address + offset     |
+|----------------|-------|-------------|-------------------------------------------------------------|
+| 0x8200_0000    | 0x0   | 0x8000_0000 | 0x4000_0000 (f2h) + 0x0200_0000 = 0x4200_0000               |
+
+> *![F2H Upper Part Example](../../images/f2h-upper-part-example.png)*
+> *Figure 4: F2H Upper 6GB Example*
+
+| Target Address | CSR_H | CSR_L       | F2H address span extender window slave address + offset     |
+|----------------|-------|-------------|-------------------------------------------------------------|
+| 0x8_8200_0000  | 0x8   | 0x8000_0000 | 0x4000_0000 (f2h) + 0x0200_0000 = 0x4200_0000               |
+
+---
+
+#### Key Takeaway
+
+> The **System Console input address (master_address)** is always derived from the **base address of the Address Span Extender IP window** plus the **offset extracted from the lower 32 bits of the target address**, regardless of which SDRAM region you are accessing.
+
+> In summary: **`CSR_H` selects the SDRAM bank, `CSR_L` slides the window within that bank, and the master_address is always base_address + offset from the target address.**
+
+### Peripherals
+| Peripheral | Address Offset | Size (bytes) | Attribute | Interrupt Number
+| :-- | :-- | :-- | :-- | :-- |
+| sysid | 0x0001_0000 | 8 | Unique system ID   | None |
+| led_pio | 0x0001_0080 | 16 | LED outputs   | None |
+| button_pio | 0x0001_0060 | 16 | Push button inputs | 0 |
+| dipsw_pio | 0x0001_0070 | 16 | DIP switch inputs | None |
+
+#### Notes
+- There are 2 user DIP switch inputs, 2 user push-button inputs and 1 LED outputs that is connected to fpga pins on Agilex 5 FPGA E-Series 065A Modular Development Kit.
+  - All LED outputs can be manipulated by software.
+- The peripheral components in fabric subsystem can be accessed via the LWS2F bridge and have offset of 0x0_2000_0000. Refer to [Total Address Map Graphical](https://docs.altera.com/r/docs/814346/26.3/hard-processor-system-technical-reference-manual-agilex-5-socs/total-address-map-graphical).
+- The FPGA IRQ has offset of 17 when mapped to Generic Interrupt Controller (GIC) in device tree structure(dts). Refer to fpga2hps_interrupt_irq0[0] in [GIC Shared Peripheral Interrupts Map for the SoC HPS](https://docs.altera.com/r/docs/814346/26.3/hard-processor-system-technical-reference-manual-agilex-5-socs/gic-shared-peripheral-interrupts-map-for-the-soc-hps).
+
+## Hardware build
+**Prerequisites**
+- Altera Quartus Prime 26.3
+- Python 3.11.5 (only required when using command line to build)
+
+### Using Quartus GUI
+1. Launch Quartus Prime 26.3.
+2. Open the design project. E.g top.qpf.
+3. Click the play button to compile the design.
+4. The compiled sof can be found in output_files folder of the project path.
+
+### Using Command Line
+1. Build the design sof
+```bash
+make desktop_linux_dp-build
+```
+After build, the bitstream (sof) can be found in output_files folder.
+
+2. Use the following command to generate the core.rbf (optional)
+```bash
+make desktop_linux_dp-install-core-rbf
+```
+The generated core.rbf can be found in install/binaries folder.
+
+## Simulation
+Follow the steps below to simulate the design using the testbench located in the design sim folder:
+1. Prepare simulation scripts
+   In the current project directory, run the following command to generate the necessary simulation scripts for QuestaSim, VCS (3-step), and Xcelium from Quartus:
+```bash
+make desktop_linux_dp-prep
+```
+
+2. Run the Simulation
+   Navigate to the sim directory
+```bash
+cd sim
+```
+   Depending on your simulator, execute the appropriate shell script to start the simulation. For example:
+   For VCS (3-step) simulator,
+```bash
+./runvcs.sh
+```
+   For QuestaSim and Questa FE simulator,
+```bash
+./runquesta.sh
+```
+   For Xcelium simulator,
+```bash
+./runxcelium.sh
+```
+
+## Hardware Demonstration
+
+### 1. Connect DisplayPort Monitor
+
+Connect the **DP TX port** on the Agilex 5 E-Series 065A Modular Development Kit to a DisplayPort monitor using a DP cable.
+
+*![DP TX Connector on Modular Devkit](images/mk-dp-tx-connector.png)*
+
+> **Note:** The display output is currently limited to **1080p60 (1920×1080 @ 60 Hz)**.
+> Tested and verified with the following monitors:
+> - Dell P2319H
+> - Samsung S27F350
+
+### 2. Connect Keyboard and Mouse
+
+Connect a USB hub to one of the USB ports on the board, then connect a keyboard and mouse to the hub.
+
+> **Tested peripherals:**
+> - **USB Hub:** SSK Type-C 4-Port USB Hub 0.25m White (SHU808)
+> - **Keyboard:** Dell KB216 Wired Keyboard
+> - **Mouse:** Dell USB Laser Mouse
+
+### 3. Boot and Log In
+
+After the FPGA is programmed and the HPS boots, connect via Telnet and log in as `root`.
+
+> **Note:** The DisplayPort KMS driver initialises at login time. Type `root` at the Telnet prompt to trigger driver initialisation and bring up the display.
+
+*![DP KMS Driver Initialisation](images/dp_kms_driver.png)*
+
+### 4. Run Sanity Check
+
+Once logged in, run the built-in DP sanity script to verify the display pipeline:
+
+```bash
+cd alteraFPGA
+./dp_sanity.sh
+```
+
+*![DP Sanity Check Output](images/dp_sanity.png)*
+
+### 5. Expected Result
+
+After a successful boot and login you should see the Weston desktop on the connected monitor:
+
+*![Desktop Linux Display](images/desktop.png)*
+
+You can launch applications such as a terminal from the desktop:
+
+*![Desktop with Terminal](images/desktop-terminal.png)*
+
+### 6. Advanced: Run `modetest`
+
+`modetest` requires exclusive DRM master access. Stop Weston first, run your tests, then restart Weston:
+
+```bash
+# Stop Weston (releases DRM master)
+systemctl stop weston-drm.service
+
+# Query all DRM objects (connectors, CRTCs, planes, formats)
+modetest -M altera-vvp-dp
+
+# Display colour-bar test pattern at 1920x1080@60
+modetest -M altera-vvp-dp -s 37:1920x1080
+```
+
+*![modetest colour-bar test pattern](images/modetest.png)*
+
+```bash
+# Same, with vsync (verifies vblank interrupt)
+modetest -M altera-vvp-dp -s 37:1920x1080 -v
+
+# Restart Weston when done
+systemctl start weston-drm.service
+```
+
+#### DRM object IDs (fixed for this design)
+
+| Object    | ID | Details |
+|-----------|----|---------|
+| Encoder   | 36 | TMDS    |
+| Connector | 37 | DP-1    |
+| CRTC      | 35 | —       |
+| Plane     | 33 | Primary, `XR24` (XRGB8888) only |
+
+> **Note:** Only `1920x1080@60` and pixel format `XR24` are supported by the current driver.

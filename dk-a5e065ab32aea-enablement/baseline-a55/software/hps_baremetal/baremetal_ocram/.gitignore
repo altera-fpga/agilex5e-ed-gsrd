@@ -1,0 +1,7 @@
+build/
+gcc-arm/
+arm-gnu-toolchain-*
+ghrd_*.sof
+*.jic
+*.rbf
+*.map

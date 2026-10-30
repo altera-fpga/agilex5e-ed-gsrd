@@ -10,7 +10,6 @@
 //****************************************************************************
 
 `timescale 1 ps / 1 ps
-//
 `default_nettype none
 
 module clocks_and_resets (

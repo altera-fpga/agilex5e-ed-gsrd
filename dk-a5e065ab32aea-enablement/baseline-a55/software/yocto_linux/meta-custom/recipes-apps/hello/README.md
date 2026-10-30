@@ -1,17 +1,54 @@
-# Creating a Yocto Recipe by Referring to `hello-world.bb`
+# Creating a Yocto Recipe by Referring to `hello.bb`
 
-This guide explains how to create your own Yocto application recipe by referring to the `hello-world` example recipe. The `hello-world` recipe demonstrates building and installing a simple C program that prints "Hello SoC FPGA!".
+This guide explains how to create your own Yocto application recipe by referring to the `hello`
+example recipe (`hello.bb`). The `hello` recipe demonstrates building a small C program with CMake
+and installing it onto the target.
 
-Use `hello-world` as a **template** to bootstrap new applications into your Yocto build.
-By referring to the `hello-world` recipe, you can:
+Use `hello` as a **template** to bootstrap new applications into your Yocto build.
+By referring to the `hello` recipe, you can:
 
 * Understand basic Yocto recipe structure
-* Learn to fetch and compile sources
+* Learn to fetch and compile sources (here, with CMake)
 * Install applications into Yocto images
 
-## Steps to Create a Recipe Similar to `hello-world`
+## The `hello` recipe at a glance
 
-###  Set Up Metadata
+`meta-custom/recipes-apps/hello/` contains:
+
+```
+hello/
+├── hello.bb
+└── files/
+    ├── hello.c
+    └── CMakeLists.txt
+```
+
+`hello.bb`:
+
+```
+DESCRIPTION = "hello world application"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
+
+SRC_URI = "file://hello.c \
+           file://CMakeLists.txt"
+
+S = "${UNPACKDIR}"
+
+inherit pkgconfig cmake
+
+do_install() {
+    # Create target directory and install the CMake-built hello executable
+    install -d ${D}/home/root/alteraFPGA
+    install -m 0755 ${B}/hello ${D}/home/root/alteraFPGA/hello
+}
+
+FILES:${PN} = "/home/root/alteraFPGA/hello"
+```
+
+## Steps to Create a Recipe Similar to `hello`
+
+### Set Up Metadata
 
 Each recipe should define basic metadata such as description, license, and license checksum:
 
@@ -21,20 +58,22 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
 ```
 
-### **Define the Source (SRC_URI) and Unpack Location (S)**
+### Define the Source (`SRC_URI`) and Unpack Location (`S`)
 
 Use the `SRC_URI` variable to specify where the source code comes from.
 
 #### Local Source File
-Use this method when your application's source code (e.g., hello-world.c) is stored locally within the recipe. The source files should be placed inside the files/ directory of your recipe.
+Use this method when your application's source code (e.g., `hello.c`) is stored locally within the
+recipe. Place the source files inside the `files/` directory of your recipe:
 
-Place the source files in the `files/` directory and update SRC_URI, S:
 ```
-meta-custom/recipes-apps/hello-world/files/hello-world.c
+meta-custom/recipes-apps/hello/files/hello.c
+meta-custom/recipes-apps/hello/files/CMakeLists.txt
 ```
 ```
-SRC_URI = "file://hello-world.c"
-S = "${WORKDIR}/sources"
+SRC_URI = "file://hello.c \
+           file://CMakeLists.txt"
+S = "${UNPACKDIR}"
 ```
 
 #### Git Repository
@@ -46,8 +85,9 @@ SRCREV = "abcdef1234567890abcdef1234567890abcdef12"
 S = "${WORKDIR}/git"
 ```
 
-####  Tarball
-This method allows you to fetch your application's source code from a remote compressed archive, such as .tar.gz, .zip,. BitBake will automatically download and unpack the archive during the fetch phase.
+#### Tarball
+Fetch your application's source from a remote compressed archive (e.g. `.tar.gz`, `.zip`). BitBake
+downloads and unpacks it during the fetch phase.
 
 ```
 SRC_URI = "http://example.com/path/to/source.tar.gz"
@@ -55,7 +95,8 @@ S = "${WORKDIR}/source"
 ```
 
 #### Multiple Sources
-Yocto allows combining multiple source inputs in a single recipe using the SRC_URI variable. This is useful when your application depends on remote source code (e.g., from Git) as well as local files like patches, configuration files.
+Combine multiple source inputs in a single recipe using `SRC_URI` — e.g. remote source plus local
+files like patches or configuration:
 
 ```
 SRC_URI = "git://github.com/user/repo.git;branch=main \
@@ -65,31 +106,39 @@ SRCREV = "abcdef1234567890abcdef1234567890abcdef12"
 S = "${WORKDIR}/git"
 ```
 
-###  Build the Application (*do_compile*)
-For compilation, follow the build flow of the source code and implement the *do_compile()* function.
+### Build the Application
 
-Refer to `hello-world.bb` for implementation. Typically:
+`hello` builds with CMake, so it simply inherits the `cmake` class (no explicit `do_compile` is
+needed — the `files/CMakeLists.txt` drives the build):
+
+```
+inherit pkgconfig cmake
+```
+
+If instead you compile by hand, implement `do_compile()`:
 
 ```
 do_compile() {
-    ${CC} ${CFLAGS} ${LDFLAGS} -o hello-world hello-world.c
+    ${CC} ${CFLAGS} ${LDFLAGS} -o hello hello.c
 }
 ```
 
-### Install the Application (*do_install*)
+### Install the Application (`do_install`)
 
-Refer to how `hello-world.bb` installs the binary:
+Refer to how `hello.bb` installs the CMake-built binary onto the target:
 
 ```
 do_install() {
-    install -d ${D}${bindir}
-    install -m 0755 hello-world ${D}${bindir}/hello-world
+    install -d ${D}/home/root/alteraFPGA
+    install -m 0755 ${B}/hello ${D}/home/root/alteraFPGA/hello
 }
+
+FILES:${PN} = "/home/root/alteraFPGA/hello"
 ```
 
 ### Include the Recipe in Your Image
 
-After writing your recipe, you must ensure the application is included in the final image.
+After writing your recipe, ensure the application is included in the final image.
 
 #### Simple Approach: Direct Installation
 
@@ -103,10 +152,10 @@ This will always include your application in the image.
 
 #### Advanced Approach: Menu-Based Configuration (Optional)
 
-If you want to enable/disable your application via a configuration menu, follow the Kconfig integration pattern used by `hello-world`:
+To enable/disable your application via a configuration menu, follow the Kconfig integration pattern:
 
-1. Add Kconfig option in `yocto_linux/kas/apps/Kconfig`
-2. Define environment variable in `yocto_linux/kas.yml`
+1. Add a Kconfig option under `yocto_linux/kas/apps/Kconfig`
+2. Define the environment variable in `yocto_linux/kas.yml`
 3. Update `meta-custom/conf/layer.conf` with conditional installation:
 
 ```
@@ -116,15 +165,15 @@ IMAGE_INSTALL:append = "${@bb.utils.contains('MY_APP', 'true', ' my-app', '', d)
 
 ## Testing the Recipe
 
-After adding the recipe, build the application by using standard bitbake commands:
+After adding the recipe, build the application with standard bitbake commands:
+
 ```
-$ bitbake hello-world
-$ bitbake -c build console-image-minimal
+$ bitbake hello
+$ bitbake console-image-minimal
 ```
 
-To verify the application included in the image:
+To verify the application is included in the image, boot the target and run:
+
 ```
-$ sh runsimics <boot mode> <binaries path>
-$ which hello-world
-$ hello-world
+$ /home/root/alteraFPGA/hello
 ```

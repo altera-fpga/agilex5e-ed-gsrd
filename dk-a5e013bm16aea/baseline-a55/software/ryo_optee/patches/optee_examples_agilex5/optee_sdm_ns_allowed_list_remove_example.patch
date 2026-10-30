@@ -1,0 +1,658 @@
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/Android.mk b/optee_examples/sdm_ns_allowed_list_remove/Android.mk
+new file mode 100644
+index 000000000000..f0d05938d170
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-ns-allowed-list-remove ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_ns_allowed_list_remove
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/CMakeLists.txt b/optee_examples/sdm_ns_allowed_list_remove/CMakeLists.txt
+new file mode 100644
+index 000000000000..e1f665d9dd71
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_ns_allowed_list_remove C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/Makefile b/optee_examples/sdm_ns_allowed_list_remove/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/host/Makefile b/optee_examples/sdm_ns_allowed_list_remove/host/Makefile
+new file mode 100644
+index 000000000000..9636ae3fd304
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_ns_allowed_list_remove
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/host/main.c b/optee_examples/sdm_ns_allowed_list_remove/host/main.c
+new file mode 100644
+index 000000000000..3e9bca6ed106
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/host/main.c
+@@ -0,0 +1,171 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_ns_allowed_list_remove - Linux host application that revokes a
++ * single SiP SMC FID from the SDM Non-Secure-world allowed list via the
++ * sdm_ns_allowed_list_remove Trusted Application.
++ *
++ * Call chain:
++ *   host -> sdm_ns_allowed_list_remove TA -> PTA_SDM_SVC ->
++ *           ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE (0x4200017F) -> SDM/ATF
++ *
++ * The argument is a complete 32-bit SiP SMC FID (the FID Linux/U-Boot
++ * would issue via smc/hvc), NOT a raw SDM mailbox opcode.  Examples:
++ *   ALTERA_SIP_SMC_ASYNC_GET_IDCODE  = 0x420000D3
++ *   ALTERA_SIP_SMC_ASYNC_FCS_CHIP_ID = 0x42000135
++ *   ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE = 0x42000181 (CAUTION)
++ *
++ * After the call succeeds ATF refuses that FID from the Non-Secure world
++ * until the next OP-TEE boot (cold reset / power-cycle), at which point
++ * the whitelist is re-installed by sdm_svc.c's boot_final() hook.
++ *
++ * Usage:
++ *   sdm_ns_allowed_list_remove <hex_sip_smc_fid>
++ *
++ *   <hex_sip_smc_fid> : 32-bit SiP SMC FID, hex with or without 0x prefix
++ *
++ * Exit status:
++ *   0 - SDM/ATF accepted the remove
++ *   1 - argument / TEE / SDM error
++ */
++
++#include <err.h>
++#include <errno.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++#include <sdm_ns_allowed_list_remove_ta.h>
++
++/* ARM SMCCC bit layout (relevant subset) */
++#define SMCCC_OEN_MASK		((uint32_t)0x3F << 24)
++#define SMCCC_OEN_SHIFT		24
++#define SMCCC_OEN_SIP		0x02
++#define SMCCC_RESERVED_MASK	((uint32_t)0xFF << 16)
++
++static int parse_hex_u32(const char *s, uint32_t *out)
++{
++	const char *p = s;
++	char *endptr = NULL;
++	unsigned long v = 0;
++
++	if (!p || !*p)
++		return -1;
++	if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X'))
++		p += 2;
++
++	errno = 0;
++	v = strtoul(p, &endptr, 16);
++	if (errno != 0 || endptr == p || *endptr != '\0' || v > UINT32_MAX)
++		return -1;
++
++	*out = (uint32_t)v;
++	return 0;
++}
++
++static int looks_like_sip_fid(uint32_t fid)
++{
++	uint32_t oen = (fid & SMCCC_OEN_MASK) >> SMCCC_OEN_SHIFT;
++
++	if (oen != SMCCC_OEN_SIP)
++		return 0;
++	if (fid & SMCCC_RESERVED_MASK)
++		return 0;
++	return 1;
++}
++
++static void print_banner(uint32_t fid)
++{
++	fprintf(stderr,
++		"\n"
++		"  ****************************************************************\n"
++		"  *                       *** WARNING ***                        *\n"
++		"  *                                                              *\n"
++		"  *  sdm_ns_allowed_list_remove: about to invoke.                *\n"
++		"  *                                                              *\n"
++		"  *  Will revoke the following SiP SMC FID from the              *\n"
++		"  *  Non-Secure-world allowed list (NS-FILTER):                  *\n"
++		"  *                                                              *\n"
++		"  *      FID = 0x%08" PRIx32 "                                   *\n"
++		"  *                                                              *\n"
++		"  *  After this call ATF will refuse this FID from the           *\n"
++		"  *  Non-Secure world.  The whitelist is re-installed at the     *\n"
++		"  *  next OP-TEE boot (cold reset / power-cycle).                *\n"
++		"  ****************************************************************\n"
++		"\n", fid);
++}
++
++int main(int argc, char *argv[])
++{
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_UUID uuid = TA_SDM_NS_ALLOWED_LIST_REMOVE_UUID;
++	uint32_t err_origin = 0;
++	uint32_t fid = 0;
++
++	if (argc != 2) {
++		fprintf(stderr,
++			"Usage: %s <hex_sip_smc_fid>\n\n"
++			"Remove a single SiP SMC FID from the SDM Non-Secure allowed\n"
++			"list via the sdm_ns_allowed_list_remove TA.  Argument is a\n"
++			"full 32-bit SiP SMC FID, NOT a raw SDM mailbox opcode.\n\n"
++			"Examples:\n"
++			"  %s 0x420000D3   # ALTERA_SIP_SMC_ASYNC_GET_IDCODE\n"
++			"  %s 0x42000135   # ALTERA_SIP_SMC_ASYNC_FCS_CHIP_ID\n"
++			"  %s 0x42000181   # ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE\n",
++			argv[0], argv[0], argv[0], argv[0]);
++		return 1;
++	}
++
++	if (parse_hex_u32(argv[1], &fid) != 0)
++		errx(1, "invalid hex SiP SMC FID: '%s'", argv[1]);
++
++	if (!looks_like_sip_fid(fid))
++		errx(1, "0x%08" PRIx32 " is not a well-formed SiP FID "
++		     "(need OEN=0x02 and bits[23:16]=0)", fid);
++
++	print_banner(fid);
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		TEEC_FinalizeContext(&ctx);
++		errx(1, "TEEC_OpenSession(sdm_ns_allowed_list_remove TA): "
++		     "0x%x (origin 0x%x)", res, err_origin);
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
++					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
++	op.params[0].value.a = fid;
++	op.params[0].value.b = 0;
++
++	res = TEEC_InvokeCommand(&sess,
++				 TA_SDM_NS_ALLOWED_LIST_REMOVE_CMD_APPLY,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		TEEC_CloseSession(&sess);
++		TEEC_FinalizeContext(&ctx);
++		errx(1, "TA_SDM_NS_ALLOWED_LIST_REMOVE_CMD_APPLY: "
++		     "0x%x (origin 0x%x)", res, err_origin);
++	}
++
++	printf("SDM NS allowed-list remove: SiP FID 0x%08" PRIx32 "  PASS\n",
++	       fid);
++	printf("  FID 0x%08" PRIx32 " is now refused from the NS world until\n"
++	       "  the next OP-TEE boot (cold reset / power-cycle).\n", fid);
++
++	TEEC_CloseSession(&sess);
++	TEEC_FinalizeContext(&ctx);
++	return 0;
++}
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/ta/Android.mk b/optee_examples/sdm_ns_allowed_list_remove/ta/Android.mk
+new file mode 100644
+index 000000000000..d0d3543147a3
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := de1e0000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/ta/Makefile b/optee_examples/sdm_ns_allowed_list_remove/ta/Makefile
+new file mode 100644
+index 000000000000..41bcb43e46f4
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/ta/Makefile
+@@ -0,0 +1,14 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_NS_ALLOWED_LIST_REMOVE_UUID in
++# include/sdm_ns_allowed_list_remove_ta.h
++BINARY=de1e0000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/ta/include/sdm_ns_allowed_list_remove_ta.h b/optee_examples/sdm_ns_allowed_list_remove/ta/include/sdm_ns_allowed_list_remove_ta.h
+new file mode 100644
+index 000000000000..fb84743ae226
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/ta/include/sdm_ns_allowed_list_remove_ta.h
+@@ -0,0 +1,56 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_ns_allowed_list_remove TA - public interface shared with the host.
++ *
++ * Side-effect-only wrapper around PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE.
++ *
++ * The TA accepts a single 32-bit SiP SMC function-ID from the Non-Secure
++ * caller, validates that it looks like a well-formed SiP FID, then asks
++ * the PTA to send ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE (0x4200017F) to
++ * ATF.  After a successful call, that FID is no longer accepted from the
++ * Non-Secure world for the remainder of the current power cycle; the
++ * whitelist is re-installed at the next OP-TEE boot.
++ *
++ * Each FID is a complete 32-bit ARM SMCCC function ID (the FID Linux /
++ * U-Boot would issue via smc/hvc), NOT a raw SDM mailbox opcode.
++ *
++ * Examples:
++ *   ALTERA_SIP_SMC_ASYNC_GET_IDCODE  = 0x420000D3
++ *   ALTERA_SIP_SMC_ASYNC_FCS_CHIP_ID = 0x42000135
++ *   ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE = 0x42000181 (CAUTION)
++ */
++
++#ifndef TA_SDM_NS_ALLOWED_LIST_REMOVE_H
++#define TA_SDM_NS_ALLOWED_LIST_REMOVE_H
++
++/*
++ * TA UUID.  Mnemonic "DE1E" = DELEte (1 FID at a time), suffix 0000 to
++ * keep room for future variants while staying in the SDM TA family
++ * suffix (-7b2a-4e5d-9c1a-100c012ec01d).
++ */
++#define TA_SDM_NS_ALLOWED_LIST_REMOVE_UUID \
++	{ 0xde1e0000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_NS_ALLOWED_LIST_REMOVE_CMD_APPLY - revoke one SiP FID from the
++ *                                           NS allowed list.
++ *
++ * GP-TEE param convention:
++ *   param[0] VALUE_INPUT
++ *     .a = 32-bit SiP SMC function ID to remove
++ *     .b = reserved, must be 0
++ *   param[1..3] NONE
++ *
++ * Result:
++ *   TEE_SUCCESS                  - SDM/ATF accepted the remove
++ *   TEE_ERROR_BAD_PARAMETERS     - wrong param types, non-zero .b,
++ *                                  or FID failed SMCCC sanity check
++ *   TEE_ERROR_BUSY               - SiP reported busy / secure-only
++ *   TEE_ERROR_GENERIC            - forwarded from PTA / ATF
++ */
++#define TA_SDM_NS_ALLOWED_LIST_REMOVE_CMD_APPLY	0
++
++#endif /* TA_SDM_NS_ALLOWED_LIST_REMOVE_H */
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/ta/sdm_ns_allowed_list_remove_ta.c b/optee_examples/sdm_ns_allowed_list_remove/ta/sdm_ns_allowed_list_remove_ta.c
+new file mode 100644
+index 000000000000..68d09e625949
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/ta/sdm_ns_allowed_list_remove_ta.c
+@@ -0,0 +1,239 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_ns_allowed_list_remove Trusted Application.
++ *
++ * Wrapper around PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE.
++ *
++ * The TA accepts a single 32-bit SiP SMC function-ID from the host,
++ * sanity-checks the FID against the ARM SMCCC encoding for SiP calls,
++ * emits a banner-style audit record, and forwards the request to the
++ * PTA - which in turn issues ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE
++ * (0x4200017F) to ATF to revoke that FID for Non-Secure callers.
++ *
++ * Validation performed:
++ *   1. GP-TEE parameter types: VALUE_INPUT, NONE, NONE, NONE.
++ *   2. params[0].value.b == 0 (reserved bits).
++ *   3. params[0].value.a is a well-formed ARM SMCCC SiP FID:
++ *        - OEN (bits 29:24) must be 0x02 (SiP service)
++ *        - Reserved bits (23:16) must be zero (MBZ per SMCCC)
++ *   4. PTA_SDM_SVC session is open (established at TA_OpenSession).
++ *
++ * The TA does NOT block specific FIDs - removing critical ones (e.g.
++ * 0x42000181 NS_ALLOWED_LIST_DEACTIVATE, U-Boot helpers like
++ * 0xC200003D, 0xC2000009) is a legitimate runtime-policy choice for
++ * post-provisioning lockdown.  It does, however, log such removals
++ * loudly so they are never silent.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_ns_allowed_list_remove_ta.h>
++
++/* ARM SMCCC bit layout (relevant subset) */
++#define SMCCC_OEN_MASK		((uint32_t)0x3F << 24)
++#define SMCCC_OEN_SHIFT		24
++#define SMCCC_OEN_SIP		0x02
++#define SMCCC_RESERVED_MASK	((uint32_t)0xFF << 16)
++
++struct nsalr_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_ns_allowed_list_remove TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_ns_allowed_list_remove TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct nsalr_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_ns_allowed_list_remove TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct nsalr_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_ns_allowed_list_remove TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * FID validation helpers
++ * ---------------------------------------------------------------------------
++ */
++
++/*
++ * is_well_formed_sip_fid - verify the supplied FID encodes a SiP service
++ * per the ARM SMCCC specification.
++ *
++ *   Bit 31      : Fast (1) or Yielding (0) call - both valid.
++ *   Bit 30      : SMC32 (0) or SMC64 (1) - both valid.
++ *   Bits 29:24  : Owning Entity Number - must be 0x02 (SiP).
++ *   Bits 23:16  : Reserved - must be zero (MBZ per SMCCC).
++ *   Bits 15:0   : Function number - any value accepted.
++ *
++ * Returns true for legal SiP FIDs, false otherwise.
++ */
++static bool is_well_formed_sip_fid(uint32_t fid)
++{
++	uint32_t oen = (fid & SMCCC_OEN_MASK) >> SMCCC_OEN_SHIFT;
++
++	if (oen != SMCCC_OEN_SIP)
++		return false;
++	if (fid & SMCCC_RESERVED_MASK)
++		return false;
++
++	return true;
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate, audit, forward to PTA
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_ns_allowed_list_remove(struct nsalr_sess_ctx *ctx,
++					    uint32_t param_types,
++					    TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t fid = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x (expected VALUE_INPUT, NONE, NONE, NONE)",
++		     param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (params[0].value.b != 0) {
++		EMSG("param[0].value.b must be 0 (got 0x%08x)",
++		     params[0].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	fid = params[0].value.a;
++
++	if (!is_well_formed_sip_fid(fid)) {
++		EMSG("0x%08" PRIx32 " is not a well-formed SiP FID "
++		     "(need OEN=0x02 and bits[23:16]=0)", fid);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	pta_params[0].value.a = fid;
++	pta_params[0].value.b = 0;
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE, exp_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_ns_allowed_list_remove: SDM accepted (FID=0x%08" PRIx32 ")",
++	     fid);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct nsalr_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_NS_ALLOWED_LIST_REMOVE_CMD_APPLY:
++		return do_ns_allowed_list_remove(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/ta/sub.mk b/optee_examples/sdm_ns_allowed_list_remove/ta/sub.mk
+new file mode 100644
+index 000000000000..18466f7b05b3
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_ns_allowed_list_remove_ta.c
+diff --git a/optee_examples/sdm_ns_allowed_list_remove/ta/user_ta_header_defines.h b/optee_examples/sdm_ns_allowed_list_remove/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..0c72d3afac00
+--- /dev/null
++++ b/optee_examples/sdm_ns_allowed_list_remove/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_ns_allowed_list_remove_ta.h>
++
++#define TA_UUID			TA_SDM_NS_ALLOWED_LIST_REMOVE_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM NS allowed-list remove wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_ns_allowed_list_remove.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Revokes one SiP SMC FID from the SDM NS-FILTER via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

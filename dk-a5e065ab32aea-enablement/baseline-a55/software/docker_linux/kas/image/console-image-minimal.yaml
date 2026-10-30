@@ -1,0 +1,4 @@
+header:
+  version: 17
+
+target: console-image-minimal

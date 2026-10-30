@@ -1,0 +1,19 @@
+::drc::add_waiver \
+	-description {VDS: Waive HPS IP SDC false path that has no valid targets in this design configuration.} \
+	-rule_id {TMC-20025} \
+	-query_string {"Ignored Constraint" =~ 'fpga_tpiu_clkin' && Reason == 'Exception is invalid (covers no paths)'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-06-09*08:00:00} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {VDS: Waive Avalon-ST clock crosser IP SDC min/max delay constraints that are fully overridden by design constraints.} \
+	-rule_id {TMC-20025} \
+	-query_string {Reason == 'Exception is fully overridden' && Location =~ 'altera_avalon_st_handshake_clock_crosser.sdc'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-06-09*08:00:00} \
+	-owner {user} \
+	-no_warn

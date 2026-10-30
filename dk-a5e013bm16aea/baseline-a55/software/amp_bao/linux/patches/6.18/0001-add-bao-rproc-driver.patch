@@ -1,0 +1,531 @@
+From a1b2c3d4e5f6789012345678901234567890abcd Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 21:30:00 +0800
+Subject: [PATCH] remoteproc: add Bao hypervisor inter-VM rproc driver
+
+Attach-mode shim: peer VM lifecycle is owned by Bao. Registers an rproc
+in RPROC_DETACHED, pre-maps OpenAMP carveouts in the Bao IPC shmem,
+kicks the peer via HVC 0x86000001 (x1 = ipc_id, x2 = vqid), and delivers
+peer notifications as GIC SPI 20 (irqid 52).
+
+DT: compatible "bao,rproc"; auto_boot=false (explicit sysfs start).
+Ops: attach, detach, kick, get_loaded_rsc_table, da_to_va.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ drivers/remoteproc/Kconfig     |  19 ++
+ drivers/remoteproc/Makefile    |   1 +
+ drivers/remoteproc/bao_rproc.c | 425 +++++++++++++++++++++++++++++++++
+ 3 files changed, 445 insertions(+)
+ create mode 100644 drivers/remoteproc/bao_rproc.c
+
+diff --git a/drivers/remoteproc/Kconfig b/drivers/remoteproc/Kconfig
+index 1111111..2222222 100644
+--- a/drivers/remoteproc/Kconfig
++++ b/drivers/remoteproc/Kconfig
+@@ -23,6 +23,25 @@ config REMOTEPROC_CDEV
+ 
+ 	  It's safe to say N if you don't want to use this interface.
+ 
++config BAO_REMOTEPROC
++	tristate "Bao hypervisor inter-VM remoteproc support"
++	depends on (ARM64 || ARM) && OF
++	depends on HAVE_ARM_SMCCC
++	help
++	  Say y here to expose a coresident guest VM, started by the Bao
++	  hypervisor, as a Linux remote processor.
++
++	  This is an attach-mode driver: Bao owns the peer VM's lifecycle
++	  (load / start / stop / reset).  The driver only registers an
++	  rproc device backed by the Bao IPC shmem region described by a
++	  "bao,rproc" device-tree node, and forwards virtqueue kicks via
++	  an HVC into Bao's vendor hypervisor service.  Notifications from
++	  the peer arrive as a GIC SPI configured by Bao on the rproc
++	  node's "interrupts" property.
++
++	  Used together with rpmsg-virtio + rpmsg-char to obtain an
++	  OpenAMP RPMsg channel between Linux and an RTOS / baremetal peer.
++
+ config IMX_REMOTEPROC
+ 	tristate "i.MX remoteproc support"
+ 	depends on ARCH_MXC
+diff --git a/drivers/remoteproc/Makefile b/drivers/remoteproc/Makefile
+index 3333333..4444444 100644
+--- a/drivers/remoteproc/Makefile
++++ b/drivers/remoteproc/Makefile
+@@ -11,6 +11,7 @@ remoteproc-y				+= remoteproc_sysfs.o
+ remoteproc-y				+= remoteproc_virtio.o
+ remoteproc-y				+= remoteproc_elf_loader.o
+ obj-$(CONFIG_REMOTEPROC_CDEV)		+= remoteproc_cdev.o
++obj-$(CONFIG_BAO_REMOTEPROC)		+= bao_rproc.o
+ obj-$(CONFIG_IMX_REMOTEPROC)		+= imx_rproc.o
+ obj-$(CONFIG_IMX_DSP_REMOTEPROC)	+= imx_dsp_rproc.o
+ obj-$(CONFIG_INGENIC_VPU_RPROC)		+= ingenic_rproc.o
+diff --git a/drivers/remoteproc/bao_rproc.c b/drivers/remoteproc/bao_rproc.c
+new file mode 100644
+index 0000000..5555555
+--- /dev/null
++++ b/drivers/remoteproc/bao_rproc.c
+@@ -0,0 +1,458 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Bao hypervisor inter-VM remoteproc driver.
++ *
++ * Bao boots both VMs at hypervisor start-up.  The peer (FreeRTOS,
++ * Zephyr, baremetal) firmware is loaded by Bao from its own image; the
++ * Linux guest never owns the peer's lifecycle.  This driver therefore
++ * registers an rproc device permanently in RPROC_DETACHED and exposes
++ * only the attach / detach / kick / get_loaded_rsc_table / da_to_va
++ * ops needed for OpenAMP-style RPMsg over the Bao IPC shmem region.
++ *
++ * The shmem region (compatible = "bao,rproc", reg = base/size) is
++ * mapped by Bao into both VMs at the same IPA.  By convention with the
++ * peer firmware the first 1 KiB holds the resource table; the rest is
++ * laid out by OpenAMP for vrings + virtio buffers.
++ *
++ * Notification path:
++ *   Linux  -> peer:  HVC fid = 0x86000001 (SMCCC vendor hyp svc, fn =
++ *                    HC_IPC), x1 = ipc_id, x2 = event_id (vqid).  Bao
++ *                    injects ipc->interrupts[event_id] into the peer
++ *                    VM's vCPU.
++ *   peer -> Linux:   peer issues the same HVC the other way; Bao
++ *                    raises the SPI configured for this rproc node
++ *                    ("interrupts" property) on a Linux vCPU.  The ISR
++ *                    here calls rproc_vq_interrupt() on both vrings.
++ *
++ * Pattern matches drivers/remoteproc/imx_rproc.c (when U-Boot has
++ * already booted the M-core) and drivers/remoteproc/stm32_rproc.c in
++ * "M33-TD" mode: detach is a state change only, not a hardware reset.
++ *
++ * Copyright (c) Bao Project and Contributors. All rights reserved.
++ */
++
++#include <linux/arm-smccc.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/platform_device.h>
++#include <linux/remoteproc.h>
++#include <linux/sizes.h>
++#include <linux/virtio_ring.h>
++
++#include "remoteproc_internal.h"
++
++/*
++ * Bao SMCCC vendor hypervisor service IDs.  Mirror enum hc_ids and
++ * SMCC32_FID_VND_HYP_SRVC in the Bao tree:
++ *   src/bao/src/core/inc/hypercall.h
++ *   src/bao/src/arch/armv8/inc/arch/smcc.h
++ */
++#define BAO_HVC_VND_HYP_SRVC	0x86000000U
++#define BAO_HVC_HC_IPC		1U
++#define BAO_HVC_IPC_FID		(BAO_HVC_VND_HYP_SRVC | BAO_HVC_HC_IPC)
++
++/*
++ * Resource table lives at offset 0 of the shmem region by convention
++ * with the peer firmware.  Size is fixed at 1 KiB; the OpenAMP layout
++ * we use never produces a larger table.
++ */
++#define BAO_RPROC_RSC_TABLE_OFFSET	0
++#define BAO_RPROC_RSC_TABLE_SIZE	SZ_1K
++
++/*
++ * Pre-registered vring + buffer carveouts within the shmem region.
++ * Without these, the remoteproc framework falls back to
++ * dma_alloc_coherent() out of Linux's RAM range:
++ *
++ *   - vring allocator emits "Allocated carveout doesn't fit device
++ *     address request" on each vring and writes vring metadata into
++ *     Linux RAM that the peer firmware cannot reach.
++ *   - virtio_rpmsg_bus probes, allocates its 32 x 512 B buffer pool
++ *     via dma_alloc_coherent() into Linux RAM, and pushes buffer
++ *     addresses into the vring descriptors that the peer firmware
++ *     interprets as IPAs into its own shmem mapping -- traffic
++ *     dead-ends silently.
++ *
++ * Pattern matches drivers/remoteproc/imx_rproc.c (imx_rproc_prepare)
++ * and drivers/remoteproc/stm32_rproc.c (stm32_rproc_parse_dt) which
++ * iterate DT "memory-region" phandles to register the same kind of
++ * pre-allocated carveouts; we hardcode the offsets because the shmem
++ * layout is fixed by the peer firmware (see the OpenAMP rpmsg
++ * resource_table for the canonical numbers).
++ *
++ * vring carveout sizing: PAGE_ALIGN(vring_size(16, 0x1000)) == 8 KiB,
++ * so vring0 occupies [0x1000..0x2FFF] and vring1 occupies
++ * [0x3000..0x4FFF] -- the canonical OpenAMP layout (Xilinx Zynq R5,
++ * NXP iMX) bumped to avoid a vring1/vring2 overlap that an earlier
++ * draft had at offset 0x2000.
++ *
++ * vdev0buffer sizing: virtio_rpmsg_bus's probe path computes
++ *   num_bufs   = virtqueue_get_vring_size(rvq) * 2 == 32   (since
++ *                vring num=16 < MAX_RPMSG_NUM_BUFS/2 == 256)
++ *   buf_size   = MAX_RPMSG_BUF_SIZE == 512
++ *   total_buf_space = num_bufs * buf_size == 16 KiB
++ * which it then splits into rbufs (first half) + sbufs (second half).
++ * We size the carveout to match exactly so dma_declare_coherent_memory
++ * succeeds and Linux's dma_alloc_coherent inside virtio_rpmsg_bus
++ * returns a buffer pool inside the shmem the peer firmware also sees.
++ */
++#define BAO_RPROC_VRING0_OFFSET		0x1000U
++#define BAO_RPROC_VRING1_OFFSET		0x3000U
++#define BAO_RPROC_VRING_NUM		16U
++#define BAO_RPROC_VRING_ALIGN		0x1000U
++#define BAO_RPROC_VDEV_BUFFER_OFFSET	0x5000U
++#define BAO_RPROC_VDEV_BUFFER_SIZE	(16U * 1024U)
++
++struct bao_rproc {
++	struct rproc		*rproc;
++	struct device		*dev;
++	void __iomem		*shmem_va;
++	phys_addr_t		 shmem_pa;
++	size_t			 shmem_size;
++	int			 irq;
++	/*
++	 * Index into the Bao partition config's .ipcs[] array
++	 * (configs/<C>/config.c).  Single-shmem topologies leave this 0;
++	 * multi-shmem boards use the "bao,ipc-id" DT property.
++	 */
++	u32			 ipc_id;
++};
++
++static void bao_rproc_kick(struct rproc *rproc, int vqid)
++{
++	struct bao_rproc *priv = rproc->priv;
++	struct arm_smccc_res res;
++
++	arm_smccc_hvc(BAO_HVC_IPC_FID,
++		      priv->ipc_id,		/* x1: ipc_id   */
++		      (unsigned long)vqid,	/* x2: event_id */
++		      0, 0, 0, 0, 0, &res);
++	if ((long)res.a0 < 0)
++		dev_warn_ratelimited(priv->dev,
++			"kick(vqid=%d) HVC failed: %ld\n",
++			vqid, (long)res.a0);
++}
++
++static int bao_rproc_attach(struct rproc *rproc)
++{
++	/*
++	 * Bao has already started the peer VM by the time we boot, so
++	 * attach is just a Linux-side state change; the hardware is
++	 * already live.
++	 */
++	return 0;
++}
++
++static int bao_rproc_detach(struct rproc *rproc)
++{
++	/* Lifecycle owned by Bao; mirror attach() and just succeed. */
++	return 0;
++}
++
++static struct resource_table *
++bao_rproc_get_loaded_rsc_table(struct rproc *rproc, size_t *table_sz)
++{
++	struct bao_rproc *priv = rproc->priv;
++
++	*table_sz = BAO_RPROC_RSC_TABLE_SIZE;
++	return (struct resource_table __force *)
++		(priv->shmem_va + BAO_RPROC_RSC_TABLE_OFFSET);
++}
++
++static void *bao_rproc_da_to_va(struct rproc *rproc, u64 da, size_t len,
++				bool *is_iomem)
++{
++	struct bao_rproc *priv = rproc->priv;
++	u64 base = priv->shmem_pa;
++	u64 end  = base + priv->shmem_size;
++
++	if (da < base || (da + len) > end)
++		return NULL;
++
++	if (is_iomem)
++		*is_iomem = true;
++
++	return (void __force *)(priv->shmem_va + (da - base));
++}
++
++static const struct rproc_ops bao_rproc_ops = {
++	.attach			= bao_rproc_attach,
++	.detach			= bao_rproc_detach,
++	.kick			= bao_rproc_kick,
++	.da_to_va		= bao_rproc_da_to_va,
++	.get_loaded_rsc_table	= bao_rproc_get_loaded_rsc_table,
++};
++
++/*
++ * Hard-IRQ handler: keep this minimal.  Just acknowledge the SPI to
++ * GIC and let the threaded handler do the real work.  rproc_vq_interrupt
++ * fans out into virtio_rpmsg_bus' rpmsg_recv_done -> rpmsg_ns_cb ->
++ * rpmsg_create_channel -> rpmsg_register_device -> rpmsg_chrdev_probe ->
++ * cdev_device_add -> devtmpfs_create_node, which inside devtmpfs takes
++ * a wait_for_completion() and is therefore fundamentally sleepable;
++ * running it from hard-IRQ context produces "BUG: scheduling while
++ * atomic" the moment the peer announces the first NS channel.
++ */
++static irqreturn_t bao_rproc_isr(int irq, void *data)
++{
++	return IRQ_WAKE_THREAD;
++}
++
++static irqreturn_t bao_rproc_isr_thread(int irq, void *data)
++{
++	struct rproc *rproc = data;
++
++	/*
++	 * The Bao notification interrupt does not carry a vqid; it just
++	 * means "the peer touched our shmem".  Wake both vrings; the
++	 * remoteproc/virtio cores treat an unchanged used-ring as a
++	 * no-op, so calling both is safe and cheap.
++	 */
++	rproc_vq_interrupt(rproc, 0);
++	rproc_vq_interrupt(rproc, 1);
++
++	return IRQ_HANDLED;
++}
++
++/*
++ * Register one virtqueue ring as a pre-mapped carveout inside the
++ * shmem region.  The mem entry is born ready: va is the offset into
++ * the devm_ioremap_wc() mapping, and we leave alloc/release NULL so
++ * the framework's rproc_alloc_registered_carveouts() walks past us
++ * without touching dma_alloc_coherent().  The carveout name has to
++ * match what rproc_alloc_vring() looks for via
++ * rproc_find_carveout_by_name(rproc, "vdev%dvring%d", rvdev->index, i)
++ * and what remoteproc_virtio.c uses to fetch mem->va when it lays out
++ * the descriptor / avail / used arrays.
++ */
++static int bao_rproc_register_vring_carveout(struct bao_rproc *priv,
++					     unsigned int idx, u32 offset)
++{
++	struct rproc *rproc = priv->rproc;
++	struct device *dev = priv->dev;
++	struct rproc_mem_entry *mem;
++	size_t size;
++	u32 da;
++
++	size = PAGE_ALIGN(vring_size(BAO_RPROC_VRING_NUM,
++				     BAO_RPROC_VRING_ALIGN));
++	da   = priv->shmem_pa + offset;
++
++	if (offset + size > priv->shmem_size) {
++		dev_err(dev,
++			"vring%u (off 0x%x + len 0x%zx) overflows shmem 0x%zx\n",
++			idx, offset, size, priv->shmem_size);
++		return -EINVAL;
++	}
++
++	mem = rproc_mem_entry_init(dev,
++				   (void __force *)(priv->shmem_va + offset),
++				   (dma_addr_t)da,
++				   size, da,
++				   NULL, NULL,
++				   "vdev0vring%u", idx);
++	if (!mem)
++		return -ENOMEM;
++
++	rproc_add_carveout(rproc, mem);
++
++	dev_dbg(dev, "registered vdev0vring%u: da 0x%x len 0x%zx\n",
++		idx, da, size);
++	return 0;
++}
++
++/*
++ * Register the vdev buffer pool as a pre-mapped carveout.  Linux's
++ * rproc_add_virtio_dev() in drivers/remoteproc/remoteproc_virtio.c
++ * looks the carveout up via rproc_find_carveout_by_name(rproc,
++ * "vdev%dbuffer", rvdev->index) and, when mem->va is NULL and
++ * mem->of_resm_idx is -1, calls
++ *
++ *     dma_declare_coherent_memory(dev, mem->dma, mem->da, mem->len);
++ *
++ * which redirects subsequent dma_alloc_coherent() calls inside
++ * virtio_rpmsg_bus probe into our shmem region.  We deliberately
++ * leave mem->va == NULL so the framework picks the mem->dma path
++ * rather than calling rproc_va_to_pa() on our ioremap'd VA (the
++ * vmalloc_to_page() inside rproc_va_to_pa() would WARN on a non-RAM
++ * physical page).  The peer firmware reads buffer addresses out of
++ * the vring descriptors as plain IPAs into its own shmem mapping --
++ * identity translation since Bao maps the IPC shmem at the same IPA
++ * in both VMs.
++ */
++static int bao_rproc_register_vdev_buffer_carveout(struct bao_rproc *priv)
++{
++	struct rproc *rproc = priv->rproc;
++	struct device *dev = priv->dev;
++	struct rproc_mem_entry *mem;
++	u32 da;
++
++	da = priv->shmem_pa + BAO_RPROC_VDEV_BUFFER_OFFSET;
++
++	if (BAO_RPROC_VDEV_BUFFER_OFFSET + BAO_RPROC_VDEV_BUFFER_SIZE >
++	    priv->shmem_size) {
++		dev_err(dev,
++			"vdev0buffer (off 0x%x + len 0x%x) overflows shmem 0x%zx\n",
++			BAO_RPROC_VDEV_BUFFER_OFFSET,
++			BAO_RPROC_VDEV_BUFFER_SIZE,
++			priv->shmem_size);
++		return -EINVAL;
++	}
++
++	mem = rproc_mem_entry_init(dev,
++				   NULL,		/* va == NULL */
++				   (dma_addr_t)da,	/* dma */
++				   BAO_RPROC_VDEV_BUFFER_SIZE,
++				   da,			/* da */
++				   NULL, NULL,
++				   "vdev0buffer");
++	if (!mem)
++		return -ENOMEM;
++
++	rproc_add_carveout(rproc, mem);
++
++	dev_dbg(dev, "registered vdev0buffer: da 0x%x len 0x%x\n",
++		da, BAO_RPROC_VDEV_BUFFER_SIZE);
++	return 0;
++}
++
++static int bao_rproc_register_carveouts(struct bao_rproc *priv)
++{
++	int ret;
++
++	ret = bao_rproc_register_vring_carveout(priv, 0,
++						BAO_RPROC_VRING0_OFFSET);
++	if (ret)
++		return ret;
++
++	ret = bao_rproc_register_vring_carveout(priv, 1,
++						BAO_RPROC_VRING1_OFFSET);
++	if (ret)
++		return ret;
++
++	return bao_rproc_register_vdev_buffer_carveout(priv);
++}
++
++static int bao_rproc_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct bao_rproc *priv;
++	struct rproc *rproc;
++	struct resource *res;
++	int ret;
++
++	rproc = devm_rproc_alloc(dev, "bao-rproc", &bao_rproc_ops,
++				 NULL, sizeof(*priv));
++	if (!rproc)
++		return -ENOMEM;
++
++	priv = rproc->priv;
++	priv->rproc = rproc;
++	priv->dev   = dev;
++
++	if (of_property_read_u32(np, "bao,ipc-id", &priv->ipc_id))
++		priv->ipc_id = 0;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res)
++		return dev_err_probe(dev, -EINVAL,
++				     "missing reg property\n");
++
++	priv->shmem_pa	 = res->start;
++	priv->shmem_size = resource_size(res);
++
++	/*
++	 * The shmem is outside Linux's main RAM (IPA 0xC4000000 vs RAM
++	 * 0x82000000-0xC2000000 on Agilex5 linux_freertos), so use
++	 * ioremap_wc which pins it as Normal-NC at stage-1.  Bao's
++	 * stage-2 maps the same page as Inner-Shareable cacheable WB
++	 * (PTE_VM_IPC_FLAGS), and the architectural combination yields
++	 * Normal-NC effective -- sufficient for virtio vring head/tail
++	 * traffic with smp_*mb() barriers, and matches imx_rproc /
++	 * stm32_rproc.
++	 */
++	priv->shmem_va = devm_ioremap_wc(dev, priv->shmem_pa,
++					 priv->shmem_size);
++	if (!priv->shmem_va)
++		return dev_err_probe(dev, -ENOMEM,
++				     "ioremap shmem failed\n");
++
++	ret = bao_rproc_register_carveouts(priv);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "register vring carveouts failed\n");
++
++	priv->irq = platform_get_irq(pdev, 0);
++	if (priv->irq < 0)
++		return priv->irq;
++
++	/*
++	 * No IRQF_ONESHOT here: the kick line is declared edge-rising in
++	 * the device tree (interrupts = <0 0x14 0x1>), so the GIC clears
++	 * the pending bit on EOI and there is no level-high source to
++	 * de-assert.  IRQF_ONESHOT keeps the IRQ masked at the irqchip
++	 * level until the threaded handler returns, which silently
++	 * coalesced every kick after the first NS_ANNOUNCE in earlier
++	 * runs (Bao re-asserted vGIC pending = true but the masked LR
++	 * never refilled, so /proc/interrupts stayed at 1 even though
++	 * vring0.used.idx in shmem climbed monotonically).  For an
++	 * edge-triggered notification line we just want every kick to
++	 * wake the irq_thread; if the handler is still draining, the
++	 * thread will simply loop one more time when next scheduled.
++	 */
++	ret = devm_request_threaded_irq(dev, priv->irq,
++					bao_rproc_isr,
++					bao_rproc_isr_thread,
++					0,
++					dev_name(dev), rproc);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "request_threaded_irq %d failed\n",
++				     priv->irq);
++
++	/*
++	 * Tell the framework the peer is already up but require an
++	 * explicit attach.  Auto-attach would scribble parse_fw warnings
++	 * into dmesg if the peer firmware in flash does not yet emit a
++	 * valid OpenAMP resource table at offset 0 (legacy SPSC-console
++	 * firmware writes its own magic there).
++	 */
++	rproc->state	 = RPROC_DETACHED;
++	rproc->auto_boot = false;
++
++	platform_set_drvdata(pdev, rproc);
++
++	ret = devm_rproc_add(dev, rproc);
++	if (ret)
++		return dev_err_probe(dev, ret, "rproc_add failed\n");
++
++	dev_info(dev,
++		 "registered: shmem 0x%llx+0x%zx, irq %d, ipc_id %u\n",
++		 (u64)priv->shmem_pa, priv->shmem_size,
++		 priv->irq, priv->ipc_id);
++
++	return 0;
++}
++
++static const struct of_device_id bao_rproc_of_match[] = {
++	{ .compatible = "bao,rproc" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, bao_rproc_of_match);
++
++static struct platform_driver bao_rproc_driver = {
++	.probe	= bao_rproc_probe,
++	.driver	= {
++		.name		= "bao-rproc",
++		.of_match_table	= bao_rproc_of_match,
++	},
++};
++module_platform_driver(bao_rproc_driver);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Bao hypervisor inter-VM remoteproc driver");
++MODULE_AUTHOR("Bao Project Contributors");
+-- 
+2.25.1
+
