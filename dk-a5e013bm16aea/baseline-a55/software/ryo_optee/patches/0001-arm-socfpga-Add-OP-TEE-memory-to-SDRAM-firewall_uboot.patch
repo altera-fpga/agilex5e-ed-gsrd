@@ -1,38 +1,21 @@
-From e2b47d4c8ee3f3e54db474e81c512f90bfe70ad9 Mon Sep 17 00:00:00 2001
-From: Boon Khai Ng <boon.khai.ng@altera.com>
-Date: Tue, 27 Jan 2026 18:47:25 +0800
+From 5fa2bf529f7348405954507522edbb7ec1fd016f Mon Sep 17 00:00:00 2001
+From: Jit Loon Lim <jit.loon.lim@altera.com>
+Date: Thu, 29 Oct 2026 14:26:06 +0800
 Subject: [PATCH 1/2] arm: socfpga: Add OP-TEE memory to SDRAM firewall.
 
 This patch enhances the SDRAM firewall configuration on
 SoCFPGA platforms to explicitly protect the OP-TEE secure
-memory region. It introduces two regions in the MPU
-and Non-MPU DDR firewall registers:
+memory region. Refreshed for socfpga_v2026.07 tip which
+guards the firewall helpers with !CONFIG_ARCH_SOCFPGA_AGILEX27.
 
-1) Region 0: Non-secure, from 1MB after ATF
-   up to the start of OP-TEE (0x80100000 - 0x82FFFFFF)
-
-2) Region 1: Non-secure, from the end of
-   OP-TEE up to the end of valid DRAM (0x85000000 - DRAM end)
-
-Key changes:
-- Adds register definitions for Region 1 for
-  both MPU and Non-MPU firewall configuration.
-
-- Defines OPTEE_TZDRAM_START and
-  OPTEE_TZDRAM_SIZE for secure memory.
-
-- Refactors functions to configure and
-  enable both regions, ensuring OP-TEE memory
-  is not accessible from non-secure world.
-
-Signed-off-by: Boon Khai Ng <boon.khai.ng@altera.com>
+Signed-off-by: Jit Loon Lim <jit.loon.lim@altera.com>
 ---
  arch/arm/mach-socfpga/include/mach/firewall.h |  16 ++
- drivers/ddr/altera/sdram_soc64.c              | 198 +++++++++++-------
- 2 files changed, 138 insertions(+), 76 deletions(-)
+ drivers/ddr/altera/sdram_soc64.c              | 199 +++++++++++-------
+ 2 files changed, 139 insertions(+), 76 deletions(-)
 
 diff --git a/arch/arm/mach-socfpga/include/mach/firewall.h b/arch/arm/mach-socfpga/include/mach/firewall.h
-index a6736c2720a..d90a19d7ab6 100644
+index ed10e0e1..ba64521f 100644
 --- a/arch/arm/mach-socfpga/include/mach/firewall.h
 +++ b/arch/arm/mach-socfpga/include/mach/firewall.h
 @@ -127,6 +127,16 @@ struct socfpga_firwall_l4_sys {
@@ -66,7 +49,7 @@ index a6736c2720a..d90a19d7ab6 100644
  #define NONMPUREGION0_ENABLE				BIT(8)
  
 diff --git a/drivers/ddr/altera/sdram_soc64.c b/drivers/ddr/altera/sdram_soc64.c
-index 2d0093c591c..1f11d772952 100644
+index 9e854166..28804413 100644
 --- a/drivers/ddr/altera/sdram_soc64.c
 +++ b/drivers/ddr/altera/sdram_soc64.c
 @@ -27,6 +27,10 @@
@@ -80,10 +63,11 @@ index 2d0093c591c..1f11d772952 100644
  #define PGTABLE_OFF	0x4000
  
  #define SINGLE_RANK_CLAMSHELL	0xc3c3
-@@ -285,6 +289,82 @@ phys_size_t sdram_calculate_size(struct altera_sdram_plat *plat)
- 	return size;
+@@ -288,6 +292,83 @@ phys_size_t sdram_calculate_size(struct altera_sdram_plat *plat)
  }
  
+ #if !IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX27)
++
 +/*
 + * Configure non-secure region 0: From 1MB to before OP-TEE
 + * This opens the region: 0x80100000 to 0x82FFFFFF
@@ -163,7 +147,7 @@ index 2d0093c591c..1f11d772952 100644
  static void sdram_set_firewall_non_f2sdram(struct bd_info *bd)
  {
  	u32 i;
-@@ -297,53 +377,16 @@ static void sdram_set_firewall_non_f2sdram(struct bd_info *bd)
+@@ -300,53 +381,16 @@ static void sdram_set_firewall_non_f2sdram(struct bd_info *bd)
  
  		value = bd->bi_dram[i].start;
  
@@ -226,7 +210,7 @@ index 2d0093c591c..1f11d772952 100644
  	}
  }
  
-@@ -359,36 +402,39 @@ static void sdram_set_firewall_f2sdram(struct bd_info *bd)
+@@ -362,36 +406,39 @@ static void sdram_set_firewall_f2sdram(struct bd_info *bd)
  
  		value = bd->bi_dram[i].start;
  

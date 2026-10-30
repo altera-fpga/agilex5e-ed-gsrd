@@ -1,0 +1,638 @@
+diff --git a/optee_examples/sdm_disable_owned_entry/Android.mk b/optee_examples/sdm_disable_owned_entry/Android.mk
+new file mode 100644
+index 000000000000..58894c00c97c
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-disable-owned-entry ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_disable_owned_entry
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_disable_owned_entry/CMakeLists.txt b/optee_examples/sdm_disable_owned_entry/CMakeLists.txt
+new file mode 100644
+index 000000000000..1dad54a1ad0f
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_disable_owned_entry C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_disable_owned_entry/Makefile b/optee_examples/sdm_disable_owned_entry/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_disable_owned_entry/host/Makefile b/optee_examples/sdm_disable_owned_entry/host/Makefile
+new file mode 100644
+index 000000000000..bbd63aaac80b
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_disable_owned_entry
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_disable_owned_entry/host/main.c b/optee_examples/sdm_disable_owned_entry/host/main.c
+new file mode 100644
+index 000000000000..77c99158ebf3
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/host/main.c
+@@ -0,0 +1,178 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_disable_owned_entry - Linux host that drives the
++ * sdm_disable_owned_entry TA.
++ *
++ * Flow:
++ *   host -> sdm_disable_owned_entry TA -> PTA_SDM_SVC -> ATF
++ *           (ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED 0x42000179)
++ *
++ * The SDM receives this command WITHOUT any payload.  Once the command
++ * is accepted in non-volatile mode the device is permanently locked
++ * out of the OWNED life-cycle state and can NEVER be provisioned again.
++ *
++ * Modes:
++ *   default                            virtual / cache-only fusing
++ *                                      (PTA picks SMC x2 = 1; reversible
++ *                                      across reset, useful for testing).
++ *   --non-volatile                     physical eFuse burn
++ *                                      (PTA picks SMC x2 = 0; the device
++ *                                      can NEVER be provisioned again).
++ *
++ * Usage:
++ *   sdm_disable_owned_entry [--non-volatile]
++ *
++ * Exit status:
++ *   0 - SDM accepted the request
++ *   1 - argument / TEE / SDM error
++ */
++
++#include <err.h>
++#include <getopt.h>
++#include <inttypes.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_disable_owned_entry_ta.h>
++
++static void usage(const char *prog, int exit_code)
++{
++	FILE *fp = (exit_code == 0) ? stdout : stderr;
++
++	fprintf(fp,
++		"Usage: %s [--non-volatile]\n"
++		"\n"
++		"Permanently disable transition of the device to the OWNED\n"
++		"life-cycle state via the sdm_disable_owned_entry TA.\n"
++		"\n"
++		"      --non-volatile  *** PERMANENTLY BURN THE PHYSICAL eFUSE ***\n"
++		"                      Disables physical fuse programming of the\n"
++		"                      owner public-key root hash.  The device will\n"
++		"                      remain permanently configured in PRODUCTION\n"
++		"                      state and can NEVER transition to OWNED.\n"
++		"                      Default (omit this flag) is virtual /\n"
++		"                      cache-only fusing (reversible across reset).\n"
++		"  -h, --help          show this help and exit\n"
++		"\n"
++		"Exit status: 0 = accepted, 1 = rejected or error\n",
++		prog);
++	exit(exit_code);
++}
++
++int main(int argc, char *argv[])
++{
++	static const struct option long_opts[] = {
++		{ "non-volatile", no_argument, NULL,  1  },
++		{ "help",         no_argument, NULL, 'h' },
++		{ NULL,           0,           NULL,  0  },
++	};
++
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_UUID uuid = TA_SDM_DISABLE_OWNED_ENTRY_UUID;
++	uint32_t err_origin = 0;
++	uint32_t host_flags = 0;
++	bool non_volatile = false;
++	int c = 0;
++	int exit_code = 1;
++
++	while ((c = getopt_long(argc, argv, "h", long_opts, NULL)) != -1) {
++		switch (c) {
++		case 1:		/* --non-volatile */
++			non_volatile = true;
++			break;
++		case 'h':
++			usage(argv[0], 0);
++			break;
++		default:
++			usage(argv[0], 1);
++		}
++	}
++
++	if (optind != argc) {
++		fprintf(stderr, "%s: unexpected argument: %s\n",
++			argv[0], argv[optind]);
++		usage(argv[0], 1);
++	}
++
++	if (non_volatile) {
++		host_flags |= SDM_DEO_HOST_FLAG_NON_VOLATILE;
++		fprintf(stderr,
++			"\n"
++			"  ****************************************************************\n"
++			"  *                       *** WARNING ***                        *\n"
++			"  *                                                              *\n"
++			"  *  --non-volatile selected.                                    *\n"
++			"  *                                                              *\n"
++			"  *  This command will permanently disable physical fuse         *\n"
++			"  *  programming of the owner public-key root hash.              *\n"
++			"  *                                                              *\n"
++			"  *  The device shall remain permanently configured in           *\n"
++			"  *  PRODUCTION state and can never transition to OWNED.         *\n"
++			"  *                                                              *\n"
++			"  *  This action is IRREVERSIBLE.                                *\n"
++			"  ****************************************************************\n"
++			"\n");
++	} else {
++		printf("\n"
++			"  ****************************************************************\n"
++			"  *                                                              *\n"
++			"  *  Mode: virtual / cache-only                                  *\n"
++			"  *                                                              *\n"
++			"  *  This command will permanently disable physical fuse         *\n"
++			"  *  programming of the owner public-key root hash.              *\n"
++			"  *                                                              *\n"
++			"  *  The device shall remain permanently configured in           *\n"
++			"  *  PRODUCTION state and can never transition to OWNED.         *\n"
++			"  *                                                              *\n"
++			"  ****************************************************************\n"
++			"\n");
++	}
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_OpenSession: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_ctx;
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
++					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
++	op.params[0].value.a = host_flags;
++	op.params[0].value.b = 0;
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_DISABLE_OWNED_ENTRY_CMD_APPLY,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr,
++			"TA_SDM_DISABLE_OWNED_ENTRY_CMD_APPLY: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_sess;
++	}
++
++	printf("SDM disable-owned-entry applied (%s)  PASS\n",
++	       non_volatile ? "NON-VOLATILE / eFuse burned"
++			    : "virtual / cache-only");
++	exit_code = 0;
++
++out_sess:
++	TEEC_CloseSession(&sess);
++out_ctx:
++	TEEC_FinalizeContext(&ctx);
++	return exit_code;
++}
+diff --git a/optee_examples/sdm_disable_owned_entry/ta/Android.mk b/optee_examples/sdm_disable_owned_entry/ta/Android.mk
+new file mode 100644
+index 000000000000..0d0c32402433
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := d0e00000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_disable_owned_entry/ta/Makefile b/optee_examples/sdm_disable_owned_entry/ta/Makefile
+new file mode 100644
+index 000000000000..f531246b50be
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_DISABLE_OWNED_ENTRY_UUID in include/sdm_disable_owned_entry_ta.h
++BINARY=d0e00000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_disable_owned_entry/ta/include/sdm_disable_owned_entry_ta.h b/optee_examples/sdm_disable_owned_entry/ta/include/sdm_disable_owned_entry_ta.h
+new file mode 100644
+index 000000000000..554585c91d7c
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/ta/include/sdm_disable_owned_entry_ta.h
+@@ -0,0 +1,67 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_disable_owned_entry TA - public interface shared with the host.
++ *
++ * Simple side-effect wrapper around PTA_CMD_SDM_DISABLE_OWNED_ENTRY.
++ *
++ * The SDM receives this command **without any payload**.  Once the
++ * command is accepted in non-volatile mode the device is permanently
++ * locked out of the OWNED life-cycle state - it will refuse every
++ * future owner-root pubkey programming attempt and stay in PRODUCTION
++ * (or the equivalent pre-OWNED state) for the rest of its life.
++ * IRREVERSIBLE.
++ *
++ * Modes:
++ *   default                            virtual / cache-only fusing
++ *                                      (PTA picks SMC x2 = 1; reversible
++ *                                      across reset, useful for SDM
++ *                                      round-trip testing).
++ *   SDM_DEO_HOST_FLAG_NON_VOLATILE     physical eFuse burn
++ *                                      (PTA picks SMC x2 = 0; the
++ *                                      device can NEVER be provisioned
++ *                                      again).
++ */
++
++#ifndef TA_SDM_DISABLE_OWNED_ENTRY_H
++#define TA_SDM_DISABLE_OWNED_ENTRY_H
++
++#include <stdint.h>
++
++/*
++ * TA UUID.  Mnemonic "D0E" = Disable Owned Entry.
++ */
++#define TA_SDM_DISABLE_OWNED_ENTRY_UUID \
++	{ 0xd0e00000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_DISABLE_OWNED_ENTRY_CMD_APPLY - issue the disable-owned-entry
++ * command to the SDM.
++ *
++ * param[0] (in value)
++ *   .a = host control flags (currently only SDM_DEO_HOST_FLAG_NON_VOLATILE).
++ *        Any unknown bit -> TEE_ERROR_BAD_PARAMETERS.
++ *   .b = reserved, must be 0.
++ * param[1..3] unused (must all be TEE_PARAM_TYPE_NONE).
++ *
++ * Result:
++ *   TEE_SUCCESS                  - SDM accepted the request
++ *   TEE_ERROR_BAD_PARAMETERS     - wrong param types, non-zero .b,
++ *                                  or unknown bits in host_flags
++ *   TEE_ERROR_GENERIC / BUSY     - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_DISABLE_OWNED_ENTRY_CMD_APPLY	0
++
++/*
++ * Re-exported from pta_sdm_svc.h so NW callers don't need OP-TEE OS
++ * internals.  The guard suppresses redefinition when both headers are
++ * visible to the TA build.
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_DEO_HOST_FLAG_NON_VOLATILE		(1U << 0)
++#define SDM_DEO_HOST_FLAGS_VALID_MASK		SDM_DEO_HOST_FLAG_NON_VOLATILE
++#endif
++
++#endif /* TA_SDM_DISABLE_OWNED_ENTRY_H */
+diff --git a/optee_examples/sdm_disable_owned_entry/ta/sdm_disable_owned_entry_ta.c b/optee_examples/sdm_disable_owned_entry/ta/sdm_disable_owned_entry_ta.c
+new file mode 100644
+index 000000000000..30508cacf627
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/ta/sdm_disable_owned_entry_ta.c
+@@ -0,0 +1,202 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_disable_owned_entry Trusted Application.
++ *
++ * Wraps PTA_CMD_SDM_DISABLE_OWNED_ENTRY.  Validation performed:
++ *
++ *   1. Param types match (VALUE_INPUT, NONE, NONE, NONE).
++ *   2. param[0].value.b == 0.
++ *   3. host_flags is within SDM_DEO_HOST_FLAGS_VALID_MASK.
++ *
++ * The SDM does not receive any payload for this command; the PTA owns
++ * the fusing-mode selector (SMC x2) and computes it solely from
++ * host_flags.  This wrapper exists so non-PTA callers can drive the
++ * command via a regular TA UUID (hello_world-style flow) while keeping
++ * the irreversible-burn policy in the trusted layer.
++ *
++ * The TA emits an EMSG audit log for every NON_VOLATILE invocation so
++ * the log captures both the TA and PTA layers separately.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_disable_owned_entry_ta.h>
++
++struct deo_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_disable_owned_entry TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_disable_owned_entry TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct deo_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_disable_owned_entry TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct deo_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_disable_owned_entry TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate then forward
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_disable_owned_entry(struct deo_sess_ctx *ctx,
++					 uint32_t param_types,
++					 TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	/*
++	 * The PTA returns the phase-2 finalize status in params[1], so it
++	 * requires VALUE_OUTPUT there.  This differs from the host-facing
++	 * param types above and must be built separately for the forward.
++	 */
++	const uint32_t pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_VALUE_OUTPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	uint32_t host_flags = 0;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	host_flags = params[0].value.a;
++	if (params[0].value.b != 0) {
++		EMSG("param[0].value.b must be 0 (got 0x%08x)",
++		     params[0].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++	if (host_flags & ~SDM_DEO_HOST_FLAGS_VALID_MASK) {
++		EMSG("unknown host flag bits 0x%08x", host_flags);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	pta_params[0].value.a = host_flags;
++	pta_params[0].value.b = 0;
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_DISABLE_OWNED_ENTRY, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_DISABLE_OWNED_ENTRY failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_disable_owned_entry: applied (host_flags=0x%08x, phase2_status=0x%08x)",
++	     host_flags, pta_params[1].value.a);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct deo_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_DISABLE_OWNED_ENTRY_CMD_APPLY:
++		return do_disable_owned_entry(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_disable_owned_entry/ta/sub.mk b/optee_examples/sdm_disable_owned_entry/ta/sub.mk
+new file mode 100644
+index 000000000000..ce1aa87fbb83
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_disable_owned_entry_ta.c
+diff --git a/optee_examples/sdm_disable_owned_entry/ta/user_ta_header_defines.h b/optee_examples/sdm_disable_owned_entry/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..37dc4ede80b1
+--- /dev/null
++++ b/optee_examples/sdm_disable_owned_entry/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_disable_owned_entry_ta.h>
++
++#define TA_UUID			TA_SDM_DISABLE_OWNED_ENTRY_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM disable-owned-entry wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_disable_owned_entry.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Permanently disables OWNED transition via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

@@ -1,0 +1,106 @@
+From 6666666666666666666666666666666666666666 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 15 May 2026 17:41:38 +0800
+Subject: [PATCH] vgic: preserve active HW-linked LRs
+
+Do not remove and re-route an HW-linked interrupt while its LR is in
+Active or Pending+Active state.  Clearing that LR destroys the GICv3
+hardware-link used to deactivate the physical SPI when the guest later
+writes DIR, which can leave the SPI stuck Active.
+
+Still update the vGIC software state and backing GICD registers; only
+defer the LR removal/re-route until the guest completes the interrupt.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ src/arch/armv8/gicv3.c | 19 +++++++++++++++++++
+ src/arch/armv8/vgic.c  | 42 +++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 58 insertions(+), 3 deletions(-)
+
+diff --git a/src/arch/armv8/gicv3.c b/src/arch/armv8/gicv3.c
+index 37a87fe..24f26bf 100644
+--- a/src/arch/armv8/gicv3.c
++++ b/src/arch/armv8/gicv3.c
+@@ -33,6 +33,25 @@ static inline void gicc_init(void)
+ 
+     sysreg_icc_pmr_el1_write(GIC_LOWEST_PRIO);
+     sysreg_icc_bpr1_el1_write(0x0);
++    /*
++     * ICC_CTLR_EL1 (S3_0_C12_C12_4, Op1=0) controls the NS EL1 (guest)
++     * view.  Set EOImode_EL1NS (bit 1) = 1 so guests use split EOI:
++     * priority-drop on ICC_EOIR1_EL1, deactivation on ICC_DIR_EL1.  This
++     * leaves physical SPIs Active in the GICD between Bao's gicc_eoir()
++     * and the guest's DIR, giving the LR's HW-link the window it needs
++     * to auto-deactivate the physical SPI when the guest finishes the
++     * IRQ.
++     *
++     * NOTE: ICC_CTLR_EL2.EOImode_EL2 (at S3_4_C12_C12_4) would ideally
++     * also be set so that gicc_eoir() from EL2 itself performs
++     * priority-drop only.  However writing S3_4_C12_C12_4 hangs on
++     * Agilex5 (register absent or EL3-trapped).  Empirically, EL2's
++     * gicc_eoir() inherits the EL1-NS EOImode in this configuration and
++     * also performs priority-drop only, which is what we want.
++     *
++     * vgic_int_set_field() must preserve an HW-linked LR while the guest
++     * is handling it, otherwise the physical SPI deactivation path is lost.
++     */
+     sysreg_icc_ctlr_el1_write(ICC_CTLR_EOIMode_BIT);
+     sysreg_ich_hcr_el2_write(sysreg_ich_hcr_el2_read() | ICH_HCR_LRENPIE_BIT);
+     sysreg_icc_igrpen1_el1_write(ICC_IGRPEN_EL1_ENB_BIT);
+diff --git a/src/arch/armv8/vgic.c b/src/arch/armv8/vgic.c
+index 515d229..d61a485 100644
+--- a/src/arch/armv8/vgic.c
++++ b/src/arch/armv8/vgic.c
+@@ -687,11 +687,47 @@ void vgic_int_set_field(struct vgic_reg_handler_info* handlers, struct vcpu* vcp
+ {
+     spin_lock(&interrupt->lock);
+     if (vgic_get_ownership(vcpu, interrupt)) {
+-        vgic_remove_lr(vcpu, interrupt);
+-        if (handlers->update_field(vcpu, interrupt, data) && vgic_int_is_hw(interrupt)) {
++        /*
++         * Preserve the LR for in-flight HW-linked IRQs.
++         *
++         * vgic_remove_lr() wipes the LR via gich_write_lr(lr_ind, 0).  For
++         * an HW-linked SPI (HW=1, pID set) currently in the ACT or PENDACT
++         * state, that write destroys the only mechanism the GIC has to
++         * auto-deactivate the physical SPI when the guest later writes
++         * ICC_DIR_EL1 (or ICC_EOIR1_EL1 with EOImode=0).  Re-adding the LR
++         * afterwards does not re-establish deactivation because the guest
++         * has already issued its DIR for that IRQ.  The physical SPI then
++         * stays Active in the GICD forever and never re-fires.
++         *
++         * Fix: when the IRQ is HW-linked and in ACT/PENDACT, skip both
++         * vgic_remove_lr() and the matching vgic_route() re-add.  The
++         * update_field() and update_hw() steps still run, so the physical
++         * GICD enable/pend/active/cfg/priority bits and the SW mirror are
++         * updated normally; only the LR is left intact so the HW-link
++         * survives until the guest naturally completes the IRQ via DIR.
++         */
++        bool defer_lr = false;
++        if (vgic_int_is_hw(interrupt) && interrupt->in_lr) {
++            gic_lr_t cur_lr = 0;
++            if (gich_get_lr(interrupt, &cur_lr) >= 0) {
++                unsigned cur_state = (unsigned)GICH_LR_STATE(cur_lr);
++                if (cur_state == ACT || cur_state == PENDACT) {
++                    defer_lr = true;
++                }
++            }
++        }
++
++        if (!defer_lr) {
++            vgic_remove_lr(vcpu, interrupt);
++        }
++        bool changed = handlers->update_field(vcpu, interrupt, data);
++        bool is_hw = vgic_int_is_hw(interrupt);
++        if (changed && is_hw) {
+             handlers->update_hw(vcpu, interrupt);
+         }
+-        vgic_route(vcpu, interrupt);
++        if (!defer_lr) {
++            vgic_route(vcpu, interrupt);
++        }
+         vgic_yield_ownership(vcpu, interrupt);
+     } else {
+         struct cpu_msg msg = {
+-- 
+2.34.1

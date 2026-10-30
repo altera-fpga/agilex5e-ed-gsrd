@@ -24,5 +24,5 @@ set_multicycle_path 2 -setup -from [get_registers {*|u_agilex_hps|intel_agilex_5
 set_multicycle_path 1 -hold -from [get_registers {*|u_agilex_hps|intel_agilex_5_soc_inst|sm_hps|sundancemesa_hps_inst~intosc_clk.reg}] -to [get_registers {*|u_agilex_hps|intel_agilex_5_soc_inst|sm_hps|sundancemesa_hps_inst~intosc_clk.reg}]
 
 # Use -no_synchronizer for the following intra-clock false paths
-set_false_path -no_synchronizer -from [get_registers {*|u_clks_and_rsts|clks_and_rsts|fpga_reset_n_sync|dreg[1]}] -to [get_registers {*|altera_reset_synchronizer_int_chain[1]}]
-set_false_path -no_synchronizer -from [get_registers {*|u_fabric_subsys|rst_controller|r_sync_rst}] -to [get_registers {*|altera_reset_synchronizer_int_chain[1]}]
+set_false_path -no_synchronizer -from [get_registers {*|u_clks_and_rsts|clks_and_rsts|fpga_reset_n_sync|dreg[1]}] -to [get_registers {*|u_fabric_subsys|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]}]
+set_false_path -no_synchronizer -from [get_registers {*|u_fabric_subsys|rst_controller|r_sync_rst}] -to [get_registers {*|u_fabric_subsys|u_niosv_subsys|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]}]

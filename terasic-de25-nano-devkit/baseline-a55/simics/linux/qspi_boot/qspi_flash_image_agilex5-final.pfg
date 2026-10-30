@@ -3,10 +3,10 @@
     <output_files>
         <output_file name="flash_image" directory="." type="JIC">
             <file_options/>
-            <secondary_file type="MAP" name="flash_image_jic">
+            <secondary_file type="MAP" name="qspi_boot">
                 <file_options/>
             </secondary_file>
-            <secondary_file type="SEC_RPD" name="flash_image_jic">
+            <secondary_file type="SEC_RPD" name="qspi_boot">
                 <file_options bitswap="1"/>
             </secondary_file>
             <flash_device_id>Flash_Device_1</flash_device_id>
@@ -21,7 +21,7 @@
             <partition reserved="0" fixed_s_addr="0" s_addr="0x04000000" e_addr="auto" fixed_e_addr="0" id="U-Boot" size="0"/>
             <partition reserved="0" fixed_e_addr="1" e_addr="0xFFFFFFF" id="HPS" s_addr="0x4200000"/>
         </flash_device>
-        <flash_loader>A5ED065BB32AE6SR0</flash_loader>
+        <flash_loader>A5EB013BB23BE4SCS</flash_loader>
     </flash_devices>
     <assignments>
         <assignment page="0" partition_id="U-Boot">

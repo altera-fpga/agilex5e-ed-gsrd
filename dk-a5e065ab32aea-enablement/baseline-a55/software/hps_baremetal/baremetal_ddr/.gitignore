@@ -1,0 +1,11 @@
+build_qspi/
+build_sd/
+arm-gnu-toolchain-*
+gcc-arm/
+ghrd_*.sof
+*.jic
+*.rbf
+*.map
+*.elf
+*.img
+fsbl_sd.sof

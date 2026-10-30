@@ -1,0 +1,781 @@
+diff --git a/optee_examples/sdm_fuse_prog/Android.mk b/optee_examples/sdm_fuse_prog/Android.mk
+new file mode 100644
+index 000000000000..5850cecfd8d2
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-fuse-prog ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_fuse_prog
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_fuse_prog/CMakeLists.txt b/optee_examples/sdm_fuse_prog/CMakeLists.txt
+new file mode 100644
+index 000000000000..59afc6435c92
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_fuse_prog C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_fuse_prog/Makefile b/optee_examples/sdm_fuse_prog/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_fuse_prog/host/Makefile b/optee_examples/sdm_fuse_prog/host/Makefile
+new file mode 100644
+index 000000000000..2adbb0449896
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_fuse_prog
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_fuse_prog/host/main.c b/optee_examples/sdm_fuse_prog/host/main.c
+new file mode 100644
+index 000000000000..50a57df23e6f
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/host/main.c
+@@ -0,0 +1,233 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_fuse_prog - Linux host that drives the sdm_fuse_prog TA.
++ *
++ * Flow:
++ *   host -> sdm_fuse_prog TA -> PTA_SDM_SVC -> ATF (GEN_MBOX_CMD 0x2C)
++ *
++ * Programs all 16 user-defined eFuse words on the Intel SDM.
++ *
++ * The TA validates the input strictly (param-types, non-NULL buffer,
++ * size **exactly** 64 bytes, NW readability, TOC-TOU snapshot,
++ * before forwarding to the PTA.  The PTA picks the SDM control
++ * word's test bit from the host_flags so that:
++ *
++ *   default                        SDM updates only its cached / virtual
++ *                                  user-fuse state (T=1, reversible on
++ *                                  cold reset).
++ *   --non-volatile                 SDM permanently burns the 16 caller-
++ *                                  supplied words into the physical eFuse
++ *                                  (T=0).  *** IRREVERSIBLE ***
++ *
++ * Usage:
++ *   sdm_fuse_prog [--non-volatile] <w0> <w1> ... <w15>
++ *
++ * Each <w*> is a hex 32-bit value (with or without the 0x prefix).
++ *
++ * Exit status:
++ *   0 - fuses programmed successfully
++ *   1 - error (bad usage / TEE / SDM)
++ */
++
++#include <err.h>
++#include <errno.h>
++#include <getopt.h>
++#include <inttypes.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_fuse_prog_ta.h>
++
++static void usage(const char *prog, int exit_code)
++{
++	FILE *fp = (exit_code == 0) ? stdout : stderr;
++
++	fprintf(fp,
++		"Usage: %s [--non-volatile] <w0> <w1> ... <w15>\n"
++		"\n"
++		"Program all %u SDM user-defined eFuse words.\n"
++		"All %u hex word values must be supplied (with or without 0x prefix).\n"
++		"\n"
++		"Mode selection:\n"
++		"      --non-volatile  *** PERMANENTLY BURN THE PHYSICAL eFUSE ***\n"
++		"                      Clears the SDM test bit so the 16 supplied\n"
++		"                      words are written into the physical eFuse.\n"
++		"                      The affected user-fuse bits CANNOT be erased\n"
++		"                      or changed.  IRREVERSIBLE.\n"
++		"                      Default (omit this flag) is virtual /\n"
++		"                      cache-only fusing — reversible across a\n"
++		"                      cold reset / power cycle.\n"
++		"  -h, --help          show this help and exit\n"
++		"\n"
++		"Exit status: 0 = programmed, 1 = error\n",
++		prog, SDM_USER_FUSE_COUNT, SDM_USER_FUSE_COUNT);
++	exit(exit_code);
++}
++
++int main(int argc, char *argv[])
++{
++	static const struct option long_opts[] = {
++		{ "non-volatile", no_argument, NULL,  1  },
++		{ "help",         no_argument, NULL, 'h' },
++		{ NULL,           0,           NULL,  0  },
++	};
++
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_SharedMemory in_shm = { };
++	TEEC_UUID uuid = TA_SDM_FUSE_PROG_UUID;
++	uint32_t err_origin = 0;
++	uint32_t fuse_data[SDM_USER_FUSE_COUNT] = { };
++	uint32_t host_flags = 0;
++	bool non_volatile = false;
++	unsigned int i = 0;
++	int c = 0;
++	int positional = 0;
++	int exit_code = 1;
++
++	while ((c = getopt_long(argc, argv, "h", long_opts, NULL)) != -1) {
++		switch (c) {
++		case 1:		/* --non-volatile */
++			non_volatile = true;
++			break;
++		case 'h':
++			usage(argv[0], 0);
++			break;
++		default:
++			usage(argv[0], 1);
++		}
++	}
++
++	positional = argc - optind;
++	if (positional != (int)SDM_USER_FUSE_COUNT) {
++		fprintf(stderr,
++			"%s: expected %u hex word arguments, got %d\n",
++			argv[0], SDM_USER_FUSE_COUNT, positional);
++		usage(argv[0], 1);
++	}
++
++	for (i = 0; i < SDM_USER_FUSE_COUNT; i++) {
++		char *endptr = NULL;
++		unsigned long v = strtoul(argv[optind + (int)i], &endptr, 16);
++
++		if (*endptr != '\0' || v > UINT32_MAX) {
++			errx(1, "invalid word %u: '%s'",
++			     i, argv[optind + (int)i]);
++		}
++		fuse_data[i] = (uint32_t)v;
++	}
++
++	/*
++	 * Mirror the audit banners emitted by the TA so the operator
++	 * always sees the same warning on stdout/stderr before the SMC
++	 * is fired.  Non-volatile is irreversible (loud, to stderr);
++	 * default is reversible (calm, to stdout).
++	 */
++	if (non_volatile) {
++		host_flags |= SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE;
++		fprintf(stderr,
++			"\n"
++			"  ****************************************************************\n"
++			"  *                       *** WARNING ***                        *\n"
++			"  *                                                              *\n"
++			"  *  --non-volatile selected.                                    *\n"
++			"  *                                                              *\n"
++			"  *  The SDM will permanently burn the 16 supplied hex words     *\n"
++			"  *  into the physical user-eFuse on this call.                  *\n"
++			"  *                                                              *\n"
++			"  *  Once written, the affected user-fuse bits CANNOT be         *\n"
++			"  *  erased or changed.                                          *\n"
++			"  *                                                              *\n"
++			"  *  This action is IRREVERSIBLE.                                *\n"
++			"  ****************************************************************\n"
++			"\n");
++	} else {
++		printf("\n"
++			"  ****************************************************************\n"
++			"  *                      ***** Virtual *****                     *\n"
++			"  *                                                              *\n"
++			"  *  Mode: virtual / cache-only (default).                       *\n"
++			"  *                                                              *\n"
++			"  *  The SDM will update only its cached user-fuse state with    *\n"
++			"  *  the 16 supplied hex words.  No physical eFuse bit will be   *\n"
++			"  *  burned by this call.                                        *\n"
++			"  *                                                              *\n"
++			"  *  The effect is lost on the next cold reset / power cycle.    *\n"
++			"  *                                                              *\n"
++			"  ****************************************************************\n"
++			"\n");
++	}
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_OpenSession: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_ctx;
++	}
++
++	/*
++	 * Register the local array as TEEC shared memory.  64-byte input
++	 * buffer; explicit registration + TEEC_MEMREF_WHOLE means the TEE
++	 * driver maps it once for the call.  TEEC_MEM_INPUT marks the TEE
++	 * mapping read-only as far as the TA is concerned; the TA also
++	 * snapshots into its own heap before forwarding.
++	 */
++	in_shm.buffer = fuse_data;
++	in_shm.size   = SDM_USER_FUSE_SIZE;
++	in_shm.flags  = TEEC_MEM_INPUT;
++	res = TEEC_RegisterSharedMemory(&ctx, &in_shm);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_RegisterSharedMemory: 0x%x\n", res);
++		goto out_sess;
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_WHOLE,
++					 TEEC_VALUE_INPUT,
++					 TEEC_NONE, TEEC_NONE);
++	op.params[0].memref.parent = &in_shm;
++	op.params[0].memref.size   = SDM_USER_FUSE_SIZE;
++	op.params[1].value.a       = host_flags;
++	op.params[1].value.b       = 0;
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_FUSE_PROG_CMD_SET,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr,
++			"TA_SDM_FUSE_PROG_CMD_SET: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_shm;
++	}
++
++	printf("\nSDM user eFuses programmed successfully (%s).\n",
++	       non_volatile ? "NON-VOLATILE / eFuse burned"
++			    : "virtual / cache-only");
++	printf("Words programmed:\n");
++	for (i = 0; i < SDM_USER_FUSE_COUNT; i++)
++		printf("  Word %2u: 0x%08" PRIX32 "\n", i, fuse_data[i]);
++	printf("\n");
++
++	exit_code = 0;
++
++out_shm:
++	TEEC_ReleaseSharedMemory(&in_shm);
++out_sess:
++	TEEC_CloseSession(&sess);
++out_ctx:
++	TEEC_FinalizeContext(&ctx);
++	return exit_code;
++}
+diff --git a/optee_examples/sdm_fuse_prog/ta/Android.mk b/optee_examples/sdm_fuse_prog/ta/Android.mk
+new file mode 100644
+index 000000000000..0f24415e35f8
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := 0f05e001-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_fuse_prog/ta/Makefile b/optee_examples/sdm_fuse_prog/ta/Makefile
+new file mode 100644
+index 000000000000..13c628dda926
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_FUSE_PROG_UUID in include/sdm_fuse_prog_ta.h
++BINARY=0f05e001-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_fuse_prog/ta/include/sdm_fuse_prog_ta.h b/optee_examples/sdm_fuse_prog/ta/include/sdm_fuse_prog_ta.h
+new file mode 100644
+index 000000000000..13908ea5caa2
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/ta/include/sdm_fuse_prog_ta.h
+@@ -0,0 +1,85 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_fuse_prog TA - public interface shared with the host.
++ *
++ * Wraps PTA_CMD_SDM_PROG_USER_FUSES with input validation:
++ *   - exactly SDM_USER_FUSE_SIZE (64) bytes (stricter than PTA's `>= 64`),
++ *   - NW source memref readable for the full size,
++ *   - TOC-TOU snapshot into TA-local memory before forwarding to the PTA,
++ *   - zeroize the TA-local snapshot before TEE_Free (fuse values may be
++ *     ownership-bound secrets across both virtual and physical modes),
++ *   - host_flags: only SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE is acted on
++ *     (other bits ignored); reserved param[1].value.b must be 0.
++ *
++ * The host controls whether the operation programs the physical eFuse
++ * (irreversible) or only the SDM cached/virtual state (reversible) via
++ * SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE in param[1].value.a:
++ *
++ *   flag CLEAR (default)                  virtual / cache-only fusing
++ *                                         (test bit set; reversible on
++ *                                         cold reset).
++ *   SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE  permanent physical eFuse burn.
++ *                                         *** IRREVERSIBLE - the 16 words
++ *                                         can never be erased or changed. ***
++ *
++ * The TA emits a `*** WARNING ***` banner on every NON_VOLATILE invocation
++ * and a `***** Virtual *****` banner on every default invocation so the
++ * secure-world log carries a symmetric audit record of every call.
++ */
++
++#ifndef TA_SDM_FUSE_PROG_H
++#define TA_SDM_FUSE_PROG_H
++
++#include <stdint.h>
++
++/*
++ * UUID for the sdm_fuse_prog Trusted Application.
++ * Sequential sibling of sdm_fuse_read (`0f05e000`) - the trailing
++ * `0f05e001` denotes the program/write counterpart of the read TA.
++ */
++#define TA_SDM_FUSE_PROG_UUID \
++	{ 0x0f05e001, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_FUSE_PROG_CMD_SET - program all 16 user-defined eFuse words.
++ *
++ * param[0] (in memref)  caller buffer; must be **exactly** SDM_USER_FUSE_SIZE
++ *                       (64 bytes), 16 x uint32_t values for words 0..15.
++ * param[1] (in value)   .a = host_flags
++ *                              (SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE only)
++ *                       .b = reserved (must be 0)
++ * param[2..3] unused.
++ *
++ * Result:
++ *   TEE_SUCCESS                  - fuses programmed (virtual or physical)
++ *   TEE_ERROR_BAD_PARAMETERS     - bad param types / null / size != 64 /
++ *                                  unknown host_flags / reserved field nonzero
++ *   TEE_ERROR_ACCESS_DENIED      - NW buffer not readable for size bytes
++ *   TEE_ERROR_OUT_OF_MEMORY      - TA-local copy allocation failed
++ *   TEE_ERROR_GENERIC / BUSY     - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_FUSE_PROG_CMD_SET	0
++
++/*
++ * SDM user-fuse sizing and host-flags, re-exported from the PTA header
++ * (pta_sdm_svc.h) so NW callers don't need OP-TEE OS internals.  Suppressed
++ * when pta_sdm_svc.h is also visible (TA build) via its include guard.
++ *
++ * SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE is just an alias for the PTA-side
++ * SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE so the bit value stays in lock-step
++ * across the host -> TA -> PTA chain.
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_USER_FUSE_COUNT			16U
++#define SDM_USER_FUSE_SIZE			(SDM_USER_FUSE_COUNT * 4U) /* 64 */
++#define SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE	(1U << 0)
++#endif
++
++/* Host-facing alias — keeps the host source readable. */
++#define SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE	\
++	SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE
++
++#endif /* TA_SDM_FUSE_PROG_H */
+diff --git a/optee_examples/sdm_fuse_prog/ta/sdm_fuse_prog_ta.c b/optee_examples/sdm_fuse_prog/ta/sdm_fuse_prog_ta.c
+new file mode 100644
+index 000000000000..9f9844383a26
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/ta/sdm_fuse_prog_ta.c
+@@ -0,0 +1,272 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_fuse_prog Trusted Application.
++ *
++ * Wraps PTA_CMD_SDM_PROG_USER_FUSES with strict input validation:
++ *
++ *   1. GP-TEE parameter types match (MEMREF_INPUT, VALUE_INPUT, NONE, NONE).
++ *   2. memref.buffer != NULL.
++ *   3. memref.size is *exactly* SDM_USER_FUSE_SIZE (64).  Stricter than
++ *      the PTA, which accepts any size >= 64 and silently uses the
++ *      first 64 bytes - a TA caller that passes the wrong count almost
++ *      certainly has a bug, and we'd rather surface it than ignore it.
++ *   4. The NW source buffer is genuinely readable for those 64 bytes
++ *      (TEE_CheckMemoryAccessRights).
++ *   5. param[1].value.b reserved field is zero; only the NON_VOLATILE bit
++ *      of value.a host_flags is acted on (other bits ignored).
++ *   6. Snapshot the 64 bytes into TA-local memory before forwarding,
++ *      so a malicious NW thread cannot mutate the buffer between our
++ *      validation and the PTA's read (TOC-TOU protection).
++ *   7. Forward the TA-local snapshot + host_flags to
++ *      PTA_CMD_SDM_PROG_USER_FUSES.
++ *   8. Zeroize the snapshot before TEE_Free so the bytes don't linger
++ *      in recycled TA heap pages.
++ *
++ * The host controls fusing mode via SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE
++ * in param[1].value.a (mirroring the prog_pubkey / disable_owned_entry /
++ * security_op convention).  The TA emits a `*** WARNING ***` banner on
++ * every NON_VOLATILE call and a `***** Virtual *****` banner on every
++ * default call so the secure-world log carries a symmetric audit record.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_fuse_prog_ta.h>
++
++struct fuse_prog_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_fuse_prog TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_fuse_prog TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct fuse_prog_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_fuse_prog TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct fuse_prog_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_fuse_prog TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate input, snapshot, forward, wipe
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_fuse_prog(struct fuse_prog_sess_ctx *ctx,
++			       uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
++						TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	void *ns_in = NULL;
++	size_t in_size = 0;
++	void *local_fuses = NULL;
++	uint32_t host_flags = 0;
++	bool non_volatile = false;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	ns_in   = params[0].memref.buffer;
++	in_size = params[0].memref.size;
++
++	if (!ns_in) {
++		EMSG("input memref buffer is NULL");
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Be stricter than the PTA: require exactly 64 bytes.  A caller
++	 * that sends a wrong-sized buffer is almost certainly bugged,
++	 * and we'd rather fail loudly than silently program 16 garbage
++	 * words because the buffer wasn't fully populated.
++	 */
++	if (in_size != SDM_USER_FUSE_SIZE) {
++		EMSG("input size %zu != SDM_USER_FUSE_SIZE (%u)",
++		     in_size, SDM_USER_FUSE_SIZE);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * The reserved field (params[1].value.b) must be zero.  Only the
++	 * NON_VOLATILE bit is meaningful: default (clear) programs the
++	 * virtual / cache-only fuse; setting it requests a permanent eFuse
++	 * burn.  Any other host_flags bits are ignored rather than rejected.
++	 */
++	if (params[1].value.b != 0) {
++		EMSG("reserved param[1].b must be 0 (got 0x%08x)",
++		     params[1].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++	host_flags = params[1].value.a;
++	non_volatile = (host_flags & SDM_FUSE_PROG_HOST_FLAG_NON_VOLATILE) != 0;
++
++	/*
++	 * Confirm the NW source memref is genuinely readable for the full
++	 * size before we touch any byte through it.  Converts a hypothetical
++	 * "lying memref" condition into a clean TEE_ERROR_ACCESS_DENIED
++	 * instead of a secure-world fault during the copy below.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_in, in_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("input memref not readable: buf=%p size=%zu res=0x%08x",
++		     ns_in, in_size, res);
++		return res;
++	}
++
++	/*
++	 * Snapshot the 64 bytes into TA-local memory so the PTA reads from
++	 * a buffer the NW caller cannot mutate in flight (TOC-TOU
++	 * protection).  This matters more for a write op than a read,
++	 * because we're going to actually program these values into the
++	 * SDM mailbox payload.
++	 */
++	local_fuses = TEE_Malloc(in_size, 0);
++	if (!local_fuses) {
++		EMSG("alloc local_fuses (%zu) failed", in_size);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	TEE_MemMove(local_fuses, ns_in, in_size);
++
++	pta_params[0].memref.buffer = local_fuses;
++	pta_params[0].memref.size   = in_size;
++	pta_params[1].value.a       = host_flags;
++	pta_params[1].value.b       = 0;
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_PROG_USER_FUSES, exp_pt,
++				  pta_params, &pta_origin);
++
++	/*
++	 * Wipe the snapshot before returning the heap memory.  Fuse
++	 * values may be ownership-bound secrets in both virtual and
++	 * physical modes — don't let them linger in recycled pages.
++	 */
++	TEE_MemFill(local_fuses, 0, in_size);
++	TEE_Free(local_fuses);
++
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_PROG_USER_FUSES failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_fuse_prog: programmed %u %s fuse words",
++	     SDM_USER_FUSE_COUNT,
++	     non_volatile ? "PHYSICAL (eFuse-burned)" : "virtual");
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct fuse_prog_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_FUSE_PROG_CMD_SET:
++		return do_fuse_prog(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_fuse_prog/ta/sub.mk b/optee_examples/sdm_fuse_prog/ta/sub.mk
+new file mode 100644
+index 000000000000..4ec0d4a1d10c
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_fuse_prog_ta.c
+diff --git a/optee_examples/sdm_fuse_prog/ta/user_ta_header_defines.h b/optee_examples/sdm_fuse_prog/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..d62929769f9b
+--- /dev/null
++++ b/optee_examples/sdm_fuse_prog/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_fuse_prog_ta.h>
++
++#define TA_UUID			TA_SDM_FUSE_PROG_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM user-eFuse program (virtual) wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_fuse_prog.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Programs 16 SDM user-defined virtual eFuse words via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

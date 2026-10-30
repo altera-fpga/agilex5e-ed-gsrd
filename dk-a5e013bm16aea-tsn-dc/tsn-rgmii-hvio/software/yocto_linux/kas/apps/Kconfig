@@ -1,0 +1,7 @@
+menu "Example applications"
+
+config HELLO_WORLD_APP
+	bool "Hello World"
+    default y
+
+endmenu

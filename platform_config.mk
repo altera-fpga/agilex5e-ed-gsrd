@@ -8,11 +8,14 @@ TARGET_SUBDIR += \
 	dk-a5e065bb32aes1-test \
 	mk-a5e065bb32aes1 \
 	dk-a5e013bm16aea \
+	dk-a5e013bm16aea-tsn-dc \
 	dk-a5e065bb32aea-nand \
 	dk-a5e065ab32aea-nand \
 	mk-a5e065ab32aea \
 	mk-a5e065bb32aea \
 	dk-a5e065bb32aea-test \
 	dk-a5e065ab32aea-test \
-	terasic-de25-nano-devkit
-	
+	terasic-de25-nano-devkit \
+	terasic-de25-standard-devkit \
+	dk-a5d064ab32bea-enablement \
+	mk-a5d064ab32bea

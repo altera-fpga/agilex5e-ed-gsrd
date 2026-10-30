@@ -1,23 +1,25 @@
-# HPS Baseline-A55 System Example Design for DE25 Nano Development and Education Board
+# HPS Baseline-A55 System Example Design for Terasic DE25 Nano Development and Education Board
 
-This is the HPS Baseline System Example Design for DE25 Nano Development and Education Board.
+HPS Baseline-A55 System Example Design for Terasic DE25 Nano Development and Education Board.
 
 ## Description
 
-</p><p>This is a hardware reference design for Altera Agilex 5 System On Chip (SoC) FPGA and it is part of the HPS Baseline System Example Design (formerly known as GSRD or Golden System Reference Design) that exercises soft IP in the fabric, boots to U-Boot, then Linux, and runs sample Linux applications.
-Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/\">Agilex 5 E-Series Premium Development Kit HPS Baseline System Example Design</a> for information about this design.
+<p>This design is a Baseline Hardware Reference Design for Altera Agilex 5 System On Chip (SoC) FPGA.
+
+</p><p>This design is part of the Baseline System Example Design, which provides a complete solution, including exercising soft IP in the fabric, booting to U-Boot, then Linux, and running sample Linux applications.
+Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/\">Agilex 5 E-Series Premium Development Kit Baseline System Example Design user guide</a> for more information.
 
 </p><p>The design uses HPS First configuration mode and boots from Arm Cortex-A55 core 0 processor.
 
 </p><h2>Baseline-A55 feature
-</h2><p>This reference design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
+</h2><p>This design demonstrates the following system integration between Hard Processor System (HPS) and FPGA IPs:
 <ul><li>Hard Processor System (HPS) enablement and configuration
 <ul><li>Enable dual core Arm Cortex-A76 processor
 </li><li>Enable dual core Arm Cortex-A55 processor
 </li><li>HPS Peripheral and I/O (SD/MMC, EMAC, MDIO, USB, I3C, JTAG, UART, and GPIO)
 </li><li>HPS Clock and Reset
 </li><li>HPS FPGA Bridge and Interrupt
-</li></ul><li>HPS EMIF configuration (starting 25.1.1 ECC is enabled by default)
+</li></ul><li>HPS EMIF configuration
 </li><li>System integration with FPGA IPs
 <ul><li>Core subsystem that consists of NiosV subsystem, 256KB of FPGA On-Chip Memory, System ID, Programmable I/O (PIO) IP for controlling DIPSW, PushButton, and LEDs.
 </li><li>NiosV subsystem that consists of JTAG Avalon Master Bridge IP and Address Span Extender IP to allow System-Console debug activity and FPGA content access through JTAG.
@@ -34,40 +36,45 @@ Refer to the <a href=\"https://altera-fpga.github.io/latest/embedded-designs/agi
 ## Project Details
 
 - **Family**: Agilex 5 E-Series
-- **Quartus Version**: 26.1.1
+- **Quartus Version**: 26.3
 - **Development Kit**: DE25 Nano Development and Education Board
 - **Device Part**: A5EB013BB23BE4SCS
 - **Category**: HPS
 - **Source**: Quartus Prime Pro
-- **URL**: https://www.github.com/altera-fpga/agilex5e-ed-gsrd
+- **URL**: https://github.com/altera-fpga/agilex5-ed-hps-baseline
 - **Design Package**: terasic-de25-nano-devkit-baseline-a55.zip
 - **Documentations**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/
 
 ## Documentations
 
-- **Title**: HPS Baseline System Example Design User Guide for the DE25 Nano Development and Education Board
-**URL**: https://altera-fpga.github.io/latest/embedded-designs/agilex-5/e-series/premium/gsrd/ug-gsrd-agx5e-premium/
-- **Title**: HPS Baseline System Example Design README for the DE25 Nano Development and Education Board
-**URL**: https://github.com/altera-fpga/agilex5e-ed-gsrd/blob/main/terasic-de25-nano-devkit/baseline-a55/README.md
+- **Title**: HPS Baseline System Example Design User Guide for the Terasic DE25 Nano Development and Education Board
+**URL**: TBD
+
+## Software projects
+
+| Project | Description |
+|---------|-------------|
+| [Yocto Linux](software/yocto_linux/README.md) | Linux BSP build, boot, and Simics bring-up |
+| [HPS debug](software/hps_debug/README.md) | HPS content wipe utility for debug |
 
 
-## Quartus Design Overview
-![Block Diagram Baseline-A55 Quartus Design Overview](../../images/oobe-baseline-overview.png)
+## Design overview
+![Block Diagram Baseline-A55 design overview](images/oobe-baseline-overview-no-ilc.png)
 
 ## Hard Processor System (HPS)
-The Quartus Design HPS configuration matches the board schematic.
+This design's HPS configuration matches the board schematic.
 Refer to [Agilex 5 Hard Processor System Technical Reference Manual](https://docs.altera.com/r/docs/814346/current) and [Hard Processor System Component Reference Manual: Agilex 5 SoCs](https://docs.altera.com/r/docs/813752/current) for more information on HPS configuration.
 
 ## HPS External Memory Interfaces (EMIF) DDR
-The Quartus Design HPS EMIF DDR configuration matches the board schematic.
+This design's HPS EMIF DDR configuration matches the board schematic.
 Refer to [External Memory Interfaces (EMIF) IP User Guide: Agilex 5 FPGAs and SoCs](https://docs.altera.com/r/docs/817467/current) for more information on HPS EMIF configuration.
 
 ## Bridges
 Bridges are used to move data between FPGA fabric and HPS logic.
-Refer to [HPS Bridges](https://docs.altera.com/r/docs/813752/26.1/hard-processor-system-component-reference-manual-agilextm-5-socs/fpga-bridges).
+Refer to [HPS Bridges](https://docs.altera.com/r/docs/813752/26.3/hard-processor-system-component-reference-manual-agilex-5-socs/fpga-bridges).
 
 The HPS address map and the FPGA address map are the same for Agilex 5.
-Refer to [Total Address Map Graphical](https://docs.altera.com/r/docs/814346/26.1/hard-processor-system-technical-reference-manual-agilextm-5-socs/total-address-map-graphical) for more information.
+Refer to [Total Address Map Graphical](https://docs.altera.com/r/docs/814346/26.3/hard-processor-system-technical-reference-manual-agilex-5-socs/total-address-map-graphical) for more information.
 
 Therefore, when accessing HPS logic in uboot or linux, the base address would be the same as, when using [NiosV Subsystem](#niosv-subsystem) from FPGA fabric.
 
@@ -81,7 +88,7 @@ Therefore, when accessing HPS logic in uboot or linux, the base address would be
 ## Core Subsystem
 
 ### NiosV Subsystem
-In the NiosV subsystem, the JTAG Avalon Master Bridge IP interface allows access to the peripherals in the FPGA with System Console. This access does not rely on HPS software drivers. Refer to this [Guide](https://docs.altera.com/r/docs/683819/26.1/quartus-prime-pro-edition-user-guide-debug-tools/analyzing-and-debugging-designs-with-system-console) for information about system console.
+In the NiosV subsystem, the JTAG Avalon Master Bridge IP interface allows access to the peripherals in the FPGA with System Console. This access does not rely on HPS software drivers. Refer to this [Guide](https://docs.altera.com/r/docs/683819/26.3/quartus-prime-pro-edition-user-guide/analyzing-and-debugging-designs-with-system-console) for information about system console.
 
 | NiosV                                | Attribute                    | Addresss Offset                           | Size (bytes)     |
 |:-------------------------------------|------------------------------|-------------------------------------------|:----------------:|
@@ -104,7 +111,7 @@ The PDK is equipped with **8 GB of SDRAM**, mapped across two physical address r
 | Lower 2 GB   | `0x00_8000_0000` – `0x00_FFFF_FFFF`  | `0x0_0000_0000` – `0x0_7FFF_FFFF`        |
 | Upper 6 GB   | `0x08_8000_0000` – `0x09_FFFF_FFFF`   | `0x0_8000_0000` – `0x1_FFFF_FFFF`        |
 
-> *![Agilex 5 Address Mapping](../../images/agilex5-address-mapping.png)*
+> *![Agilex 5 Address Mapping](images/agilex5-address-mapping.png)*
 
 > **Note:** System Console/Nios V operates in a **32-bit address space** and cannot directly access 64-bit SDRAM addresses. The address `0x9_0200_0000` is an example of a target address in the upper 6GB region.
 
@@ -158,28 +165,28 @@ Compute_address = F2H Address Span Extender IP window slave address (0x4000_0000
 
 #### Example Target Address
 
-> *![F2SDRAM Lower Part Example](../../images/f2sdram-lower-part-example.png)*
+> *![F2SDRAM Lower Part Example](images/f2sdram-lower-part-example.png)*
 > *Figure 1: F2SDRAM Lower 2GB Example*
 
 | Target Address | CSR_H | CSR_L       | F2SDRAM address span extender window slave address + offset |
 |----------------|-------|-------------|-------------------------------------------------------------|
 | 0xC200_0000    | 0x0   | 0xC000_0000 | 0x8000_0000 (f2sdram) + 0x0200_0000 = 0x8200_0000           |
 
-> *![F2SDRAM Upper Part Example](../../images/f2sdram-upper-part-example.png)*
+> *![F2SDRAM Upper Part Example](images/f2sdram-upper-part-example.png)*
 > *Figure 2: F2SDRAM Upper 6GB Example*
 
 | Target Address | CSR_H | CSR_L       | F2SDRAM address span extender window slave address + offset |
 |----------------|-------|-------------|-------------------------------------------------------------|
 | 0x9_0200_0000  | 0x9   | 0x0000_0000 | 0x8000_0000 (f2sdram) + 0x0200_0000 = 0x8200_0000           |
 
-> *![F2H Lower Part Example](../../images/f2h-lower-part-example.png)*
+> *![F2H Lower Part Example](images/f2h-lower-part-example.png)*
 > *Figure 3: F2H Lower 2GB Example*
 
 | Target Address | CSR_H | CSR_L       | F2H address span extender window slave address + offset     |
 |----------------|-------|-------------|-------------------------------------------------------------|
 | 0x8200_0000    | 0x0   | 0x8000_0000 | 0x4000_0000 (f2h) + 0x0200_0000 = 0x4200_0000               |
 
-> *![F2H Upper Part Example](../../images/f2h-upper-part-example.png)*
+> *![F2H Upper Part Example](images/f2h-upper-part-example.png)*
 > *Figure 4: F2H Upper 6GB Example*
 
 | Target Address | CSR_H | CSR_L       | F2H address span extender window slave address + offset     |
@@ -204,60 +211,54 @@ Compute_address = F2H Address Span Extender IP window slave address (0x4000_0000
 
 #### Notes
 - There are 4 user DIP switch inputs, 2 user push-button inputs, and 8 LED outputs connected to FPGA pins on the DE25 Nano Development and Education Board.
-  - Only the lower seven bits of the LED PIO are available for software to control. The most significant bit of the LED is used in Quartus Design top module as heartbeat led. This LED blinks when the fpga design is loaded. Users will not be able to control this LED with HPS software, for example U-Boot or Linux.
-- The peripheral components in core subsystem can be accessed via the LWS2F bridge and have offset of 0x0_2000_0000. Refer to [Total Address Map Graphical](https://docs.altera.com/r/docs/814346/26.1/hard-processor-system-technical-reference-manual-agilextm-5-socs/total-address-map-graphical).
-- The FPGA IRQ has offset of 17 when mapped to Generic Interrupt Controller (GIC) in device tree structure(dts). Refer to fpga2hps_interrupt_irq0[0] in [GIC Shared Peripheral Interrupts Map for the SoC HPS](https://docs.altera.com/r/docs/814346/26.1/hard-processor-system-technical-reference-manual-agilextm-5-socs/gic-shared-peripheral-interrupts-map-for-the-soc-hps).
+  -  Only the lower seven bits of LED outputs are available for software to control. The most significant bit of the LED is used in the design top module as heartbeat led. This LED blinks when the fpga design is loaded. Users will not be able to control this LED with HPS software, for example U-Boot or Linux.
+- The peripheral components in core subsystem can be accessed via the LWS2F bridge and have offset of 0x0_2000_0000. Refer to [Total Address Map Graphical](https://docs.altera.com/r/docs/814346/26.3/hard-processor-system-technical-reference-manual-agilex-5-socs/total-address-map-graphical).
+- The FPGA IRQ has offset of 17 when mapped to Generic Interrupt Controller (GIC) in device tree structure(dts). Refer to fpga2hps_interrupt_irq0[0] in [GIC Shared Peripheral Interrupts Map for the SoC HPS](https://docs.altera.com/r/docs/814346/26.3/hard-processor-system-technical-reference-manual-agilex-5-socs/gic-shared-peripheral-interrupts-map-for-the-soc-hps).
 
-## Binaries location
-After build, the bitstream (sof) can be found in output_files folder.
+## Hardware build
 
-## Generating FPGA Fabric Configuration (Core RBF)
-After the sof is generated, the following command can be run to generate the core.rbf.
+From **this design directory**, compile the design with Quartus on `PATH`:
+
 ```bash
-make baseline-a55-install-core-rbf
-```
-The generated core.rbf can be found in install/binaries folder.
-
-## Simulation Steps
-Follow the steps below to simulate the design using the testbench located in the design sim folder:
-1. Prepare simulation scripts
-   In the current project directory, run the following command to generate the necessary simulation scripts for QuestaSim, VCS (3-step), and Xcelium from Quartus:
-```bash
-make output_files/prep-baseline_a55.done
+make build
 ```
 
-2. Run the Simulation
-   Navigate to the sim directory
+Alternatively, open `top.qpf` in Quartus Prime and run a full compilation. Bitstreams and the core RBF are written to `output_files/` when the build completes.
+
+## Simulation
+
+A testbench is provided in the `sim/` folder.
+
+1. **Prepare simulation fileset and scripts** — From this design directory, run:
+
 ```bash
-cd sim
+make prep
 ```
-   Depending on simulator license, execute the appropriate shell script to start the simulation. For example:
-   For VCS (3-step) simulator,
+
+This prepares the simulation fileset and scripts required by the testbench.
+
+2. **Run the simulation** — From the `sim/` directory, run the script for your simulator:
+
+For VCS (3-step) simulator,
+
 ```bash
 ./runvcs.sh
 ```
-   For QuestaSim and Questa FE simulator,
+
+For QuestaSim and Questa FE simulator,
+
 ```bash
 ./runquesta.sh
 ```
-   For Xcelium simulator,
+
+For Xcelium simulator,
+
 ```bash
 ./runxcelium.sh
 ```
 
-# Yocto Build Setup Guide
-1. Refer to [Yocto Linux Build Instructions](software/yocto_linux/README.md#yocto-build) file and follow the steps to build Yocto.
+To run prep and the default VCS flow in one step from this design directory:
 
-After build, the binaries can be found in the software/yocto_linux_sd or software/yocto_linux_qspi folder.
-
-# Roll-your-own Linux Script
-This script serves as a reference example for building minimal software required for Altera Agilex 5 HPS (Hard Processor System) platforms.<br>
-It guides users through the steps to build Arm Trusted Firmware (ATF), U-Boot, the Linux kernel, and a minimal root filesystem, all using their default configurations.<br>
-
-The script also automatically downloads the necessary toolchains needed for the build process.<br>
-
-Please note that this script prioritizes simplicity and demonstration over optimization.<br>
-The resulting SD card boot image is intended solely to showcase the initial HPS boot flow.<br>
-It does **not** perform any FPGA core fabric configuration in either U-Boot or Linux.<br>
-
-Refer to [ryo_linux_sd.sh](software/ryo_linux/ryo_linux_sd.sh) and follow the steps to build the SD card image.
+```bash
+make sim
+```

@@ -1,0 +1,72 @@
+menu "Virtualization Options"
+
+config SD_ONLY
+    string
+    default "1" if ENABLE_DOCKER_BUILD
+    default "0"
+
+config ALWAYS_DOCKER
+    bool
+    default y if SSBL_BOOT_SRC_SD_MMC_CARD
+    depends on SSBL_BOOT_SRC_SD_MMC_CARD
+    help
+      Hidden anchor retained for compatibility; avoid using 'select' here since it bypasses dependencies.
+      Docker options are shown/enabled via defaults when booting from SD/MMC.
+
+config ENABLE_DOCKER_BUILD
+    bool "Enable Docker Support"
+    default y
+    depends on SSBL_BOOT_SRC_SD_MMC_CARD
+    help
+      This option adds Docker container support to the Linux image. It uses the meta-virtualization layer and packages required for the Docker framework.
+
+config KAS_INCLUDE_DOCKER
+    string
+    default "docker_enable.yml" if ENABLE_DOCKER_BUILD
+    default ""
+
+
+menuconfig DOCKER_MENU
+    bool "Docker Options"
+    depends on ENABLE_DOCKER_BUILD
+    default y
+    help
+      Submenu for Docker container options.
+
+if DOCKER_MENU
+
+config DOCKER_STATE_START_DAEMON
+    bool "Start Docker daemon at Boot"
+    default y
+    help
+      If enabled, systemd will start docker.service at boot.
+
+config DOCKER_LIST_IMAGES
+    string "Docker images list (comma-delimited, up to 4)"
+    default "docker.io/library/hello-world:latest"
+    help
+      Comma-separated list of up to 4 Docker images.
+      Default packs a single hello-world image. For a multi-image example
+      (up to 4 slots), see docker-images.cfg and
+      docker-images-override.cfg.example in this directory.
+      Supported format examples: docker.io/library/alpine:3.19,
+                                 gcr.io/project-id/image:tag,
+      or a local image archive: file:///path/on/build-host/image.tar
+
+config DOCKER_LIST_RUN_ARGS
+    string "Docker run arguments per image (comma-delimited, up to 4)"
+    default "--name=hello|no"
+    help
+      Comma-separated list of Docker run arguments. Each entry maps to the image
+      at the same position in Docker image list above. The trailing |yes/no controls whether to
+      start the container on first boot.
+      Default matches the single hello-world image (not started on first boot).
+      For a multi-image example, see docker-images.cfg and
+      docker-images-override.cfg.example in this directory.
+      e.g. "--name=alpine --network=host --restart=unless-stopped|yes,--name=localapp -v /data:/data|no,--name=hello|yes"
+      Format per entry:
+        <docker run flags and options>|{yes|no}
+
+endif  # DOCKER_MENU
+
+endmenu

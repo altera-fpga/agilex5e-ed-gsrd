@@ -24,7 +24,7 @@ cd TOP_DIR/dk-a5e065ab32aea-enablement/baseline-a55
 2. Generate JIC file (hello_world.hps.jic)
 
 ```bash
-make software-freertos_hello_world-build-sw
+make software-freertos_qspi-build-sw
 ```
 hello_world.hps.jic should appear under the software/freertos/hello-world-app directory
 

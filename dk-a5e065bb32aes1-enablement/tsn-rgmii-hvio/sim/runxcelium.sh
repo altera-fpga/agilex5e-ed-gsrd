@@ -51,8 +51,6 @@ source $SIM_SCRIPT_GEN_DIR/xcelium/xcelium_setup.sh \
 SKIP_ELAB=1 \
 SKIP_SIM=1 \
 QSYS_SIMDIR=$SIM_SCRIPT_GEN_DIR
-SKIP_DEV_COM=1 \
-SKIP_COM=1
 
 # Compile all design files and testbench files, including the top level.
 # (These are all the files required for simulation other than the files

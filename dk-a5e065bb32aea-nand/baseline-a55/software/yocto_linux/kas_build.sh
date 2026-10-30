@@ -48,7 +48,7 @@ fi
 echo "Using revision name: $REVISION_NAME"
 
 # Copy the RBF to the meta-custom/recipes-fpga/fpga-bitstream/files directory
-cp -f "$RBF_FILE" "meta-custom/recipes-fpga/fpga-bitstream/files/${REVISION_NAME}_hps_debug.core.rbf"
+cp -f "$RBF_FILE" "meta-custom/recipes-fpga/fpga-bitstream/files/${REVISION_NAME}.core.rbf"
 
 # Create a variable for the PIP proxy if http_proxy is set
 if [ -n "$http_proxy" ]; then

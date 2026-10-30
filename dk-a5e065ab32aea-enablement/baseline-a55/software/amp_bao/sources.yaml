@@ -1,0 +1,125 @@
+# hps-amp external source manifest.
+#
+# Single source of truth for every materialised upstream tree. Edit refs/URLs
+# here; `make fetch` (or `make <name>-fetch`) does the clone + checkout + patch.
+#
+# Layout invariant (see README.md): this solution is fully self-contained.
+# Every component lives under <c>/ (relative to this solution dir):
+#   <c>/src/            pristine upstream checkout, gitignored, fetch-managed.
+#   <c>/patches/<ref>/  Bao-solution patch overlay, applied on top of src/.
+#   <c>/configs/ …      any other solution-owned deltas (configs, glue).
+#
+# Fields per component:
+#   name      Identifier used by --only and as lock-file key.
+#   url       Git remote (HTTPS preferred for unattended CI).
+#   ref       Tag, branch, or full SHA. See ref_kind.
+#   ref_kind  One of: sha | tag | branch.
+#               sha    -> full clone, then `git checkout --detach <sha>`.
+#               tag    -> `git clone --depth 1 -b <tag>`.
+#               branch -> `git clone --depth 1 -b <branch>` (NOT reproducible;
+#                         pin to SHA via `make pin` for shipping builds).
+#   dest      Path relative to the solution dir (pristine source location).
+#   patches   Path to the Bao patch overlay dir (lex-ordered *.patch). Empty
+#             string = component carries no Bao-specific patches today.
+#   recurse_submodules  Default false. Set true only if you genuinely want
+#                       upstream's submodules; otherwise we promote needed
+#                       sub-trees to top-level entries (see freertos-kernel).
+#
+# Env-var overrides (per component, evaluated by scripts/fetch-sources.py):
+#   HPS_AMP_<NAME>_URL  -> overrides `url`
+#   HPS_AMP_<NAME>_REF  -> overrides `ref`
+#   <NAME> = component name uppercased, dashes -> underscores
+#   (e.g. HPS_AMP_FREERTOS_KERNEL_REF=...).
+#
+# Components are fetched in `dest` depth order so parent trees materialise
+# before nested entries (e.g. freertos-socfpga before its FreeRTOS/Source).
+
+schema_version: 1
+
+components:
+
+  # ── Hypervisor (solution-owned source) ─────────────────────────────────────
+  # Bao hypervisor. Pinned past v2.0.0 (= v2.0-rc7) to pick up upstream PSCI
+  # SMCCC fix that the platform/agilex5 + vGICv3 patches below depend on.
+  # All 9 patches under bao-hypervisor/patches/v2.0.0/ apply cleanly on this
+  # SHA. If you bump the ref, re-run `make reset-sources && make fetch` and
+  # ensure each patch still applies; otherwise roll back to tag v2.0.0 and
+  # re-test on hardware.
+  - name: bao
+    url: https://github.com/bao-project/bao-hypervisor
+    ref: 0af4a1ab558ad60c9658af4f43756c4536dd3141   # v2.0-rc7 (post-v2.0.0)
+    ref_kind: sha
+    dest: bao-hypervisor/src
+    patches: bao-hypervisor/patches/v2.0.0
+
+  # ── FreeRTOS guest stack (SoC-FPGA port + upstream kernel) ─────────────────
+  # freertos-socfpga: SoC-FPGA ports / drivers, NOT the kernel. We deliberately
+  # do NOT recurse into its 7 declared submodules (FreeRTOS-Plus-TCP, ATF,
+  # libfcs, librsu, tinyusb, Fat-Fs, FreeRTOS/Source) — the only one we need is
+  # FreeRTOS/Source, fetched as a top-level entry below. The Bao-specific
+  # BAO_GUEST patches live under freertos/patches/v26.3/.
+  # QPDS26.3_REL_BASELINE_PR is a tag at d4bc69f, the same commit as the
+  # v26.3 tag, so the v26.3 patch overlay still applies.
+  - name: freertos-socfpga
+    url: https://github.com/altera-fpga/freertos-socfpga
+    ref: QPDS26.3_REL_BASELINE_PR
+    ref_kind: tag
+    dest: freertos/src
+    patches: freertos/patches/v26.3
+    recurse_submodules: false
+
+  # Upstream FreeRTOS-Kernel, materialised INTO the freertos-socfpga tree at the
+  # location its CMake build expects. SHA matches what the freertos-socfpga
+  # FreeRTOS/Source submodule pointed to before this migration. Bump together
+  # with `freertos-socfpga` ref when upstream advances its kernel pin.
+  - name: freertos-kernel
+    url: https://github.com/FreeRTOS/FreeRTOS-Kernel
+    ref: 9b777ae5c5b8e9e456065a00294d1e5f5f9facf5
+    ref_kind: sha
+    dest: freertos/src/FreeRTOS/Source
+    patches: ""
+
+  # ── Linux + bootloaders ────────────────────────────────────────────────────
+  - name: linux
+    url: https://github.com/altera-fpga/linux-socfpga
+    ref: QPDS26.3_REL_BASELINE_PR
+    ref_kind: branch
+    dest: linux/src
+    patches: linux/patches/6.18
+
+  - name: atf
+    url: https://github.com/altera-fpga/arm-trusted-firmware.git
+    ref: QPDS26.3_REL_BASELINE_PR
+    ref_kind: branch
+    dest: atf/src
+    patches: ""
+
+  - name: u-boot
+    url: https://github.com/altera-fpga/u-boot-socfpga.git
+    ref: QPDS26.3_REL_BASELINE_PR
+    ref_kind: branch
+    dest: uboot/src
+    patches: ""
+
+  # ── RPMsg stack (consumed by the rpmsg_console FreeRTOS app) ───────────────
+  - name: openamp
+    url: https://github.com/OpenAMP/open-amp
+    ref: v2025.04.0
+    ref_kind: tag
+    dest: openamp/src
+    patches: ""
+
+  - name: libmetal
+    url: https://github.com/OpenAMP/libmetal
+    ref: v2025.04.0
+    ref_kind: tag
+    dest: libmetal/src
+    patches: libmetal/patches/v2025.04.0
+
+  # ── Rootfs ─────────────────────────────────────────────────────────────────
+  - name: buildroot
+    url: https://github.com/buildroot/buildroot
+    ref: "2024.02"
+    ref_kind: tag
+    dest: buildroot/src
+    patches: ""

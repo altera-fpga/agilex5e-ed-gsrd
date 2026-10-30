@@ -1,34 +1,15 @@
-From ff18a40bc9d1ce86c18081788a12ef36b2acc570 Mon Sep 17 00:00:00 2001
-From: Boon Khai Ng <boon.khai.ng@altera.com>
-Date: Tue, 27 Jan 2026 21:38:36 +0800
+From 9ff76096ec0308df321aba6960ff01a0c2d2683c Mon Sep 17 00:00:00 2001
+From: Jit Loon Lim <jit.loon.lim@altera.com>
+Date: Thu, 29 Oct 2026 14:26:07 +0800
 Subject: [PATCH 2/2] arm: socfpga: Add OP-TEE OS as a loadable firmware in FIT
  Image
 
-This patch integrates OP-TEE OS as a loadable firmware in the
-FIT image for SoCFPGA and updates the memory layout to avoid
-conflicts with the secure OP-TEE region.
+Integrate OP-TEE OS in the FIT image, move kernel_addr_r past
+the OP-TEE region, and teach SPL ATF to find /images as well as
+/fit-images. Refreshed for socfpga_v2026.07 tip (A5|A27 env
+guard and current FIT layout).
 
-1) Add an `optee` node to the FIT image device tree,
-   specifying the load and entry address at 0x83000000,
-   and referencing the OP-TEE binary.
-
-2) Update the board configuration to include OP-TEE as
-   a loadable alongside U-Boot.
-
-3) Change the default kernel load address
-   (`kernel_addr_r`) to 0x85000000 to avoid
-   overlap with the OP-TEE reserved region.
-
-4) Enhance SPL ATF support to find the
-  `/images` node in addition to `/fit-images`,
-   ensuring correct firmware loading order with OP-TEE
-   present.
-
-These changes ensure OP-TEE is loaded at the correct address,
-the kernel does not overwrite the secure region, and
-the U-Boot SPL can properly load all required firmware components.
-
-Signed-off-by: Boon Khai Ng <boon.khai.ng@altera.com>
+Signed-off-by: Jit Loon Lim <jit.loon.lim@altera.com>
 ---
  arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi | 18 +++++++++++++++++-
  common/spl/spl_atf.c                       |  4 +++-
@@ -36,14 +17,13 @@ Signed-off-by: Boon Khai Ng <boon.khai.ng@altera.com>
  3 files changed, 21 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi b/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi
-index 93a8e0697d6..8aabc3d98b7 100644
+index 5a8fd85e..9bd1e26c 100644
 --- a/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi
 +++ b/arch/arm/dts/socfpga_soc64_fit-u-boot.dtsi
-@@ -73,6 +73,22 @@
- 						algo = "crc32";
+@@ -64,6 +64,22 @@
  					};
  				};
-+
+ 
 +				optee {
 +					description = "OP-TEE OS";
 +					type = "firmware";
@@ -59,10 +39,11 @@ index 93a8e0697d6..8aabc3d98b7 100644
 +						algo = "crc32";
 +					};
 +				};
- 			};
- 
- 			board_config: configurations {
-@@ -81,7 +97,7 @@
++
+ 				fdt-0 {
+ 					description = "socfpga_socdk";
+ 					type = "flat_dt";
+@@ -83,7 +99,7 @@
  				board-0 {
  					description = "board_0";
  					firmware = "atf";
@@ -72,7 +53,7 @@ index 93a8e0697d6..8aabc3d98b7 100644
  					signature {
  						algo = "crc32";
 diff --git a/common/spl/spl_atf.c b/common/spl/spl_atf.c
-index 8bc5db77395..d529d6a0660 100644
+index 8bc5db77..d529d6a0 100644
 --- a/common/spl/spl_atf.c
 +++ b/common/spl/spl_atf.c
 @@ -217,7 +217,9 @@ static int spl_fit_images_find(void *blob, int os)
@@ -87,11 +68,11 @@ index 8bc5db77395..d529d6a0660 100644
  		return -FDT_ERR_NOTFOUND;
  
 diff --git a/include/configs/socfpga_soc64_common.h b/include/configs/socfpga_soc64_common.h
-index 8ef603073e3..fd214dd9f12 100644
+index 7c2be800..c7bc39a5 100644
 --- a/include/configs/socfpga_soc64_common.h
 +++ b/include/configs/socfpga_soc64_common.h
-@@ -153,7 +153,7 @@
- #if IS_ENABLED(CONFIG_TARGET_SOCFPGA_AGILEX5)
+@@ -139,7 +139,7 @@
+ #if IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX5) || IS_ENABLED(CONFIG_ARCH_SOCFPGA_AGILEX27)
  
  #define CFG_EXTRA_ENV_SETTINGS \
 -	"kernel_addr_r=0x82000000\0" \

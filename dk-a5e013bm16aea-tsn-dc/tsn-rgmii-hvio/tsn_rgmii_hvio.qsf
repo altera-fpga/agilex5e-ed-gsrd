@@ -1,0 +1,313 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2025  Altera Corporation. All rights reserved.
+# Your use of Altera Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Altera Program License
+# Subscription Agreement, the Altera Quartus Prime License Agreement,
+# the Altera IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Altera and sold by Altera or its authorized distributors.  Please
+# refer to the Altera Software License Subscription Agreements
+# on the Quartus Prime software download page.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 25.1.0 Build 109 02/26/2025 SC Pro Edition
+# Date created = 15:43:58  March 05, 2025
+#
+# -------------------------------------------------------------------------- #
+
+# Quartus version assignments
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 25.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "19:25:59  JANUARY 19, 2025"
+set_global_assignment -name LAST_QUARTUS_VERSION "26.3.0 Pro Edition"
+
+
+# Device properties
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5ED013BM16AE4SCS
+
+
+# Toplevel and toplevel RTL
+set_global_assignment -name TOP_LEVEL_ENTITY tsn_rgmii_hvio
+
+
+# Flow assignments
+# Put all reports into the output_files directory
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+# Set the default parallelization to 4
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
+# Define the board as default
+set_global_assignment -name BOARD default
+# Convert timing failures to errors
+set_global_assignment -name PROMOTE_WARNING_TO_ERROR 332148
+# Include custom IP in IP search path
+set_global_assignment -name IP_SEARCH_PATHS custom_ip/**/*
+# Disable assembler during "play button" flow
+set_global_assignment -name FLOW_DISABLE_ASSEMBLER ON
+# Disable spawning the Timing Analyzer GUI during the "play button" flow
+set_global_assignment -name FLOW_ENABLE_INTERACTIVE_TIMING_ANALYZER OFF
+# Promote pins without location assignments to errors
+set_global_assignment -name PROMOTE_WARNING_TO_ERROR 12677
+# workaround to regenerate HPS EMIF IP and prevent synthesis error
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+
+
+# Configuration Assignments
+set_global_assignment -name HPS_DAP_NO_CERTIFICATE on
+set_global_assignment -name QSPI_OWNERSHIP HPS
+set_global_assignment -name ENABLE_INTERMEDIATE_SNAPSHOTS ON
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO10
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name USE_INIT_DONE SDM_IO0
+set_global_assignment -name SDM_DIRECT_TO_FACTORY_IMAGE SDM_IO13
+set_global_assignment -name HPS_INITIALIZATION "HPS FIRST"
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_100MHZ
+set_global_assignment -name HPS_DAP_SPLIT_MODE "SDM PINS"
+set_global_assignment -name USE_CHECKSUM_AS_USERCODE OFF
+set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
+# Default value is Flash, but it must be set to other value to avoid conflict the QSPI_OWNERSHIP.
+set_global_assignment -name PROGRAMMING_BITSTREAM_ENCRYPTION_KEY_SELECT eFuses
+
+
+# Pin location and IO standard assignments
+# Clocks, resets, GPIO
+set_location_assignment PIN_AJ27 -to pll_refclk_100
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to pll_refclk_100 -entity tsn_rgmii_hvio
+set_instance_assignment -name INPUT_TERMINATION OFF -to pll_refclk_100
+set_location_assignment PIN_M1 -to fpga_reset_n
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_reset_n -entity tsn_rgmii_hvio
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_reset_n
+set_location_assignment PIN_L1 -to fpga_user_push_buttons[0]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_push_buttons[0] -entity tsn_rgmii_hvio
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_push_buttons[0]
+set_location_assignment PIN_K1 -to fpga_user_leds[0]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[0] -entity tsn_rgmii_hvio
+set_location_assignment PIN_L2 -to fpga_user_leds[1]
+set_instance_assignment -name IO_STANDARD "1.1-V" -to fpga_user_leds[1] -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 12MA -to fpga_user_leds[0] -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 12MA -to fpga_user_leds[1] -entity tsn_rgmii_hvio
+set_instance_assignment -name SLEW_RATE 0 -to fpga_user_leds[0] -entity tsn_rgmii_hvio
+set_instance_assignment -name SLEW_RATE 0 -to fpga_user_leds[1] -entity tsn_rgmii_hvio
+# HPS I/O
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_jtag_tdo -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_STP -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA0 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA1 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA2 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA3 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA4 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA5 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA6 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA7 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_TX_CLK -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TX_CTL -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD0 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD1 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD2 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD3 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_MDIO -entity tsn_rgmii_hvio
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_emac2_MDIO -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_MDC -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_uart0_TX -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_uart0_RX -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio0_io1 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio0_io11 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio1_io3 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio1_io4 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tck -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tms -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tdi -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_CLK -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DIR -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_NXT -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA0 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA1 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA2 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA3 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA4 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA5 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA6 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA7 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RX_CLK -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RX_CTL -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD0 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD1 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD2 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD3 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_MDIO -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_gpio0_io1 -entity tsn_rgmii_hvio
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_gpio0_io11 -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_i2c0_SDA -entity tsn_rgmii_hvio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_i2c0_SCL -entity tsn_rgmii_hvio
+set_instance_assignment -name SLEW_RATE 0 -to hps_i2c0_SDA -entity tsn_rgmii_hvio
+set_instance_assignment -name SLEW_RATE 0 -to hps_i2c0_SCL -entity tsn_rgmii_hvio
+# HPS-EMIF Interface
+set_location_assignment PIN_E9 -to emif_hps_emif_mem_0_mem_ck_t
+set_location_assignment PIN_E10 -to emif_hps_emif_mem_0_mem_ck_c
+set_location_assignment PIN_A4 -to emif_hps_emif_mem_0_mem_cke
+set_location_assignment PIN_E15 -to emif_hps_emif_mem_0_mem_reset_n
+set_location_assignment PIN_C7 -to emif_hps_emif_mem_0_mem_cs
+set_location_assignment PIN_C2 -to emif_hps_emif_mem_0_mem_ca[0]
+set_location_assignment PIN_D3 -to emif_hps_emif_mem_0_mem_ca[1]
+set_location_assignment PIN_C3 -to emif_hps_emif_mem_0_mem_ca[2]
+set_location_assignment PIN_B3 -to emif_hps_emif_mem_0_mem_ca[3]
+set_location_assignment PIN_A6 -to emif_hps_emif_mem_0_mem_ca[4]
+set_location_assignment PIN_B5 -to emif_hps_emif_mem_0_mem_ca[5]
+set_location_assignment PIN_H6 -to emif_hps_emif_mem_0_mem_dq[0]
+set_location_assignment PIN_H7 -to emif_hps_emif_mem_0_mem_dq[1]
+set_location_assignment PIN_G5 -to emif_hps_emif_mem_0_mem_dq[2]
+set_location_assignment PIN_G6 -to emif_hps_emif_mem_0_mem_dq[3]
+set_location_assignment PIN_M6 -to emif_hps_emif_mem_0_mem_dq[4]
+set_location_assignment PIN_N5 -to emif_hps_emif_mem_0_mem_dq[5]
+set_location_assignment PIN_M5 -to emif_hps_emif_mem_0_mem_dq[6]
+set_location_assignment PIN_L6 -to emif_hps_emif_mem_0_mem_dq[7]
+set_location_assignment PIN_L3 -to emif_hps_emif_mem_0_mem_dq[8]
+set_location_assignment PIN_J5 -to emif_hps_emif_mem_0_mem_dq[9]
+set_location_assignment PIN_M3 -to emif_hps_emif_mem_0_mem_dq[10]
+set_location_assignment PIN_L4 -to emif_hps_emif_mem_0_mem_dq[11]
+set_location_assignment PIN_M4 -to emif_hps_emif_mem_0_mem_dq[12]
+set_location_assignment PIN_G4 -to emif_hps_emif_mem_0_mem_dq[13]
+set_location_assignment PIN_H3 -to emif_hps_emif_mem_0_mem_dq[14]
+set_location_assignment PIN_H5 -to emif_hps_emif_mem_0_mem_dq[15]
+set_location_assignment PIN_D15 -to emif_hps_emif_mem_0_mem_dq[16]
+set_location_assignment PIN_C13 -to emif_hps_emif_mem_0_mem_dq[17]
+set_location_assignment PIN_C10 -to emif_hps_emif_mem_0_mem_dq[18]
+set_location_assignment PIN_D10 -to emif_hps_emif_mem_0_mem_dq[19]
+set_location_assignment PIN_C8 -to emif_hps_emif_mem_0_mem_dq[20]
+set_location_assignment PIN_D9 -to emif_hps_emif_mem_0_mem_dq[21]
+set_location_assignment PIN_D14 -to emif_hps_emif_mem_0_mem_dq[22]
+set_location_assignment PIN_C15 -to emif_hps_emif_mem_0_mem_dq[23]
+set_location_assignment PIN_A8 -to emif_hps_emif_mem_0_mem_dq[24]
+set_location_assignment PIN_B8 -to emif_hps_emif_mem_0_mem_dq[25]
+set_location_assignment PIN_A9 -to emif_hps_emif_mem_0_mem_dq[26]
+set_location_assignment PIN_B9 -to emif_hps_emif_mem_0_mem_dq[27]
+set_location_assignment PIN_B13 -to emif_hps_emif_mem_0_mem_dq[28]
+set_location_assignment PIN_A13 -to emif_hps_emif_mem_0_mem_dq[29]
+set_location_assignment PIN_B14 -to emif_hps_emif_mem_0_mem_dq[30]
+set_location_assignment PIN_A14 -to emif_hps_emif_mem_0_mem_dq[31]
+set_location_assignment PIN_B6 -to "emif_hps_emif_ref_clk_0_clk(n)"
+set_location_assignment PIN_L7 -to emif_hps_emif_mem_0_mem_dmi[0]
+set_location_assignment PIN_K5 -to emif_hps_emif_mem_0_mem_dmi[1]
+set_location_assignment PIN_D13 -to emif_hps_emif_mem_0_mem_dmi[2]
+set_location_assignment PIN_B11 -to emif_hps_emif_mem_0_mem_dmi[3]
+set_location_assignment PIN_B10 -to emif_hps_emif_mem_0_mem_dqs_t[3]
+set_location_assignment PIN_A11 -to emif_hps_emif_mem_0_mem_dqs_c[3]
+set_location_assignment PIN_K7 -to emif_hps_emif_mem_0_mem_dqs_t[0]
+set_location_assignment PIN_J7 -to emif_hps_emif_mem_0_mem_dqs_c[0]
+set_location_assignment PIN_J4 -to emif_hps_emif_mem_0_mem_dqs_t[1]
+set_location_assignment PIN_D12 -to emif_hps_emif_mem_0_mem_dqs_t[2]
+set_location_assignment PIN_J3 -to emif_hps_emif_mem_0_mem_dqs_c[1]
+set_location_assignment PIN_C11 -to emif_hps_emif_mem_0_mem_dqs_c[2]
+set_location_assignment PIN_E14 -to emif_hps_emif_oct_0_oct_rzqin
+set_location_assignment PIN_A7 -to emif_hps_emif_ref_clk_0_clk
+# FPGA RGMII IO Interface
+set_location_assignment PIN_AJ22 -to fpga_rgmii_rx_clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_rx_clk
+set_location_assignment PIN_AJ20 -to fpga_rgmii_rx_ctl
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_rx_ctl
+set_location_assignment PIN_AH18 -to fpga_rgmii_rxd[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_rxd[0]
+set_location_assignment PIN_AG21 -to fpga_rgmii_rxd[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_rxd[1]
+set_location_assignment PIN_AF24 -to fpga_rgmii_rxd[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_rxd[2]
+set_location_assignment PIN_AG24 -to fpga_rgmii_rxd[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_rxd[3]
+set_location_assignment PIN_AJ24 -to fpga_rgmii_tx_clk
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_tx_clk
+set_location_assignment PIN_AJ23 -to fpga_rgmii_tx_ctl
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_tx_ctl
+set_location_assignment PIN_AH21 -to fpga_rgmii_txd[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_txd[0]
+set_location_assignment PIN_AJ19 -to fpga_rgmii_txd[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_txd[1]
+set_location_assignment PIN_AH23 -to fpga_rgmii_txd[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_txd[2]
+set_location_assignment PIN_AH22 -to fpga_rgmii_txd[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_rgmii_txd[3]
+set_location_assignment PIN_AG23 -to fpga_emac1_mdio
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_emac1_mdio -entity tsn_rgmii_hvio
+set_location_assignment PIN_AH20 -to fpga_emac1_mdc
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_emac1_mdc -entity tsn_rgmii_hvio
+set_instance_assignment -name INPUT_DELAY_CHAIN 62 -to fpga_rgmii_rx_ctl
+set_instance_assignment -name INPUT_DELAY_CHAIN 62 -to fpga_rgmii_rxd[0]
+set_instance_assignment -name INPUT_DELAY_CHAIN 62 -to fpga_rgmii_rxd[1]
+set_instance_assignment -name INPUT_DELAY_CHAIN 62 -to fpga_rgmii_rxd[2]
+set_instance_assignment -name INPUT_DELAY_CHAIN 62 -to fpga_rgmii_rxd[3]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_tx_clk
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_txd[0]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_txd[1]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_txd[2]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_txd[3]
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_rgmii_tx_ctl
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_emac1_mdc
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 30 OHM WITHOUT CALIBRATION" -to fpga_emac1_mdio
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_emac1_mdio
+
+
+# Variant IP source files
+set_global_assignment -name VDS_IP_FILE src/vds/hps_subsys/ip/agilex_hps.ip -tag "vds::hps_subsys"
+set_global_assignment -name IP_FILE src/ip/emif_io96b_hps.ip
+set_global_assignment -name VDS_IP_FILE src/vds/hps_subsys/ip/gmii_to_rgmii_converter.ip -tag "vds::hps_subsys"
+set_global_assignment -name VDS_FILE src/vds/hps_subsys/hps_subsys.vds -tag "vds::hps_subsys"
+
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/f2sdram_adapter.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/h2f_axi_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/ocm.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/system_clock.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/system_reset.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/lwh2f_axi_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/peripherals_mm_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/button_pio.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/led_pio.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/sysid.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/ilc.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/interval_timer.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_FILE src/vds/fabric_subsys/fabric_subsys.vds -tag "vds::fabric_subsys"
+
+set_global_assignment -name IP_FILE src/ip/sys_pll.ip
+set_global_assignment -name IP_FILE src/ip/user_rst_clkgate.ip
+set_global_assignment -name VDS_IP_FILE src/vds/shell_subsys/ip/clocks_and_resets.ip -tag "vds::shell_subsys"
+set_global_assignment -name IP_FILE src/ip/clks_and_rsts.ip
+set_global_assignment -name VDS_FILE src/vds/shell_subsys/shell_subsys.vds -tag "vds::shell_subsys"
+
+set_global_assignment -name VDS_IP_FILE src/vds/tsn_rgmii_hvio_top/ip/sys_clock.ip -tag "vds::tsn_rgmii_hvio_top"
+set_global_assignment -name VDS_IP_FILE src/vds/tsn_rgmii_hvio_top/ip/sys_reset.ip -tag "vds::tsn_rgmii_hvio_top"
+set_global_assignment -name VDS_FILE src/vds/tsn_rgmii_hvio_top/tsn_rgmii_hvio_top.vds -tag "vds::tsn_rgmii_hvio_top"
+
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/f2sdram_address_span_extender.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/jtag_avalon_master.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/jtag_uart.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_clock.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_m.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_onchip_memory_0.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_pio_in.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_pio_out.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_reset.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_FILE src/vds/niosv_subsys/niosv_subsys.vds -tag "vds::niosv_subsys"
+
+set_global_assignment -name IP_FILE src/ip/ddr_gpio.ip
+
+
+# Variant RTL source files
+set_global_assignment -name SYSTEMVERILOG_FILE src/clocks_and_resets.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/debounce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE tsn_rgmii_hvio.sv
+
+
+# SDC files
+set_global_assignment -name SDC_FILE tsn_rgmii_hvio.sdc
+set_global_assignment -name SDC_FILE jtag.sdc
+
+
+# Design Assistant files
+set_global_assignment -name DESIGN_ASSISTANT_WAIVER_FILE tsn_rgmii_hvio.dawf
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"

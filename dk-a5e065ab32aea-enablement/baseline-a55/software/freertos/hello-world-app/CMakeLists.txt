@@ -13,8 +13,8 @@ set(FREERTOS_LIBFCS n)
 include(FetchContent)
 FetchContent_Declare(
     freertos
-    GIT_REPOSITORY https://github.com/Ignitarium-Software/freertos-socfpga
-    GIT_TAG f3935c85170c58fd3a73855ca802a9facfd64f5d
+    GIT_REPOSITORY https://github.com/altera-fpga/freertos-socfpga
+    GIT_TAG d4bc69f39cafc7ece3db9a48735950c0fd42ffe0
 )
 FetchContent_MakeAvailable(freertos)
 FetchContent_GetProperties(freertos)

@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 30 Oct 2026 15:00:00 +0800
+Subject: [PATCH 6/6] cpu_init: _stack_setup: skip EL2/EL0 stacks under HV_GUEST_EL1
+
+MSR SP_EL1 is only writable from EL2+; executed from EL1 it is
+UNDEFINED, not a trap to EL2 - the exception lands right back in the
+guest's own sync-exception vector, which just spins under Bao, before
+the UART is usable.
+
+Under HV_GUEST_EL1 install the EL1 stack top - the slot a hypervisor at
+EL2 would have handed down to EL1 - directly on the current SP. Keeping
+the same per-core slot layout means the _STACK_EL012 / _STACK_MAX
+arithmetic in lscript.ld is identical for guest and bare-metal builds.
+
+SP_EL0 is deliberately left untouched here (the bare-metal #else branch
+still pre-seeds it). MSR SP_EL0 from EL1 is legal, but nothing reads it
+before FreeRTOS's own portRESTORE_CONTEXT loads it from the first
+task's TCB when the scheduler starts, so a value written here would
+never be observed. Restoring that write for strict EL0/EL1/EL2 parity
+with the bare-metal path is deferred to a follow-up change.
+
+Ported from patches/v26.1-SMP/0006, which patched the duplicated stack
+pre-seed in _boot and _secondary_boot. v26.3 factored both copies into a
+single _stack_setup routine, so this is now one hunk instead of two.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+diff --git a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+index a4773f5..226bcde 100644
+--- a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
++++ b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+@@ -117,6 +117,27 @@ _stack_setup:
+     ldr x0, =_STACK_START
+     ldr x1, =_STACK_EL012
+     msub x0, x1, x3, x0      /* x0 = __stack_top - (_STACK_EL012 * core_id) */
++#ifdef HV_GUEST_EL1
++    /* A hypervisor guest enters directly at EL1, so the only legal target
++     * for this routine is the current EL1 stack pointer. MSR SP_EL1 from
++     * EL1 is UNDEFINED (that register is only writable from EL2+); on Bao
++     * the resulting exception is taken right back into this guest's own
++     * sync-exception vector, which just spins (b .), so the symptom reads
++     * like a hang rather than a trap to the hypervisor.
++     *
++     * We deliberately leave SP_EL0 untouched here (unlike the bare-metal
++     * path below, which pre-seeds it). MSR SP_EL0 from EL1 is legal, but
++     * nothing reads SP_EL0 before FreeRTOS's own portRESTORE_CONTEXT loads
++     * it from the first task's TCB when the scheduler starts, so a
++     * pre-seeded value here would never be observed. Install the EL1
++     * stack top -- the slot a guest at EL2 would have handed down to EL1
++     * -- on the current SP. Keeping the same slot layout means the memory
++     * map in lscript.ld is unchanged between guest and bare-metal builds. */
++    /* EL1 top = EL2 top - EL2 size */
++    ldr x1, =_EL2_STACK_SIZE
++    sub x0, x0, x1
++    mov sp, x0
++#else
+     /* EL2 top */
+     mov sp, x0
+     /* EL1 top = EL2 top - EL2 size */
+@@ -127,6 +148,7 @@ _stack_setup:
+     ldr x1, =_EL1_STACK_SIZE
+     sub x0, x0, x1
+     msr sp_el0, x0
++#endif
+ 
+     ret
+ 
+-- 
+2.25.1
+

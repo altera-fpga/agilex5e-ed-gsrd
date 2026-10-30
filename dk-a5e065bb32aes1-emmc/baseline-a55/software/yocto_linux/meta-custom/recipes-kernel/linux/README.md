@@ -1,7 +1,7 @@
 # Linux Kernel - linux-socfpga-lts
 
 ## Device tree
-Refer and follow the steps mentioned at ```meta-custom/recipes-bsp/device-tree/README.md```
+Refer and follow the steps mentioned at ```meta-custom/recipes-kernel/linux/device-tree/README.md```
 
 ## Configuration fragments
 Follow the below steps to create and add configuration fragments for Linux Kernel.

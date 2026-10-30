@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2025, Altera Corporation
+ */
+/dts-v1/;
+#include "socfpga_agilex5_socdk_modular.dts"
+
+/ {
+
+    soc@0 {
+
+        // FPGA LED PIO
+        led_pio: gpio@20010080 {
+            compatible = "altr,pio-1.0";
+            reg = <0x20010080 0x10>;
+            #gpio-cells = <2>;
+            gpio-controller;
+            resetvalue = <0>;
+        };
+
+        // FPGA Button PIO
+        button_pio: gpio@20010060 {
+            compatible = "altr,pio-1.0";
+            reg = <0x20010060 0x10>;
+            interrupt-parent = <&intc>;
+            interrupts = <0 17 1>;
+            altr,interrupt-type = <2>;
+            #gpio-cells = <2>;
+            gpio-controller;
+        };
+
+        // FPGA DIP switch PIO
+        dipsw_pio: gpio@20010070 {
+            compatible = "altr,pio-1.0";
+            reg = <0x20010070 0x10>;
+            #gpio-cells = <2>;
+            gpio-controller;
+        };
+
+        /*
+         * DisplayPort output - VVP DP TX + Video Frame Reader (VFR).
+         *
+         * Bound by the altera-vvp-dp DRM/KMS driver (compatible below). The
+         * reg windows are the DP TX CSR block, the video-clock PIO, and the
+         * VFR CSR block; the driver owns the VFR frame interrupt directly.
+         *
+         * The VFR raises one "frame read" interrupt per output frame, wired:
+         *     altera_vvp_vfr_0.frame_reader_int  ->  f2h_irq0[1]  ->  GIC SPI 18
+         * (the button PIO above is f2h_irq0[0] -> GIC SPI 17, so the two never
+         * collide - the f2h IRQ bundle uses individual-request GIC lines).
+         *
+         * interrupts = <0 18 4>: GIC SPI 18, IRQ_TYPE_LEVEL_HIGH (the VFR holds
+         * its IRQ line asserted until IRQ_STATUS is cleared = level semantics).
+         */
+        dp: dp@20030000 {
+            compatible = "altera,agilex5-dp";
+            reg = <0x20030000 0x2000>,   /* dptx  */
+                  <0x20035000 0x10>,     /* clk_pio */
+                  <0x20020000 0x200>;    /* vfr   */
+            reg-names = "dptx", "clk_pio", "vfr";
+            interrupt-parent = <&intc>;
+            interrupts = <0 18 4>;
+
+            /*
+             * Video clock PIO divide ratio N.  The PIO divides the 148.5 MHz
+             * system clock by N to make the DP source video clock; the driver
+             * programs CLK_PIO_DATA with N - 1.  For 1080p60, N = 4 =>
+             * 148.5 / 4 = 37.125 MHz, and the VFR streams 4 pixels/clock for a
+             * 148.5 MHz pixel rate.
+             *
+             * This is a board/FPGA parameter, not a driver constant: it must
+             * match the system clock feeding the clock PIO and the vid_pll in
+             * the Quartus design.  A respin for a different pixel clock /
+             * monitor should retune this value here rather than editing the
+             * driver.  Omit the property to use the driver's built-in
+             * divide-by-4 default.
+             */
+            intel,vid-clk-divider = <4>;
+
+            /*
+             * Framebuffer DMA path: non-coherent F2SDRAM.
+             *
+             * The fabric routes the VFR read master
+             * (altera_vvp_vfr_0.av_mm_mem_read_host) through
+             * u_f2sdram_adapter.axi4_sub, which reaches DDR directly and
+             * bypasses both the HPS SMMU and the CCU. So this node carries
+             * NO `iommus` and NO `dma-coherent`:
+             *   - No SMMU StreamID translation is in the path, so an
+             *     `iommus = <&smmu 12>` identity mapping would be meaningless.
+             *   - The VFR read does NOT snoop the A55 caches, so the buffer
+             *     must be treated as non-coherent. Omitting `dma-coherent`
+             *     makes the kernel allocate this device's GEM buffers
+             *     write-combining (uncached); CPU writes then land directly
+             *     in DDR where the F2SDRAM read picks them up - no stale
+             *     cache lines, no manual flush.
+             *
+             * Only `memory-region` is needed: it points at the 32 MB
+             * carve-out the VFR's 32-bit BASE register reads from.
+             */
+            memory-region = <&dp_framebuffer>;
+        };
+    };
+
+    /* LED nodes */
+    soc_leds: leds {
+        compatible = "gpio-leds";
+
+        led_fpga0: fpga0 {
+            label = "fpga_led0";
+            gpios = <&led_pio 0 GPIO_ACTIVE_HIGH>;
+        };
+
+        led_fpga1: fpga1 {
+            label = "fpga_led1";
+            gpios = <&led_pio 1 GPIO_ACTIVE_HIGH>;
+        };
+
+        led_fpga2: fpga2 {
+            label = "fpga_led2";
+            gpios = <&led_pio 2 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};
+
+/*
+ * DisplayPort framebuffer carve-out for the VVP Video Frame Reader (VFR).
+ *
+ * The VFR DMA-reads pixels from DDR via the f2sdram bridge and its BASE
+ * register (VFR_BUFFER_N_BASE) is only 32-bit, so the buffer must live in the
+ * lower 2 GB SDRAM window (HPS phys 0x8000_0000 - 0xFFFF_FFFF on this 8 GB
+ * board). We reserve 32 MB at 0xC000_0000 with `no-map` so:
+ *   - Linux never allocates it as general RAM, and
+ *   - the altera-vvp-dp KMS driver's `memory-region` points here (it is not
+ *     System RAM).
+ *
+ * NOTE: do NOT use the very top of the window (e.g. 0xFE00_0000). On this board
+ * firmware already reserves 0xF8A0_0000 - 0xFE9F_FFFF (ATF/OP-TEE/FPGA config,
+ * plus CMA at 0xFCA0_0000), so a carve-out there is rejected at boot
+ * ("failed to reserve memory for node 'dp-framebuffer@fe000000'"). 0xC000_0000
+ * sits in the large clean gap (0x8438_0000 - 0xF89F_FFFF) and reserves cleanly.
+ *
+ * 32 MB holds two 1920x1080x32bpp frames (2 x 0x7E9000 = ~15.8 MB) for
+ * double buffering, matching Frank's altvipfb2 reference (which double-buffers
+ * via dma_alloc_coherent + a BASE flip on vsync). The `dp_framebuffer` label is
+ * referenced by the DP node's `memory-region`, so the DT is the single source
+ * of truth for the address.
+ *
+ * Appended to the (unlabelled) /reserved-memory node from socfpga_agilex5.dtsi.
+ */
+&{/reserved-memory} {
+	dp_framebuffer: dp-framebuffer@c0000000 {
+		reg = <0x0 0xc0000000 0x0 0x2000000>;	/* 32 MB @ 0xC0000000 */
+		no-map;
+
+		/*
+		 * No `iommu-addresses` entry: the VFR reads this window over the
+		 * non-coherent F2SDRAM bridge, which does not traverse the SMMU,
+		 * so there is no StreamID to install an identity mapping for.
+		 */
+	};
+};
+
+/*
+ * The HPS System MMU stays disabled (its socfpga_agilex5.dtsi default) for
+ * the DP path.
+ *
+ * The VFR read master now reaches DDR over the non-coherent F2SDRAM bridge
+ * (altera_vvp_vfr_0.av_mm_mem_read_host -> u_f2sdram_adapter.axi4_sub), which
+ * does NOT traverse the SMMU or the CCU. There is therefore no StreamID to
+ * translate and nothing for the SMMU to do on the framebuffer path, so the
+ * `iommus = <&smmu 12>` / `iommu-addresses` identity-mapping setup that the
+ * old coherent-F2H build required has been removed from the nodes above.
+ *
+ * (The SDM service-layer StreamID 10 is enabled independently from firmware
+ * via the base dtsi quirk and is unaffected by leaving this node disabled.)
+ */

@@ -17,12 +17,52 @@
 	-timestamp {2025-11-19*18:18:52} \
 	-owner {user} \
 	-no_warn
+
 ::drc::add_waiver \
 	-description {The register mem_used[0] in the ace5lite_cache_coherency_translator write_rsp_fifo exhibits high timing path endpoint tension due to how the Quartus fitter routes its high fanout connections. This is intermittent and does not indicate a functional or timing violation.} \
 	-rule_id {TMC-20602} \
-	-query_string {"Register Name" =~ '.*ace5lite_cache_coherency_translator_s_axi_agent\|write_rsp_fifo\|my_altera_avalon_sc_fifo_wr\|mem_used.*'} \
+	-query_string {"Register Name" =~ '.*mm_interconnect_1\|u_ace5lite_cache_coherency_translator_s_axi_agent\|write_rsp_fifo\|my_altera_avalon_sc_fifo_wr\|mem_used\[0\].*'} \
 	-stages {{Timing Signoff}} \
 	-tag {} \
 	-timestamp {2026-04-29*10:06:00} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {VDS: The register ready_done in the ace5lite_cache_coherency_translator s_axi_agent exhibits high timing path endpoint tension due to how the Quartus fitter routes its high fanout connections. This is intermittent and does not indicate a functional or timing violation.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" =~ '.*ace5lite_cache_coherency_translator_s_axi_agent\|ready_done.*'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-06-09*10:00:00} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {VDS: Waive HPS IP SDC false path that has no valid targets in this design configuration.} \
+	-rule_id {TMC-20025} \
+	-query_string {"Ignored Constraint" =~ 'fpga_tpiu_clkin' && Reason == 'Exception is invalid (covers no paths)'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-06-09*08:00:00} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {VDS: Waive Avalon-ST clock crosser IP SDC min/max delay constraints that are fully overridden by design constraints.} \
+	-rule_id {TMC-20025} \
+	-query_string {Reason == 'Exception is fully overridden' && Location =~ 'altera_avalon_st_handshake_clock_crosser.sdc'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-06-09*08:00:00} \
+	-owner {user} \
+	-no_warn
+::drc::add_waiver \
+	-description {Waive GMII-to-RGMII adapter IP SDC clock group constraint that has no valid targets in this design configuration.} \
+	-rule_id {TMC-20025} \
+	-query_string {Reason == 'Exception is invalid (covers no paths)' && Location =~ 'intel_gmii_to_rgmii_adapter.sdc'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-06-09*08:00:00} \
 	-owner {user} \
 	-no_warn

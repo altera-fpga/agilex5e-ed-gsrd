@@ -1,0 +1,72 @@
+From a6339f84ae9bba329630ab3740a4622011b27588 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 15:33:50 +0800
+Subject: [PATCH] platform/agilex5: route powerdown/standby through WFI
+
+Agilex5 ATF rejects PSCI_CPU_SUSPEND for both StandBy and PowerDown
+power state types with INVALID_PARAMS. Without action, Bao's
+cpu_powerdown() and cpu_standby() helpers issue an SMC that fails
+on every call, spamming the UART with
+
+    BAO ERROR: PSCI cpu<N> power down failed with error 4294967294
+
+and preventing OFF vCPUs from parking cleanly.
+
+Use the upstream-supported plat-level fallbacks (already used by
+s32g3, rpi4, zcu102, zcu104 and ultra96 for the same limitation):
+when PLAT_PSCI_POWERDOWN_NOT_SUPPORTED / PLAT_PSCI_STANDBY_NOT_SUPPORTED
+is defined, psci_power_down() / psci_standby() route through a plain
+WFI and return PSCI_E_SUCCESS. cpu_arch_powerdown / cpu_arch_standby
+then rewind the stack to cpu_powerdown_wakeup / cpu_standby_wakeup as
+designed, so:
+
+  - boot-time secondary vCPU bring-up via PSCI_CPU_ON works,
+  - guest-issued PSCI_CPU_OFF parks the pCPU in WFI without SMC noise,
+  - the next PSCI_CPU_ON IPI wakes WFI and re-enters vcpu_run with
+    state == ON, reaching vcpu_arch_entry and ERETing into the guest's
+    secondary entry point.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ src/platform/agilex5/inc/plat/psci.h | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/src/platform/agilex5/inc/plat/psci.h b/src/platform/agilex5/inc/plat/psci.h
+index 9e3aa31..ec738ab 100644
+--- a/src/platform/agilex5/inc/plat/psci.h
++++ b/src/platform/agilex5/inc/plat/psci.h
+@@ -7,8 +7,12 @@
+ #define __PLAT_PSCI_H__
+ 
+ /**
+- * Agilex5 uses ATF (arm-trusted-firmware) with PSCI-0.2 via SMC.
+- * Power state encoding follows ARM PSCI spec:
++ * Agilex5 uses ATF (arm-trusted-firmware) with PSCI-0.2 via SMC, but the ATF
++ * build for Agilex5 only supports PSCI_CPU_ON / PSCI_CPU_OFF for cold reset
++ * and rejects PSCI_CPU_SUSPEND for both StandBy and PowerDown power states
++ * with INVALID_PARAMS.
++ *
++ * Power state encoding still follows the ARM PSCI spec:
+  *   - StateID in bits [27:0], StateType in bit [30]
+  *   - PowerLevel in bits [25:24]
+  */
+@@ -19,6 +23,15 @@
+ #define PSCI_STATE_TYPE_POWERDOWN       (1UL << 30)
+ #define PSCI_STATE_TYPE_BIT             (1UL << 30)
+ 
+-/* Agilex5 ATF supports both standby and powerdown via PSCI_SUSPEND */
++/*
++ * Route Bao's internal cpu_powerdown() / cpu_standby() through a plain WFI
++ * instead of PSCI_CPU_SUSPEND SMCs. This is the upstream-supported fallback
++ * already used by s32g3, rpi4, zcu102/104 and ultra96 for the same firmware
++ * limitation. cpu_arch_powerdown / cpu_arch_standby still rewind the stack
++ * to cpu_powerdown_wakeup / cpu_standby_wakeup on resume, so the Bao state
++ * machine (and PSCI_CPU_OFF -> PSCI_CPU_ON round-trips) keeps working.
++ */
++#define PLAT_PSCI_POWERDOWN_NOT_SUPPORTED 1
++#define PLAT_PSCI_STANDBY_NOT_SUPPORTED   1
+ 
+ #endif /* __PLAT_PSCI_H__ */
+-- 
+2.25.1
+

@@ -1,0 +1,47 @@
+# Solution-local .gitignore for the Bao AMP build (paths relative to this dir).
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+build/
+out/
+
+.toolchain/
+venv/
+.venv/
+
+# ── Fetched upstream checkouts ────────────────────────────────────────────────
+# Each fetch-managed component's pristine source tree, materialised by
+# `make fetch` and never tracked. Listed explicitly (NOT /*/src/) so the
+# vendored bare-metal guest runtime at bao-baremetal-guest/src/ stays tracked.
+/bao-hypervisor/src/
+/atf/src/
+/uboot/src/
+/linux/src/
+/freertos/src/
+/buildroot/src/
+/openamp/src/
+/libmetal/src/
+
+# ── In-tree guest / ILC build outputs ─────────────────────────────────────────
+bao-baremetal-guest/build/
+ilc_baremetal_standalone/*.o
+ilc_baremetal_standalone/drivers/**/*.o
+ilc_baremetal_standalone/*.elf
+ilc_baremetal_standalone/*.bin
+ilc_baremetal_standalone/*.map
+
+# ── Loose object/binary noise ─────────────────────────────────────────────────
+*.o
+*.a
+*.elf
+*.bin
+*.map
+*.swp
+
+# ── Python bytecode ───────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+
+# ── OS / editor noise ─────────────────────────────────────────────────────────
+.DS_Store
+*.orig
+*.rej

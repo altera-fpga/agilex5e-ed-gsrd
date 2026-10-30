@@ -1,0 +1,618 @@
+diff --git a/optee_examples/sdm_get_random/Android.mk b/optee_examples/sdm_get_random/Android.mk
+new file mode 100644
+index 000000000000..8deca97b1bf5
+--- /dev/null
++++ b/optee_examples/sdm_get_random/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-get-random ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_get_random
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_get_random/CMakeLists.txt b/optee_examples/sdm_get_random/CMakeLists.txt
+new file mode 100644
+index 000000000000..0f53ec9134a8
+--- /dev/null
++++ b/optee_examples/sdm_get_random/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_get_random C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_get_random/Makefile b/optee_examples/sdm_get_random/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_get_random/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_get_random/host/Makefile b/optee_examples/sdm_get_random/host/Makefile
+new file mode 100644
+index 000000000000..31627622f22c
+--- /dev/null
++++ b/optee_examples/sdm_get_random/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_get_random
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY) optee_example_sdm_get_random
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_get_random/host/main.c b/optee_examples/sdm_get_random/host/main.c
+new file mode 100644
+index 000000000000..f7fbcf5571f5
+--- /dev/null
++++ b/optee_examples/sdm_get_random/host/main.c
+@@ -0,0 +1,145 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2024-2026, Intel Corporation
++ *
++ * sdm_get_random - Linux host application for SDM hardware RNG.
++ *
++ * Requests random bytes from the Intel SDM (Secure Device Manager)
++ * hardware RNG by opening a session to the sdm_get_random Trusted
++ * Application, which in turn forwards the request to the SDM Services
++ * Pseudo-TA.
++ *
++ * Boot chain:
++ *     host -> sdm_get_random TA -> PTA_SDM_SVC -> ATF (FCS_RANDOM_NUMBER_EXT)
++ *
++ * Distinct from the upstream "random" example: that one uses
++ * TEE_GenerateRandom (OP-TEE software RNG); this one reaches the SDM
++ * hardware RNG via the Intel SDM PTA.
++ *
++ * Usage:
++ *   sdm_get_random <size>
++ *   sdm_get_random <size> <output_file>
++ *
++ *   size        : byte count in hex (e.g. 0x20) or decimal (e.g. 32)
++ *                 must be 4-byte aligned, between 4 and 4080 inclusive
++ *   output_file : optional path; writes raw random bytes to this file
++ *                 if omitted, prints random bytes as hex to stdout
++ */
++
++#include <err.h>
++#include <errno.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_get_random_ta.h>
++
++static void usage(const char *prog)
++{
++	fprintf(stderr,
++		"Usage:\n"
++		"  %s <size> [output_file]\n"
++		"\n"
++		"  size        hex (0x..) or decimal byte count\n"
++		"              must be 4-aligned, %u..%u\n"
++		"  output_file optional; writes raw bytes to file\n"
++		"              (default: print hex to stdout)\n",
++		prog, SDM_RNG_MIN_BYTES, SDM_RNG_MAX_BYTES);
++	exit(1);
++}
++
++int main(int argc, char *argv[])
++{
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_SharedMemory out_shm = { };
++	TEEC_UUID uuid = TA_SDM_GET_RANDOM_UUID;
++	uint32_t err_origin = 0;
++	unsigned long size_arg = 0;
++	uint32_t size = 0;
++	uint32_t returned = 0;
++	uint8_t *buf = NULL;
++	const char *out_path = NULL;
++
++	if (argc < 2 || argc > 3)
++		usage(argv[0]);
++
++	size_arg = strtoul(argv[1], NULL, 0);
++	if (size_arg < SDM_RNG_MIN_BYTES || size_arg > SDM_RNG_MAX_BYTES ||
++	    (size_arg % 4) != 0)
++		errx(1, "size %lu invalid: must be 4-aligned, %u..%u",
++		     size_arg, SDM_RNG_MIN_BYTES, SDM_RNG_MAX_BYTES);
++
++	size = (uint32_t)size_arg;
++	if (argc == 3)
++		out_path = argv[2];
++
++	buf = calloc(1, size);
++	if (!buf)
++		err(1, "calloc");
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_OpenSession: 0x%x (origin 0x%x)",
++		     res, err_origin);
++
++	out_shm.buffer = buf;
++	out_shm.size   = size;
++	out_shm.flags  = TEEC_MEM_OUTPUT;
++	res = TEEC_RegisterSharedMemory(&ctx, &out_shm);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_RegisterSharedMemory: 0x%x", res);
++
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
++					 TEEC_MEMREF_WHOLE,
++					 TEEC_NONE, TEEC_NONE);
++	op.params[0].value.a       = size;
++	op.params[1].memref.parent = &out_shm;
++	op.params[1].memref.size   = size;
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_GET_RANDOM_CMD_GET, &op,
++				 &err_origin);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TA_SDM_GET_RANDOM_CMD_GET: 0x%x (origin 0x%x)",
++		     res, err_origin);
++
++	returned = (uint32_t)op.params[1].memref.size;
++
++	if (out_path) {
++		FILE *fp = fopen(out_path, "wb");
++
++		if (!fp)
++			err(1, "open %s for write", out_path);
++		if (fwrite(buf, 1, returned, fp) != returned)
++			err(1, "fwrite %s", out_path);
++		fclose(fp);
++		printf("sdm_get_random: %u bytes written to %s\n",
++		       returned, out_path);
++	} else {
++		for (uint32_t i = 0; i < returned; i++) {
++			printf("%02x", buf[i]);
++			if ((i + 1) % 32 == 0 || i + 1 == returned)
++				printf("\n");
++			else if ((i + 1) % 4 == 0)
++				printf(" ");
++		}
++	}
++
++	TEEC_ReleaseSharedMemory(&out_shm);
++	TEEC_CloseSession(&sess);
++	TEEC_FinalizeContext(&ctx);
++	free(buf);
++
++	return 0;
++}
+diff --git a/optee_examples/sdm_get_random/ta/Android.mk b/optee_examples/sdm_get_random/ta/Android.mk
+new file mode 100644
+index 000000000000..fb1e09d180f7
+--- /dev/null
++++ b/optee_examples/sdm_get_random/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := 4adb0042-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_get_random/ta/Makefile b/optee_examples/sdm_get_random/ta/Makefile
+new file mode 100644
+index 000000000000..71d71d4e4655
+--- /dev/null
++++ b/optee_examples/sdm_get_random/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_GET_RANDOM_UUID in include/sdm_get_random_ta.h
++BINARY=4adb0042-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_get_random/ta/include/sdm_get_random_ta.h b/optee_examples/sdm_get_random/ta/include/sdm_get_random_ta.h
+new file mode 100644
+index 000000000000..8737ce9544d9
+--- /dev/null
++++ b/optee_examples/sdm_get_random/ta/include/sdm_get_random_ta.h
+@@ -0,0 +1,64 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_get_random TA - public interface shared with the host.
++ *
++ * This Trusted Application is a thin wrapper around the SDM Services
++ * Pseudo-TA's PTA_CMD_SDM_GET_RANDOM.  It returns random bytes drawn
++ * from the Intel SDM (Secure Device Manager) hardware RNG - distinct
++ * from the OP-TEE software RNG exposed by the upstream "random"
++ * example, which uses TEE_GenerateRandom() instead.
++ *
++ * Boot chain for the underlying SiP call:
++ *     host -> sdm_get_random TA -> PTA_SDM_SVC ->
++ *     ATF (FCS_OPEN_CS_SESSION / FCS_RANDOM_NUMBER_EXT / FCS_CLOSE_CS_SESSION)
++ *     -> SDM HW RNG
++ */
++
++#ifndef TA_SDM_GET_RANDOM_H
++#define TA_SDM_GET_RANDOM_H
++
++/*
++ * UUID for the sdm_get_random Trusted Application.
++ *
++ * The leading "4adb0042" has no semantic meaning beyond uniqueness.
++ * This UUID is the binary name of the .ta file.
++ */
++#define TA_SDM_GET_RANDOM_UUID \
++	{ 0x4adb0042, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * SDM RNG size constraints, re-exported from pta_sdm_svc.h so callers of
++ * this TA do not need to pull in OP-TEE OS internal headers.  Keep these
++ * values in sync with the PTA.  Suppressed when pta_sdm_svc.h is also
++ * visible (TA build) via its include guard.
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_RNG_MIN_BYTES		4U	/* minimum: 1 word, 4-byte aligned */
++#define SDM_RNG_MAX_BYTES		4080U	/* 1020 words */
++#endif
++
++/*
++ * TA_SDM_GET_RANDOM_CMD_GET - Get a buffer of random bytes from the SDM.
++ *
++ * param[0] (in value) .a = requested byte count;
++ *                     must be 4-byte aligned and within
++ *                     [SDM_RNG_MIN_BYTES .. SDM_RNG_MAX_BYTES].
++ * param[1] (out memref) Output buffer, pre-allocated by caller;
++ *                       must be >= param[0].value.a bytes.
++ *                       On success, memref.size = bytes written
++ *                       (equals the requested count).
++ * param[2..3] unused.
++ *
++ * Result:
++ *   TEE_SUCCESS                 - random bytes written to param[1]
++ *   TEE_ERROR_BAD_PARAMETERS    - bad param types, unaligned size,
++ *                                 out-of-range size, or output too small
++ *   TEE_ERROR_ACCESS_DENIED     - output memref not writable
++ *   TEE_ERROR_GENERIC / BUSY    - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_GET_RANDOM_CMD_GET	0
++
++#endif /* TA_SDM_GET_RANDOM_H */
+diff --git a/optee_examples/sdm_get_random/ta/sdm_get_random_ta.c b/optee_examples/sdm_get_random/ta/sdm_get_random_ta.c
+new file mode 100644
+index 000000000000..07f7532c8941
+--- /dev/null
++++ b/optee_examples/sdm_get_random/ta/sdm_get_random_ta.c
+@@ -0,0 +1,218 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_get_random Trusted Application.
++ *
++ * Wraps PTA_CMD_SDM_GET_RANDOM with parameter validation:
++ *   1. Verify parameter types.
++ *   2. Verify size is 4-byte aligned and in [SDM_RNG_MIN_BYTES,
++ *      SDM_RNG_MAX_BYTES] (catches the typical misuse before any SDM
++ *      mailbox round-trip).
++ *   3. Verify the output memref is large enough for the requested count.
++ *   4. Verify the output memref is writable via TEE_CheckMemoryAccessRights
++ *      so a hostile NW caller cannot trick the secure core into a fault
++ *      during the PTA -> NS copy.
++ *   5. Forward to PTA_CMD_SDM_GET_RANDOM and propagate the actual
++ *      returned size back to the host.
++ *
++ * The random data itself is never copied through TA-local heap; the PTA
++ * writes directly into the host's pre-validated NW shared memory.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_get_random_ta.h>
++
++struct rng_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_get_random TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_get_random TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct rng_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_get_random TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct rng_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_get_random TA: session closed");
++}
++
++static TEE_Result do_get_random(struct rng_sess_ctx *ctx,
++				uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_MEMREF_OUTPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	uint32_t size = 0;
++	void *ns_out = NULL;
++	size_t out_size = 0;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	size     = params[0].value.a;
++	ns_out   = params[1].memref.buffer;
++	out_size = params[1].memref.size;
++
++	if (size < SDM_RNG_MIN_BYTES || size > SDM_RNG_MAX_BYTES) {
++		EMSG("requested size %u out of range [%u..%u]",
++		     size, SDM_RNG_MIN_BYTES, SDM_RNG_MAX_BYTES);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (size & 0x3U) {
++		EMSG("requested size %u not 4-byte aligned", size);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (!ns_out || out_size < size) {
++		EMSG("output memref invalid: buf=%p size=%zu (need %u)",
++		     ns_out, out_size, size);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Verify the NW output buffer is genuinely writable for the
++	 * requested byte count BEFORE the SDM is contacted.  This catches
++	 * the "lying memref size / unmapped page" condition and turns it
++	 * into a clean TEE_ERROR_ACCESS_DENIED instead of a fault in the
++	 * PTA -> NS copy.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_WRITE |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_out, size);
++	if (res != TEE_SUCCESS) {
++		EMSG("output memref not writable: out=%p size=%u res=0x%08x",
++		     ns_out, size, res);
++		return res;
++	}
++
++	DMSG("sdm_get_random: validated (size=%u)", size);
++
++	/* Forward to PTA - the PTA writes random data directly into ns_out */
++	pta_params[0].value.a       = size;
++	pta_params[1].memref.buffer = ns_out;
++	pta_params[1].memref.size   = out_size;
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_GET_RANDOM, exp_pt,
++				  pta_params, &pta_origin);
++
++	/* Propagate the PTA's actual returned size back to the host */
++	params[1].memref.size = pta_params[1].memref.size;
++
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_GET_RANDOM failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_get_random: OK, %zu bytes",
++	     (size_t)params[1].memref.size);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct rng_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_GET_RANDOM_CMD_GET:
++		return do_get_random(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_get_random/ta/sub.mk b/optee_examples/sdm_get_random/ta/sub.mk
+new file mode 100644
+index 000000000000..d2496f5c6176
+--- /dev/null
++++ b/optee_examples/sdm_get_random/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_get_random_ta.c
+diff --git a/optee_examples/sdm_get_random/ta/user_ta_header_defines.h b/optee_examples/sdm_get_random/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..9e41558550f1
+--- /dev/null
++++ b/optee_examples/sdm_get_random/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_get_random_ta.h>
++
++#define TA_UUID			TA_SDM_GET_RANDOM_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM hardware RNG wrapper TA (PTA_SDM_SVC)"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_get_random.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Returns random bytes from the SDM HW RNG via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

@@ -80,7 +80,7 @@ if [[ "$BOOTMODE" == "sdmmc" ]]; then
 
     # Define image file paths
     UBOOT_FILE="$BINARIES_PATH/u-boot-spl-dtb.bin"
-    SDMMC_IMAGE_FILE="$BINARIES_PATH/gsrd-console-image-agilex5e.rootfs.wic"
+    SDMMC_IMAGE_FILE="$BINARIES_PATH/gsrd-console-image-agilex5e_013b.rootfs.wic"
 
     # Log setup
     echo "[INFO] Simics scenario: $SIMICS_SCENARIO"

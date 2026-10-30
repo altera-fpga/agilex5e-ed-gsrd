@@ -1,0 +1,13 @@
+diff --git a/conf/layer.conf b/conf/layer.conf
+index 2a4a4c91..0dcfe4a7 100644
+--- a/conf/layer.conf
++++ b/conf/layer.conf
+@@ -72,7 +72,7 @@ HOSTTOOLS_NONFATAL += "getent"
+ 
+ # Propagate virtualization/vcontainer to native DISTRO_FEATURES for qemu virtfs support
+ # This enables virtio-9p in qemu-system-native for container-cross-install batch imports
+-DISTRO_FEATURES_FILTER_NATIVE:append = " vcontainer virtualization"
++# DISTRO_FEATURES_FILTER_NATIVE:append = " vcontainer virtualization"
+ 
+ NON_MULTILIB_RECIPES:append:x86-64 = " kubernetes"
+ 

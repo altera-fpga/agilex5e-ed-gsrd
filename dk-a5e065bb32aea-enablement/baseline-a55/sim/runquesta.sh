@@ -8,7 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DESIGN_ROOT_DIR="$(realpath $SCRIPT_DIR/..)"
 
 # Toplevel sim script generation
-SIM_SCRIPT_GEN_DIR=$DESIGN_ROOT_DIR/baseline_top/sim
+SIM_SCRIPT_GEN_DIR=$DESIGN_ROOT_DIR/sim_setup_baseline_a55
+VDS_TOP_SIM_DIR=$DESIGN_ROOT_DIR/gen/vds/baseline_top/sim
 
 # # TOP-LEVEL TEMPLATE - BEGIN
 # #
@@ -72,16 +73,20 @@ vsim -c -do "
 	set TOP_LEVEL_NAME testbench;
 	dev_com;
 	com;
+	set VDS_TOP_SIM_DIR $DESIGN_ROOT_DIR/gen/vds/baseline_top/sim;
+	set QSYS_SIMDIR $VDS_TOP_SIM_DIR;
+	source $VDS_TOP_SIM_DIR/mentor/msim_setup.tcl;
+	com;
 	vlog -sv $DESIGN_ROOT_DIR/src/debounce.sv;
 	vlog -sv $DESIGN_ROOT_DIR/src/clocks_and_resets.sv;
 	vlog -sv $DESIGN_ROOT_DIR/baseline_a55.sv;
 	vlog -sv ./hps_h2f_pkg.sv;
 	vlog -sv ./hps_h2f_lw_pkg.sv;
 	vlog -sv -timescale 1ps/1ps ./baseline_a55_tb.sv -L altera_lnsim_ver;
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/sim/sys_pll.v;
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/sim/user_rst_clkgate.v;
-	vlog -sv $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/altera_s10_user_rst_clkgate_1949/sim/altera_s10_user_rst_clkgate.sv;
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/altera_iopll_*/synth/sys_pll_altera_iopll_*.v;
+	vlog $DESIGN_ROOT_DIR/src/ip/sys_pll/sim/sys_pll.v;
+	vlog $DESIGN_ROOT_DIR/src/ip/user_rst_clkgate/sim/user_rst_clkgate.v;
+	vlog -sv $DESIGN_ROOT_DIR/src/ip/user_rst_clkgate/altera_s10_user_rst_clkgate_1949/sim/altera_s10_user_rst_clkgate.sv;
+	vlog $DESIGN_ROOT_DIR/src/ip/sys_pll/altera_iopll_*/synth/sys_pll_altera_iopll_*.v;
 	set USER_DEFINED_ELAB_OPTIONS \"-suppress 14408,16154 -voptargs=-svext=+adta\";
 	elab_debug;
 	run -all"
