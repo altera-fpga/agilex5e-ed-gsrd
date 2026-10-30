@@ -1,0 +1,542 @@
+diff --git a/optee_examples/sdm_fuse_read/Android.mk b/optee_examples/sdm_fuse_read/Android.mk
+new file mode 100644
+index 000000000000..c5c70a78dcb4
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-fuse-read ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_fuse_read
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_fuse_read/CMakeLists.txt b/optee_examples/sdm_fuse_read/CMakeLists.txt
+new file mode 100644
+index 000000000000..5ba04effdbeb
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_fuse_read C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_fuse_read/Makefile b/optee_examples/sdm_fuse_read/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_fuse_read/host/Makefile b/optee_examples/sdm_fuse_read/host/Makefile
+new file mode 100644
+index 000000000000..aecb188b360e
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_fuse_read
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_fuse_read/host/main.c b/optee_examples/sdm_fuse_read/host/main.c
+new file mode 100644
+index 000000000000..3966816ae1e0
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/host/main.c
+@@ -0,0 +1,108 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_fuse_read - Linux host that drives the sdm_fuse_read TA.
++ *
++ * Flow:
++ *   host -> sdm_fuse_read TA -> PTA_SDM_SVC -> ATF (GEN_MBOX_CMD 0x2D)
++ *
++ * Reads all 16 user-defined eFuse words from the Intel SDM (Secure
++ * Device Manager) and prints them.
++ *
++ * Usage:
++ *   sdm_fuse_read
++ *
++ * Exit status:
++ *   0 - fuse data retrieved and displayed
++ *   1 - error
++ */
++
++#include <err.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_fuse_read_ta.h>
++
++int main(int argc, char *argv[])
++{
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_SharedMemory out_shm = { };
++	TEEC_UUID uuid = TA_SDM_FUSE_READ_UUID;
++	uint32_t err_origin = 0;
++	uint32_t fuse_data[SDM_USER_FUSE_COUNT] = { };
++	unsigned int i = 0;
++	int exit_code = 1;
++
++	if (argc != 1) {
++		fprintf(stderr,
++			"Usage: %s\n\n"
++			"Read and display all 16 SDM user-defined eFuse words.\n",
++			argv[0]);
++		return 1;
++	}
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_OpenSession: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_ctx;
++	}
++
++	/*
++	 * Register the local array as TEEC shared memory.  64-byte output
++	 * buffer; explicit registration + TEEC_MEMREF_WHOLE means the TEE
++	 * driver maps it once for the call.
++	 */
++	out_shm.buffer = fuse_data;
++	out_shm.size   = SDM_USER_FUSE_SIZE;
++	out_shm.flags  = TEEC_MEM_OUTPUT;
++	res = TEEC_RegisterSharedMemory(&ctx, &out_shm);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_RegisterSharedMemory: 0x%x\n", res);
++		goto out_sess;
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_WHOLE,
++					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
++	op.params[0].memref.parent = &out_shm;
++	op.params[0].memref.size   = SDM_USER_FUSE_SIZE;
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_FUSE_READ_CMD_GET,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr,
++			"TA_SDM_FUSE_READ_CMD_GET: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_shm;
++	}
++
++	printf("\nSDM User eFuse Data (%u words):\n\n", SDM_USER_FUSE_COUNT);
++	for (i = 0; i < SDM_USER_FUSE_COUNT; i++)
++		printf("  Word %2u: 0x%08" PRIX32 "\n", i, fuse_data[i]);
++	printf("\n");
++
++	exit_code = 0;
++
++out_shm:
++	TEEC_ReleaseSharedMemory(&out_shm);
++out_sess:
++	TEEC_CloseSession(&sess);
++out_ctx:
++	TEEC_FinalizeContext(&ctx);
++	return exit_code;
++}
+diff --git a/optee_examples/sdm_fuse_read/ta/Android.mk b/optee_examples/sdm_fuse_read/ta/Android.mk
+new file mode 100644
+index 000000000000..3f56d72feb37
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := 0f05e000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_fuse_read/ta/Makefile b/optee_examples/sdm_fuse_read/ta/Makefile
+new file mode 100644
+index 000000000000..813c1a0fb305
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_FUSE_READ_UUID in include/sdm_fuse_read_ta.h
++BINARY=0f05e000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_fuse_read/ta/include/sdm_fuse_read_ta.h b/optee_examples/sdm_fuse_read/ta/include/sdm_fuse_read_ta.h
+new file mode 100644
+index 000000000000..0abd28c28934
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/ta/include/sdm_fuse_read_ta.h
+@@ -0,0 +1,52 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_fuse_read TA - public interface shared with the host.
++ *
++ * Simple wrapper around PTA_CMD_SDM_READ_USER_FUSES.  Validates the
++ * caller's output memref (param-types, non-NULL buffer, size, writable
++ * NW memory) and forwards the call to the PTA.
++ */
++
++#ifndef TA_SDM_FUSE_READ_H
++#define TA_SDM_FUSE_READ_H
++
++#include <stdint.h>
++
++/*
++ * UUID for the sdm_fuse_read Trusted Application.
++ * The leading "0f05e000" reads as "0-F-0-5-E" ~= "FOSE" / "FUSE".
++ */
++#define TA_SDM_FUSE_READ_UUID \
++	{ 0x0f05e000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_FUSE_READ_CMD_GET - read all 16 user-defined eFuse words.
++ *
++ * param[0] (out memref)  caller buffer, must be >= SDM_USER_FUSE_SIZE
++ *                        (64 bytes).  On success, filled with 16 x uint32_t
++ *                        and memref.size updated to SDM_USER_FUSE_SIZE.
++ * param[1..3] unused.
++ *
++ * Result:
++ *   TEE_SUCCESS                  - fuses read; param[0].memref.size = 64
++ *   TEE_ERROR_BAD_PARAMETERS     - bad param types / null buffer
++ *   TEE_ERROR_SHORT_BUFFER       - caller buffer < SDM_USER_FUSE_SIZE
++ *   TEE_ERROR_ACCESS_DENIED      - caller buffer not writable
++ *   TEE_ERROR_GENERIC / BUSY     - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_FUSE_READ_CMD_GET	0
++
++/*
++ * SDM user-fuse sizing, re-exported from the PTA header (pta_sdm_svc.h)
++ * so NW callers don't need OP-TEE OS internals.  Suppressed when
++ * pta_sdm_svc.h is also visible (TA build) via its include guard.
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_USER_FUSE_COUNT		16U
++#define SDM_USER_FUSE_SIZE		(SDM_USER_FUSE_COUNT * 4U)	/* 64 */
++#endif
++
++#endif /* TA_SDM_FUSE_READ_H */
+diff --git a/optee_examples/sdm_fuse_read/ta/sdm_fuse_read_ta.c b/optee_examples/sdm_fuse_read/ta/sdm_fuse_read_ta.c
+new file mode 100644
+index 000000000000..0a34d3a3b28b
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/ta/sdm_fuse_read_ta.c
+@@ -0,0 +1,191 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_fuse_read Trusted Application.
++ *
++ * Simple wrapper around PTA_CMD_SDM_READ_USER_FUSES.  Validates that
++ * the caller passed:
++ *   - the right GP-TEE parameter types,
++ *   - a non-NULL output memref of >= SDM_USER_FUSE_SIZE bytes,
++ *   - and that the NW buffer is genuinely writable for that size,
++ * then forwards the request straight to the PTA.  The PTA fills the
++ * caller's buffer with 16 user-fuse uint32_t words and updates
++ * params[0].memref.size to SDM_USER_FUSE_SIZE (64).
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_fuse_read_ta.h>
++
++struct fuse_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_fuse_read TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_fuse_read TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct fuse_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_fuse_read TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct fuse_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_fuse_read TA: session closed");
++}
++
++static TEE_Result do_fuse_read(struct fuse_sess_ctx *ctx,
++			       uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	void *ns_out = NULL;
++	size_t ns_out_size = 0;
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	ns_out      = params[0].memref.buffer;
++	ns_out_size = params[0].memref.size;
++
++	if (!ns_out) {
++		EMSG("output memref buffer is NULL");
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (ns_out_size < SDM_USER_FUSE_SIZE) {
++		EMSG("output memref size %zu < SDM_USER_FUSE_SIZE (%u)",
++		     ns_out_size, SDM_USER_FUSE_SIZE);
++		return TEE_ERROR_SHORT_BUFFER;
++	}
++
++	/*
++	 * Confirm the NW destination buffer is genuinely writable for the
++	 * full size before we hand it to the PTA.  Converts a hypothetical
++	 * "lying memref" into a clean TEE_ERROR_ACCESS_DENIED.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_WRITE |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_out, ns_out_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("output memref not writable: buf=%p size=%zu res=0x%08x",
++		     ns_out, ns_out_size, res);
++		return res;
++	}
++
++	/* Forward directly to the PTA - it handles the TZDRAM bounce + SiP */
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_READ_USER_FUSES, exp_pt,
++				  params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_READ_USER_FUSES failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_fuse_read: returned %zu bytes to NW",
++	     (size_t)params[0].memref.size);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct fuse_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_FUSE_READ_CMD_GET:
++		return do_fuse_read(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_fuse_read/ta/sub.mk b/optee_examples/sdm_fuse_read/ta/sub.mk
+new file mode 100644
+index 000000000000..de4b180a3c43
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_fuse_read_ta.c
+diff --git a/optee_examples/sdm_fuse_read/ta/user_ta_header_defines.h b/optee_examples/sdm_fuse_read/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..10dab060f82e
+--- /dev/null
++++ b/optee_examples/sdm_fuse_read/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_fuse_read_ta.h>
++
++#define TA_UUID			TA_SDM_FUSE_READ_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM user-eFuse read wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_fuse_read.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Reads 16 SDM user-defined eFuse words via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

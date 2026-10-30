@@ -1,0 +1,35 @@
+menu "Virtualization Options"
+
+config ENABLE_XEN_BUILD
+    bool "Enable XEN Hypervisor Build (SD/MMC only)"
+    default n
+    depends on SSBL_BOOT_SRC_SD_MMC_CARD
+    help
+      Enable XEN hypervisor support. This will add meta-virtualization layer,
+      include Xen tools and related virtualization features in the build.
+      
+      XEN is only supported for SD/MMC card boot and is mutually exclusive
+      with QSPI NOR Flash boot.
+      
+      When enabled, this adds:
+      - meta-virtualization and meta-filesystems layers
+      - Xen tools and net-tools packages
+      - virtualization and xen DISTRO_FEATURES
+      - XEN device tree repository for passthrough examples
+      
+      The build will generate multiple images:
+      - xen-image-minimal (XEN-specific minimal image)
+      - console-image-minimal (Standard console image)
+      - gsrd-console-image (Full GSRD image)
+
+config HYP_BUILD
+    string
+    default "1" if ENABLE_XEN_BUILD
+    default "0"
+
+config KAS_INCLUDE_VIRTUALIZATION
+    string
+    default "xen_enable.yml" if ENABLE_XEN_BUILD
+    default ""
+
+endmenu

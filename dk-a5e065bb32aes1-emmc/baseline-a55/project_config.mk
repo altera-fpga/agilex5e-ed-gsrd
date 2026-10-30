@@ -5,6 +5,9 @@ PROJECT_NAME := top
 REVISION_NAMES := \
 	baseline_a55 \
 
+# Define the base revision
+BASE_REVISION := $(firstword $(REVISION_NAMES))
+
 # Enable functional simulation
 SIM_ENABLED := 0
 include $(THIS_MK_DIR)/niosv_build.mk

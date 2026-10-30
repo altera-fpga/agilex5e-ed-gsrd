@@ -1,0 +1,117 @@
+From 88c3aebe14ea4ab38860751d87cf10a947afd766 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 10:00:00 +0800
+Subject: [PATCH 3/6] uart_ll: skip clock/reset under HV_GUEST_NO_CLKMGR
+
+In a static-partitioning setup the clock-manager (CLK_PERPLL) and
+reset-manager MMIO windows are NOT mapped to this guest -- another
+OS or the boot loader owns them. Touching those registers from the
+guest would cause a stage-2 fault and abort the VM under Bao.
+
+Guard the clock/reset helpers, uart_init's clock-enable path,
+uart_deinit's clock-disable call and the divisor-computing branch
+of uart_set_baud under #ifdef HV_GUEST_NO_CLKMGR (formerly BAO_GUEST).
+The peripheral clock has already been enabled and the UART brought
+out of reset before the guest is entered; uart_set_baud honours the
+request silently since the boot loader has already configured
+115200-8N1 and the divisor cannot be computed without the clock
+frequency.
+
+Pure rename of the previous BAO_GUEST guards. The umbrella BAO_GUEST
+CMake option in patch 0004 forces HV_GUEST_NO_CLKMGR=ON so existing
+-DBAO_GUEST=ON invocations are byte-identical.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ drivers/uart/socfpga_uart_ll.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/drivers/uart/socfpga_uart_ll.c b/drivers/uart/socfpga_uart_ll.c
+index 7287d5a..b56e72f 100644
+--- a/drivers/uart/socfpga_uart_ll.c
++++ b/drivers/uart/socfpga_uart_ll.c
+@@ -17,6 +17,13 @@
+ #include "socfpga_clk_mngr.h"
+ #include "socfpga_rst_mngr.h"
+ 
++#ifndef HV_GUEST_NO_CLKMGR
++/* On partitions where the clock-manager and reset-manager MMIO windows are
++ * NOT passed through to this guest (HV_GUEST_NO_CLKMGR=ON), these four helpers
++ * can never run -- the boot loader has already enabled the peripheral clock
++ * and brought the UART out of reset. Compile them out so -Werror=unused-function
++ * stays clean. */
++
+ /**
+  * @brief Enable clock for UART
+  */
+@@ -58,12 +65,22 @@ static void uart_deassert_reset(uint32_t instance)
+     reset_inst = (instance == 1U) ? RST_UART1: RST_UART0;
+     (void)rstmgr_deassert_reset(reset_inst);
+ }
++#endif /* !HV_GUEST_NO_CLKMGR */
+ 
+ /**
+  * @brief Initialize UART and configure the FIFO
+  */
+ void uart_init(uint32_t instance)
+ {
++#ifdef HV_GUEST_NO_CLKMGR
++    /* When this guest's partition does not own CLK_PERPLL / RST (typically a
++     * hypervisor / static-partitioning setup with HV_GUEST_NO_CLKMGR=ON), the
++     * boot loader has already enabled the peripheral clock and brought the
++     * UART out of reset before our entry, so we only need to (re)configure
++     * the FIFO here. Touching the clock or reset MMIO would cause a stage-2
++     * fault and abort the VM under Bao. */
++    uart_config_fifo(GET_UART_BASE_ADDRESS(instance));
++#else
+     volatile int32_t i = 0;
+     uart_enable_clock(instance);
+ 
+@@ -83,6 +100,7 @@ void uart_init(uint32_t instance)
+     }
+ 
+     uart_config_fifo(GET_UART_BASE_ADDRESS(instance));
++#endif
+ }
+ 
+ /**
+@@ -90,7 +108,13 @@ void uart_init(uint32_t instance)
+  */
+ void uart_deinit(uint32_t instance)
+ {
++#ifdef HV_GUEST_NO_CLKMGR
++    /* This partition does not own clock/reset; the guest must not touch
++     * CLK_PERPLL. */
++    (void)instance;
++#else
+     uart_disable_clock(instance);
++#endif
+ }
+ 
+ /**
+@@ -134,6 +158,14 @@ void uart_set_config(uint32_t base_address, uart_partity_t parity,
+  */
+ uint32_t uart_set_baud(uint32_t base_address, uint32_t baud)
+ {
++#ifdef HV_GUEST_NO_CLKMGR
++    /* The clock manager isn't passed through to this guest, so we cannot
++     * compute the divisor; the boot loader has already configured the UART
++     * for 115200-8N1. Honour the request silently and report success. */
++    (void)base_address;
++    (void)baud;
++    return 1U;
++#else
+     uint32_t peri_clk = 0U;
+     uint32_t lcr_var;
+     uint32_t val;
+@@ -168,6 +200,7 @@ uint32_t uart_set_baud(uint32_t base_address, uint32_t baud)
+     WR_REG32((base_address + UART_LCR), lcr_data);
+ 
+     return 1U;
++#endif
+ }
+ 
+ /**
+-- 
+2.25.1
+

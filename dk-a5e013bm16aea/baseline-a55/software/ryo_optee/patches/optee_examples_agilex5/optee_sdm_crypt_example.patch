@@ -1,0 +1,1063 @@
+diff --git a/optee_examples/sdm_crypt/Android.mk b/optee_examples/sdm_crypt/Android.mk
+new file mode 100644
+index 000000000000..bc0b0ed161f1
+--- /dev/null
++++ b/optee_examples/sdm_crypt/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-crypt ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_crypt
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_crypt/CMakeLists.txt b/optee_examples/sdm_crypt/CMakeLists.txt
+new file mode 100644
+index 000000000000..9f0aa84a886d
+--- /dev/null
++++ b/optee_examples/sdm_crypt/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_crypt C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_crypt/Makefile b/optee_examples/sdm_crypt/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_crypt/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_crypt/host/Makefile b/optee_examples/sdm_crypt/host/Makefile
+new file mode 100644
+index 000000000000..566117f0cdb8
+--- /dev/null
++++ b/optee_examples/sdm_crypt/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_crypt
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY) optee_example_sdm_crypt
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_crypt/host/main.c b/optee_examples/sdm_crypt/host/main.c
+new file mode 100644
+index 000000000000..7ebcb7bab11b
+--- /dev/null
++++ b/optee_examples/sdm_crypt/host/main.c
+@@ -0,0 +1,305 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2024-2026, Intel Corporation
++ *
++ * sdm_crypt - Linux host application for SDM SDOS encrypt/decrypt.
++ *
++ * The host constructs the SDOS-formatted input buffer (sdos_hdr +
++ * plaintext + padding for encrypt; or the previously-produced SDOS blob
++ * for decrypt) and submits it to the sdm_crypt Trusted Application.
++ *
++ * The TA performs defensive validation of the buffer (magic / hdr_pad /
++ * data_len / size relationships / iv) BEFORE forwarding the request to
++ * PTA_CMD_SDM_SDOS_CRYPT, so malformed buffers never reach the SDM.
++ *
++ * Boot chain:
++ *     host -> sdm_crypt TA -> PTA_SDM_SVC -> ATF (FCS_CRYPTION_EXT etc.)
++ *
++ * Usage:
++ *   sdm_crypt encrypt <owner_id_hex> <srk_index> <in.bin> <out.bin>
++ *   sdm_crypt decrypt <in.bin> <out.bin>
++ */
++
++#include <err.h>
++#include <errno.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_crypt_ta.h>
++
++/* -------------------------------------------------------------------------
++ * File helpers
++ * ---------------------------------------------------------------------- */
++
++static uint8_t *read_file(const char *path, size_t *out_len)
++{
++	FILE *fp = fopen(path, "rb");
++	uint8_t *buf = NULL;
++	long len = 0;
++
++	if (!fp)
++		err(1, "open %s", path);
++
++	if (fseek(fp, 0, SEEK_END) != 0)
++		err(1, "fseek %s", path);
++	len = ftell(fp);
++	if (len < 0)
++		err(1, "ftell %s", path);
++	rewind(fp);
++
++	buf = malloc((size_t)len);
++	if (!buf)
++		err(1, "malloc");
++
++	if (fread(buf, 1, (size_t)len, fp) != (size_t)len)
++		err(1, "fread %s", path);
++
++	fclose(fp);
++	*out_len = (size_t)len;
++	return buf;
++}
++
++static void write_file(const char *path, const uint8_t *buf, size_t len)
++{
++	FILE *fp = fopen(path, "wb");
++
++	if (!fp)
++		err(1, "open %s for write", path);
++	if (fwrite(buf, 1, len, fp) != len)
++		err(1, "fwrite %s", path);
++	fclose(fp);
++}
++
++/* -------------------------------------------------------------------------
++ * TA session
++ * ---------------------------------------------------------------------- */
++
++static void open_ta_session(TEEC_Context *ctx, TEEC_Session *sess)
++{
++	TEEC_UUID uuid = TA_SDM_CRYPT_UUID;
++	uint32_t err_origin = 0;
++	TEEC_Result res;
++
++	res = TEEC_InitializeContext(NULL, ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(ctx, sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_OpenSession: 0x%x (origin 0x%x)",
++		     res, err_origin);
++}
++
++/* -------------------------------------------------------------------------
++ * Encrypt
++ * ---------------------------------------------------------------------- */
++
++static void do_encrypt(TEEC_Context *ctx, TEEC_Session *sess,
++		       uint64_t owner_id, uint32_t srk_index,
++		       const char *in_path, const char *out_path)
++{
++	size_t plaintext_len = 0;
++	uint8_t *plaintext = read_file(in_path, &plaintext_len);
++	size_t pad_len = SDOS_PAD_LEN(plaintext_len);
++	size_t src_size = (size_t)SDOS_HDR_SIZE + plaintext_len + pad_len;
++	size_t dst_size = src_size + (size_t)SDOS_HMAC_SIZE;
++	uint8_t *src_buf = calloc(1, src_size);
++	uint8_t *dst_buf = NULL;
++	struct sdos_hdr *hdr = NULL;
++	TEEC_SharedMemory src_shm = { };
++	TEEC_SharedMemory dst_shm = { };
++	TEEC_Operation op = { };
++	uint32_t err_origin = 0;
++	TEEC_Result res;
++	size_t out_len = 0;
++
++	if (!src_buf)
++		err(1, "calloc src_buf");
++
++	hdr = (struct sdos_hdr *)src_buf;
++	hdr->magic       = SDOS_ENCRYPT_IN_MAGIC;
++	hdr->data_len    = (uint32_t)(plaintext_len + pad_len);
++	hdr->flags       = SDOS_FLAGS(1, srk_index, (uint32_t)pad_len);
++	hdr->owner_id[0] = (uint32_t)(owner_id & 0xFFFFFFFFU);
++	hdr->owner_id[1] = (uint32_t)(owner_id >> 32);
++	hdr->hdr_pad     = SDOS_HDR_PAD_MAGIC;
++	/* iv is zero from calloc */
++
++	memcpy(src_buf + SDOS_HDR_SIZE, plaintext, plaintext_len);
++	free(plaintext);
++
++	dst_buf = malloc(dst_size);
++	if (!dst_buf)
++		err(1, "malloc dst_buf");
++
++	src_shm.buffer = src_buf;
++	src_shm.size   = src_size;
++	src_shm.flags  = TEEC_MEM_INPUT;
++	dst_shm.buffer = dst_buf;
++	dst_shm.size   = dst_size;
++	dst_shm.flags  = TEEC_MEM_OUTPUT;
++
++	res = TEEC_RegisterSharedMemory(ctx, &src_shm);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_RegisterSharedMemory src: 0x%x", res);
++	res = TEEC_RegisterSharedMemory(ctx, &dst_shm);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_RegisterSharedMemory dst: 0x%x", res);
++
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
++					 TEEC_MEMREF_WHOLE,
++					 TEEC_MEMREF_WHOLE,
++					 TEEC_NONE);
++	op.params[0].value.a = TA_SDM_CRYPT_DIR_ENCRYPT;
++	op.params[1].memref.parent = &src_shm;
++	op.params[1].memref.size   = src_size;
++	op.params[2].memref.parent = &dst_shm;
++	op.params[2].memref.size   = dst_size;
++
++	res = TEEC_InvokeCommand(sess, TA_SDM_CRYPT_CMD_RUN, &op, &err_origin);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TA_SDM_CRYPT_CMD_RUN encrypt: 0x%x (origin 0x%x)",
++		     res, err_origin);
++
++	out_len = op.params[2].memref.size;
++	printf("Encrypted %zu bytes -> %zu bytes SDOS blob\n",
++	       plaintext_len, out_len);
++	write_file(out_path, dst_buf, out_len);
++
++	TEEC_ReleaseSharedMemory(&src_shm);
++	TEEC_ReleaseSharedMemory(&dst_shm);
++	free(src_buf);
++	free(dst_buf);
++}
++
++/* -------------------------------------------------------------------------
++ * Decrypt
++ * ---------------------------------------------------------------------- */
++
++static void do_decrypt(TEEC_Context *ctx, TEEC_Session *sess,
++		       const char *in_path, const char *out_path)
++{
++	size_t src_size = 0;
++	uint8_t *src_buf = read_file(in_path, &src_size);
++	uint8_t *dst_buf = NULL;
++	TEEC_SharedMemory src_shm = { };
++	TEEC_SharedMemory dst_shm = { };
++	TEEC_Operation op = { };
++	uint32_t err_origin = 0;
++	TEEC_Result res;
++	size_t out_len = 0;
++	const struct sdos_hdr *hdr = NULL;
++	size_t plaintext_len = 0;
++	uint32_t pad_len = 0;
++
++	if (src_size < (size_t)SDOS_HDR_SIZE + (size_t)SDOS_HMAC_SIZE)
++		errx(1, "input too small to be a valid SDOS blob (%zu bytes)",
++		     src_size);
++
++	dst_buf = malloc(src_size);
++	if (!dst_buf)
++		err(1, "malloc dst_buf");
++
++	src_shm.buffer = src_buf;
++	src_shm.size   = src_size;
++	src_shm.flags  = TEEC_MEM_INPUT;
++	dst_shm.buffer = dst_buf;
++	dst_shm.size   = src_size;
++	dst_shm.flags  = TEEC_MEM_OUTPUT;
++
++	res = TEEC_RegisterSharedMemory(ctx, &src_shm);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_RegisterSharedMemory src: 0x%x", res);
++	res = TEEC_RegisterSharedMemory(ctx, &dst_shm);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_RegisterSharedMemory dst: 0x%x", res);
++
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
++					 TEEC_MEMREF_WHOLE,
++					 TEEC_MEMREF_WHOLE,
++					 TEEC_NONE);
++	op.params[0].value.a = TA_SDM_CRYPT_DIR_DECRYPT;
++	op.params[1].memref.parent = &src_shm;
++	op.params[1].memref.size   = src_size;
++	op.params[2].memref.parent = &dst_shm;
++	op.params[2].memref.size   = src_size;
++
++	res = TEEC_InvokeCommand(sess, TA_SDM_CRYPT_CMD_RUN, &op, &err_origin);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TA_SDM_CRYPT_CMD_RUN decrypt: 0x%x (origin 0x%x)",
++		     res, err_origin);
++
++	out_len = op.params[2].memref.size;
++	if (out_len < (size_t)SDOS_HDR_SIZE)
++		errx(1, "decrypt output too small (%zu bytes)", out_len);
++
++	hdr = (const struct sdos_hdr *)dst_buf;
++	pad_len = SDOS_FLAGS_PAD_LEN(hdr->flags);
++	plaintext_len = out_len - (size_t)SDOS_HDR_SIZE;
++	if (pad_len <= plaintext_len)
++		plaintext_len -= pad_len;
++
++	printf("Decrypted %zu bytes SDOS blob -> %zu bytes plaintext\n",
++	       src_size, plaintext_len);
++	write_file(out_path, dst_buf + SDOS_HDR_SIZE, plaintext_len);
++
++	TEEC_ReleaseSharedMemory(&src_shm);
++	TEEC_ReleaseSharedMemory(&dst_shm);
++	free(src_buf);
++	free(dst_buf);
++}
++
++/* -------------------------------------------------------------------------
++ * main
++ * ---------------------------------------------------------------------- */
++
++static void usage(const char *prog)
++{
++	fprintf(stderr,
++		"Usage:\n"
++		"  %s encrypt <owner_id_hex> <srk_index> <input.bin> <output.bin>\n"
++		"  %s decrypt <input.bin> <output.bin>\n"
++		"\n"
++		"  owner_id_hex  16-hex-char owner ID (e.g. 0807060504030201)\n"
++		"  srk_index     integer SRK index (typically 0)\n",
++		prog, prog);
++	exit(1);
++}
++
++int main(int argc, char *argv[])
++{
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++
++	if (argc < 2)
++		usage(argv[0]);
++
++	open_ta_session(&ctx, &sess);
++
++	if (strcmp(argv[1], "encrypt") == 0) {
++		uint64_t owner_id;
++		uint32_t srk_index;
++
++		if (argc != 6)
++			usage(argv[0]);
++		owner_id  = strtoull(argv[2], NULL, 16);
++		srk_index = (uint32_t)strtoul(argv[3], NULL, 0);
++		do_encrypt(&ctx, &sess, owner_id, srk_index, argv[4], argv[5]);
++	} else if (strcmp(argv[1], "decrypt") == 0) {
++		if (argc != 4)
++			usage(argv[0]);
++		do_decrypt(&ctx, &sess, argv[2], argv[3]);
++	} else {
++		usage(argv[0]);
++	}
++
++	TEEC_CloseSession(&sess);
++	TEEC_FinalizeContext(&ctx);
++	return 0;
++}
+diff --git a/optee_examples/sdm_crypt/ta/Android.mk b/optee_examples/sdm_crypt/ta/Android.mk
+new file mode 100644
+index 000000000000..b2082c2196d4
+--- /dev/null
++++ b/optee_examples/sdm_crypt/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := 5d050000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_crypt/ta/Makefile b/optee_examples/sdm_crypt/ta/Makefile
+new file mode 100644
+index 000000000000..fcb3cefedfcb
+--- /dev/null
++++ b/optee_examples/sdm_crypt/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_CRYPT_UUID in include/sdm_crypt_ta.h
++BINARY=5d050000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_crypt/ta/include/sdm_crypt_ta.h b/optee_examples/sdm_crypt/ta/include/sdm_crypt_ta.h
+new file mode 100644
+index 000000000000..464aaf8bbb9b
+--- /dev/null
++++ b/optee_examples/sdm_crypt/ta/include/sdm_crypt_ta.h
+@@ -0,0 +1,126 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_crypt TA - public interface shared with the host.
++ *
++ * This Trusted Application is a wrapper around the SDM Services
++ * Pseudo-TA's PTA_CMD_SDM_SDOS_CRYPT.  Unlike the chip-id / id-code
++ * wrappers, the SDOS request has a non-trivial input layout, so the TA
++ * defensively validates the SDOS header and the buffer sizes BEFORE
++ * forwarding the request.  The input is copied into TA-local memory
++ * prior to validation to avoid TOC-TOU re-reads from NW shared memory.
++ *
++ * The host is responsible for constructing the encrypt-input SDOS header
++ * (it knows the owner_id / srk_index / plaintext); the TA only verifies
++ * that what arrives matches the SDOS layout specified in the Security
++ * Methodology UG, Table 49.
++ */
++
++#ifndef TA_SDM_CRYPT_H
++#define TA_SDM_CRYPT_H
++
++#include <stdint.h>
++
++/*
++ * UUID for the sdm_crypt Trusted Application.
++ *
++ * The leading "5d05" is a mnemonic for "SDOS".  This UUID is the binary
++ * name of the .ta file.
++ */
++#define TA_SDM_CRYPT_UUID \
++	{ 0x5d050000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * Direction values for param[0].value.a, matching the PTA's encoding so
++ * the TA can pass the value through unchanged.
++ */
++#define TA_SDM_CRYPT_DIR_DECRYPT	0
++#define TA_SDM_CRYPT_DIR_ENCRYPT	1
++
++/*
++ * TA_SDM_CRYPT_CMD_RUN - Run an SDOS encrypt or decrypt operation.
++ *
++ * param[0] (in value)
++ *   .a = direction: TA_SDM_CRYPT_DIR_ENCRYPT (1) or TA_SDM_CRYPT_DIR_DECRYPT (0)
++ *   .b = unused
++ * param[1] (in memref)  Fully-formatted SDOS input buffer (see layouts below)
++ * param[2] (out memref) Output buffer, pre-allocated by caller
++ *                       On success, memref.size is updated to the actual
++ *                       number of bytes written.
++ * param[3] unused
++ *
++ * Encrypt input layout:
++ *   [sdos_hdr (40 bytes)] [plaintext] [zero-padding (SDOS_PAD_LEN bytes)]
++ *   size = SDOS_HDR_SIZE + data_len
++ * Encrypt output size:
++ *   SDOS_HDR_SIZE + data_len + SDOS_HMAC_SIZE
++ *
++ * Decrypt input layout:
++ *   [sdos_hdr (40 bytes)] [ciphertext + padding] [HMAC (48 bytes)]
++ *   size = SDOS_HDR_SIZE + data_len + SDOS_HMAC_SIZE
++ * Decrypt output size:
++ *   SDOS_HDR_SIZE + data_len   (header + plaintext + padding)
++ *
++ * Result:
++ *   TEE_SUCCESS                  - operation completed; out memref.size set
++ *   TEE_ERROR_BAD_PARAMETERS     - param type / size / direction / null check
++ *   TEE_ERROR_BAD_FORMAT         - sdos_hdr magic / hdr_pad / data_len / iv invalid
++ *   TEE_ERROR_SHORT_BUFFER       - output memref too small for the operation
++ *   TEE_ERROR_OUT_OF_MEMORY      - TA-local copy allocation failed
++ *   TEE_ERROR_GENERIC / TEE_ERROR_BUSY
++ *                                - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_CRYPT_CMD_RUN		0
++
++/* ---------------------------------------------------------------------------
++ * SDOS layout constants & sdos_hdr structure
++ *
++ * Re-exported from the SDM PTA (pta_sdm_svc.h) so that NW callers of this
++ * TA do not need to pull in OP-TEE OS internal headers.  When this header
++ * is consumed inside the TA (which also includes pta_sdm_svc.h from the
++ * TA dev kit) the duplicated definitions are suppressed via the PTA
++ * header's include guard.  Keep these values in sync with the PTA.
++ * ---------------------------------------------------------------------------
++ */
++
++#ifndef __PTA_SDM_SVC_H
++
++#define SDOS_HDR_SIZE			40
++#define SDOS_HMAC_SIZE			48
++#define SDOS_ENCRYPT_IN_MAGIC		0xACBDBDEDU
++#define SDOS_ENCRYPT_OUT_MAGIC		0x53424212U
++#define SDOS_HDR_PAD_MAGIC		0x01020304U
++
++/* Zero when n is already a multiple of 32, else (32 - n%32). Range [0..31]. */
++#define SDOS_PAD_LEN(n)			(((n) % 32) ? (32 - ((n) % 32)) : 0)
++
++/* data_len (= plaintext + padding) must lie in this range. */
++#define SDOS_MIN_DATA_LEN		32U
++#define SDOS_MAX_DATA_LEN		(32U * 1024U - 96U)	/* 32,672 bytes */
++
++#define SDOS_FLAGS(asoi, srk_index, pad_len) \
++	(((uint32_t)(asoi) << 16) | \
++	 ((uint32_t)(srk_index) << 8) | \
++	 (uint32_t)(pad_len))
++
++/*
++ * SDOS 40-byte header - placed at offset 0 of the encrypt/decrypt buffer.
++ * Fields are little-endian 32-bit words; total size is exactly SDOS_HDR_SIZE.
++ */
++struct sdos_hdr {
++	uint32_t magic;		/* SDOS_ENCRYPT_IN_MAGIC or SDOS_ENCRYPT_OUT_MAGIC */
++	uint32_t data_len;	/* plaintext_len + pad_len  (multiple of 32) */
++	uint32_t flags;		/* SDOS_FLAGS(asoi, srk_index, pad_len) */
++	uint32_t owner_id[2];	/* 8-byte owner ID, little-endian */
++	uint32_t hdr_pad;	/* must be SDOS_HDR_PAD_MAGIC (0x01020304) */
++	uint32_t iv[4];		/* {0} on encrypt input, filled by SDM on output */
++};
++
++#endif /* __PTA_SDM_SVC_H */
++
++/* Always-available helper - extracts pad_len from sdos_hdr.flags */
++#define SDOS_FLAGS_PAD_LEN(flags)	((uint32_t)(flags) & 0xFFU)
++
++#endif /* TA_SDM_CRYPT_H */
+diff --git a/optee_examples/sdm_crypt/ta/sdm_crypt_ta.c b/optee_examples/sdm_crypt/ta/sdm_crypt_ta.c
+new file mode 100644
+index 000000000000..d8400d7c31ac
+--- /dev/null
++++ b/optee_examples/sdm_crypt/ta/sdm_crypt_ta.c
+@@ -0,0 +1,433 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_crypt Trusted Application.
++ *
++ * Wraps PTA_CMD_SDM_SDOS_CRYPT, adding defensive input validation that the
++ * PTA itself does not perform:
++ *
++ *   1. Verify the GP-TEE parameter types and the direction value.
++ *   2. Copy the input buffer from NW shared memory to a TA-local heap
++ *      buffer (TOC-TOU protection: NW cannot mutate the data after the
++ *      TA has validated it).
++ *   3. Inspect the SDOS header against the Security Methodology UG
++ *      (Table 49) layout for the requested direction:
++ *        - magic / hdr_pad sentinel words
++ *        - data_len range, 32-byte alignment, internal size consistency
++ *        - pad_len consistency with flags
++ *        - IV zero-initialisation (encrypt only)
++ *   4. Verify that the output memref is large enough for the operation.
++ *   5. Forward the validated TA-local input + the original NW output
++ *      memref to PTA_CMD_SDM_SDOS_CRYPT.
++ *   6. Return the PTA's status, propagating the output size into the
++ *      caller's memref.
++ *
++ * The TA caches a single PTA session in TA_OpenSessionEntryPoint() so the
++ * per-invocation cost stays low; the API version check is done once at
++ * session open and the session is closed when the host releases it.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_crypt_ta.h>
++
++/* Per-session context: handle to the open PTA_SDM_SVC session */
++struct crypt_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle - opens / closes the PTA session, verifies API version
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_crypt TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_crypt TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct crypt_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_crypt TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct crypt_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_crypt TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * SDOS header validators
++ *
++ * These run on the TA-local copy of the input buffer, so the values
++ * cannot be changed by the NW caller after the checks complete.
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result check_common_hdr(const struct sdos_hdr *hdr,
++				   uint32_t expected_magic)
++{
++	uint32_t pad_len = 0;
++
++	if (hdr->magic != expected_magic) {
++		EMSG("SDOS hdr: bad magic 0x%08x (expected 0x%08x)",
++		     hdr->magic, expected_magic);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (hdr->hdr_pad != SDOS_HDR_PAD_MAGIC) {
++		EMSG("SDOS hdr: bad hdr_pad 0x%08x (expected 0x%08x)",
++		     hdr->hdr_pad, SDOS_HDR_PAD_MAGIC);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (hdr->data_len < SDOS_MIN_DATA_LEN ||
++	    hdr->data_len > SDOS_MAX_DATA_LEN) {
++		EMSG("SDOS hdr: data_len %u out of range [%u..%u]",
++		     hdr->data_len, SDOS_MIN_DATA_LEN, SDOS_MAX_DATA_LEN);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (hdr->data_len % 32U) {
++		EMSG("SDOS hdr: data_len %u not multiple of 32",
++		     hdr->data_len);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	pad_len = SDOS_FLAGS_PAD_LEN(hdr->flags);
++	if (pad_len > 31U) {
++		EMSG("SDOS hdr: pad_len %u > 31", pad_len);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (pad_len >= hdr->data_len) {
++		EMSG("SDOS hdr: pad_len %u >= data_len %u (no payload)",
++		     pad_len, hdr->data_len);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	return TEE_SUCCESS;
++}
++
++static TEE_Result validate_encrypt(const struct sdos_hdr *hdr,
++				   size_t in_size, size_t out_size)
++{
++	TEE_Result res = check_common_hdr(hdr, SDOS_ENCRYPT_IN_MAGIC);
++	size_t expected_in = 0;
++	size_t expected_out = 0;
++	size_t i = 0;
++
++	if (res != TEE_SUCCESS)
++		return res;
++
++	expected_in = (size_t)SDOS_HDR_SIZE + hdr->data_len;
++	if (in_size != expected_in) {
++		EMSG("encrypt: in_size %zu != hdr (%u + %u = %zu)",
++		     in_size, (unsigned)SDOS_HDR_SIZE, hdr->data_len,
++		     expected_in);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	expected_out = expected_in + (size_t)SDOS_HMAC_SIZE;
++	if (out_size < expected_out) {
++		EMSG("encrypt: out_size %zu < %zu (hdr + data + hmac)",
++		     out_size, expected_out);
++		return TEE_ERROR_SHORT_BUFFER;
++	}
++
++	/* IV must be all-zero on encrypt input - SDM fills it in the output */
++	for (i = 0; i < sizeof(hdr->iv) / sizeof(hdr->iv[0]); i++) {
++		if (hdr->iv[i] != 0) {
++			EMSG("encrypt: iv[%zu] = 0x%08x must be 0", i,
++			     hdr->iv[i]);
++			return TEE_ERROR_BAD_FORMAT;
++		}
++	}
++
++	return TEE_SUCCESS;
++}
++
++static TEE_Result validate_decrypt(const struct sdos_hdr *hdr,
++				   size_t in_size, size_t out_size)
++{
++	TEE_Result res = check_common_hdr(hdr, SDOS_ENCRYPT_OUT_MAGIC);
++	size_t expected_in = 0;
++	size_t expected_out = 0;
++
++	if (res != TEE_SUCCESS)
++		return res;
++
++	expected_in = (size_t)SDOS_HDR_SIZE + hdr->data_len +
++		      (size_t)SDOS_HMAC_SIZE;
++	if (in_size != expected_in) {
++		EMSG("decrypt: in_size %zu != hdr + data + hmac (%zu)",
++		     in_size, expected_in);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	/* PTA returns the full SDOS structure: hdr + plaintext + padding */
++	expected_out = (size_t)SDOS_HDR_SIZE + hdr->data_len;
++	if (out_size < expected_out) {
++		EMSG("decrypt: out_size %zu < %zu (hdr + data)",
++		     out_size, expected_out);
++		return TEE_ERROR_SHORT_BUFFER;
++	}
++
++	return TEE_SUCCESS;
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate then forward to PTA_CMD_SDM_SDOS_CRYPT
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_sdos_crypt(struct crypt_sess_ctx *ctx,
++				uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++						TEE_PARAM_TYPE_MEMREF_INPUT,
++						TEE_PARAM_TYPE_MEMREF_OUTPUT,
++						TEE_PARAM_TYPE_NONE);
++	void *ns_in = NULL;
++	void *ns_out = NULL;
++	size_t in_size = 0;
++	size_t out_size = 0;
++	uint32_t direction = 0;
++	void *local_in = NULL;
++	const struct sdos_hdr *hdr = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	direction = params[0].value.a;
++	ns_in     = params[1].memref.buffer;
++	in_size   = params[1].memref.size;
++	ns_out    = params[2].memref.buffer;
++	out_size  = params[2].memref.size;
++
++	if (direction != TA_SDM_CRYPT_DIR_DECRYPT &&
++	    direction != TA_SDM_CRYPT_DIR_ENCRYPT) {
++		EMSG("bad direction %u", direction);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (!ns_in || !in_size || !ns_out || !out_size) {
++		EMSG("null/zero memref: in=%p (%zu) out=%p (%zu)",
++		     ns_in, in_size, ns_out, out_size);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (in_size < (size_t)SDOS_HDR_SIZE) {
++		EMSG("in_size %zu < SDOS_HDR_SIZE (%u)", in_size,
++		     (unsigned)SDOS_HDR_SIZE);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	/*
++	 * Verify that all in_size bytes of the NW source pointer are
++	 * actually readable by this TA before we dereference it.  The
++	 * client framework already maps params[1] for us, but an explicit
++	 * GP-TEE access-rights check is cheap and turns a hypothetical
++	 * "lying memref size / unmapped page" condition into a clean
++	 * TEE_ERROR_ACCESS_DENIED instead of a secure-world fault during
++	 * the copy below.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_in, in_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("input memref not readable: in=%p size=%zu res=0x%08x",
++		     ns_in, in_size, res);
++		return res;
++	}
++
++	/*
++	 * Likewise validate the output buffer once for write access.  The
++	 * TA itself never writes through ns_out, but it forwards the
++	 * memref to the PTA; failing here gives the host a precise error
++	 * before the SDM is even contacted.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_WRITE |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_out, out_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("output memref not writable: out=%p size=%zu res=0x%08x",
++		     ns_out, out_size, res);
++		return res;
++	}
++
++	/*
++	 * Copy the NW input into TA-local memory so subsequent validation
++	 * reads cannot race with a malicious NW thread that mutates the
++	 * shared buffer.  All header field accesses below read from local_in.
++	 */
++	local_in = TEE_Malloc(in_size, 0);
++	if (!local_in) {
++		EMSG("alloc local_in (%zu) failed", in_size);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	/*
++	 * Bounded move: destination has exactly in_size bytes (just
++	 * allocated above) and the source has been just verified for
++	 * in_size readable bytes.  TEE_MemMove is the GP-TEE-defined
++	 * bounded copy primitive.
++	 */
++	TEE_MemMove(local_in, ns_in, in_size);
++
++	hdr = (const struct sdos_hdr *)local_in;
++
++	if (direction == TA_SDM_CRYPT_DIR_ENCRYPT)
++		res = validate_encrypt(hdr, in_size, out_size);
++	else
++		res = validate_decrypt(hdr, in_size, out_size);
++
++	if (res != TEE_SUCCESS) {
++		/*
++		 * Wipe before free even on the validation-failure path:
++		 * a malformed-but-readable plaintext copy still lives in
++		 * local_in and must not be left in recycled heap pages.
++		 */
++		TEE_MemFill(local_in, 0, in_size);
++		TEE_Free(local_in);
++		return res;
++	}
++
++	DMSG("sdm_crypt: %s validated (in=%zu out=%zu data_len=%u pad=%u)",
++	     direction == TA_SDM_CRYPT_DIR_ENCRYPT ? "encrypt" : "decrypt",
++	     in_size, out_size, hdr->data_len,
++	     SDOS_FLAGS_PAD_LEN(hdr->flags));
++
++	/* Forward to PTA: validated TA-local input, original NW output */
++	pta_params[0].value.a = direction;
++	pta_params[1].memref.buffer = local_in;
++	pta_params[1].memref.size   = in_size;
++	pta_params[2].memref.buffer = ns_out;
++	pta_params[2].memref.size   = out_size;
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_SDOS_CRYPT, exp_pt,
++				  pta_params, &pta_origin);
++
++	/* Propagate the PTA's actual output size back to the host */
++	params[2].memref.size = pta_params[2].memref.size;
++
++	/*
++	 * Wipe local_in before returning it to the TA heap.  On encrypt it
++	 * holds the caller's plaintext; on decrypt the SDOS ciphertext.
++	 * TEE_MemFill is followed by TEE_Free (an external call) so the
++	 * compiler is not allowed to elide the wipe.
++	 */
++	TEE_MemFill(local_in, 0, in_size);
++	TEE_Free(local_in);
++
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_SDOS_CRYPT failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_crypt: %s OK, out=%zu bytes",
++	     direction == TA_SDM_CRYPT_DIR_ENCRYPT ? "encrypt" : "decrypt",
++	     (size_t)params[2].memref.size);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct crypt_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_CRYPT_CMD_RUN:
++		return do_sdos_crypt(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_crypt/ta/sub.mk b/optee_examples/sdm_crypt/ta/sub.mk
+new file mode 100644
+index 000000000000..7e6f684b6630
+--- /dev/null
++++ b/optee_examples/sdm_crypt/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_crypt_ta.c
+diff --git a/optee_examples/sdm_crypt/ta/user_ta_header_defines.h b/optee_examples/sdm_crypt/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..24bb7a42245c
+--- /dev/null
++++ b/optee_examples/sdm_crypt/ta/user_ta_header_defines.h
+@@ -0,0 +1,39 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_crypt_ta.h>
++
++#define TA_UUID			TA_SDM_CRYPT_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(4 * 1024)
++
++/*
++ * Heap large enough to hold the worst-case TOC-TOU input copy:
++ *   decrypt input = SDOS_HDR_SIZE + SDOS_MAX_DATA_LEN + SDOS_HMAC_SIZE
++ *                 = 40 + 32672 + 48 = 32760 bytes
++ * plus normal TEE_Malloc bookkeeping overhead.  128 KB gives ample margin
++ * and matches what other validating TAs in this tree use.
++ */
++#define TA_DATA_SIZE		(128 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM SDOS encrypt/decrypt wrapper TA (PTA_SDM_SVC)"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_crypt.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Validates and forwards SDOS encrypt/decrypt to PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

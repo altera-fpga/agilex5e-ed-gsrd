@@ -1,0 +1,137 @@
+amp_bao: fix Bao self-coloring boot hang (root pool bitmap relocation)
+
+With hypervisor self-coloring (config.hyp.colors, BAO_HYP_COLORING=1),
+mem_color_hypervisor() aborted in its bitmap-relocation step and hung
+before console_init() (no UART). Root cause: upstream copies the root
+page-pool bitmap as a *standalone* SEC_HYP_GLOBAL region and remaps it at
+its original VA. On this build the bitmap is a static .bss array
+(pp_bitmap_alloc()) that lives *inside* the Bao image, so that VA already
+belongs to SEC_HYP_IMAGE; mem_alloc_vpage() returns INVALID_VA and the
+"Can't allocate address" ERROR() spins in console_write() pre-console.
+
+The bitmap is already carried into the colored image by the existing
+copy_space(&_image_start, ...). The only thing the early image snapshot
+misses is the page-table pages allocated afterwards to map the image into
+cpu_new->as. Since the bitmap tracks every physical allocation, refresh
+the colored copy from the now-final live bitmap by re-copying the whole
+image over copy_space()'s existing temporary mapping (image_cpy), once,
+after the barrier when all allocations are complete. This needs no new
+allocation (avoiding the self-referential page-table race that a manual
+per-page remap hits) and is cleaned to the PoC.
+
+Also drop the matching phantom-bitmap cleanup near the end: on this build
+the old bitmap copy is reclaimed by the image-noload cleanup, so freeing
+a separate range there would corrupt live colored pool memory.
+
+This is the second of the two required functional fixes for hyp
+self-coloring; it builds on the image_cpy handle introduced by 0008 (the
+I-cache fix). Together 0008+0009 are sufficient to boot a fully colored Bao;
+patches 0010-0012 are optional debug aids only.
+
+diff --git a/src/core/mmu/mem.c b/src/core/mmu/mem.c
+index 2b1cca6..57290d5 100644
+--- a/src/core/mmu/mem.c
++++ b/src/core/mmu/mem.c
+@@ -747,19 +747,22 @@ void mem_color_hypervisor(const paddr_t load_addr, struct mem_region* root_regio
+     struct cpu* cpu_new;
+     struct ppages p_cpu;
+     struct ppages p_image;
+-    struct ppages p_bitmap;
++    void* image_cpy = NULL;
+ 
+     size_t image_load_size = (size_t)(&_image_load_end - &_image_start);
+     size_t image_noload_size = (size_t)(&_image_end - &_image_load_end);
+     size_t image_size = image_load_size + image_noload_size;
+     size_t vm_image_size = (size_t)(&_vm_image_end - &_vm_image_start);
+     size_t cpu_boot_size = mem_cpu_boot_alloc_size();
+-    struct page_pool* root_pool = &root_region->page_pool;
+-    size_t bitmap_size =
+-        (root_pool->num_pages / (8 * PAGE_SIZE) + !!(root_pool->num_pages % (8 * PAGE_SIZE) != 0)) *
+-        PAGE_SIZE;
+     colormap_t colors = config.hyp.colors;
+ 
++    /*
++     * root_region is unused on this build: the root page-pool bitmap lives in
++     * .bss inside the Bao image (pp_bitmap_alloc()) and is relocated together
++     * with the image, so no standalone bitmap region is derived from it here.
++     */
++    (void)root_region;
++
+     /* Set hypervisor colors in current address space */
+     cpu()->as.colors = config.hyp.colors;
+ 
+@@ -804,7 +807,7 @@ void mem_color_hypervisor(const paddr_t load_addr, struct mem_region* root_regio
+      * to access it.
+      */
+     if (cpu_is_master()) {
+-        void* image_cpy = copy_space(&_image_start, image_size, &p_image);
++        image_cpy = copy_space(&_image_start, image_size, &p_image);
+         /*
+          * copy_space() relocates the hypervisor image (including .text) with a
+          * data-side memcpy only. Clean the freshly written copy to the PoC so
+@@ -844,16 +847,32 @@ void mem_color_hypervisor(const paddr_t load_addr, struct mem_region* root_regio
+      * thing to be copied, as after that, no physical allocation will be tracked.
+      */
+     if (cpu_is_master()) {
+-        /* Copy root pool bitmap */
+-        copy_space((void*)root_pool->bitmap, bitmap_size, &p_bitmap);
+-        va = mem_alloc_vpage(&cpu_new->as, SEC_HYP_GLOBAL, (vaddr_t)root_pool->bitmap,
+-            NUM_PAGES(bitmap_size));
+-
+-        if (va != (vaddr_t)root_pool->bitmap) {
+-            ERROR("Can't allocate address for cpu interface");
+-        }
+-
+-        mem_map(&cpu_new->as, va, &p_bitmap, NUM_PAGES(bitmap_size), PTE_HYP_FLAGS);
++        /*
++         * Finalize the colored image's copy of the root page pool bitmap.
++         *
++         * On this build the bitmap is a static array in .bss (pp_bitmap_alloc()),
++         * i.e. it lives *inside* the Bao image, so it was already relocated by the
++         * copy_space(&_image_start, ...) above and is mapped in cpu_new->as as part
++         * of SEC_HYP_IMAGE. Upstream instead copies the bitmap as a standalone
++         * SEC_HYP_GLOBAL region; that fails here because the bitmap's VA already
++         * belongs to SEC_HYP_IMAGE (mem_alloc_vpage() returns INVALID_VA, which is
++         * what tripped the original "Can't allocate address" abort and pre-console
++         * hang).
++         *
++         * The wrinkle is that the bitmap tracks every physical allocation, but the
++         * image was snapshotted early (right before the copy), before the
++         * page-table pages used to map the image into cpu_new->as were allocated.
++         * Now that we are past the barrier, every core's allocations are complete
++         * and the live bitmap is final, so simply re-copy the whole image over the
++         * temporary mapping that copy_space() already left behind (image_cpy). This
++         * refreshes the colored bitmap (and the rest of .data/.bss) with no further
++         * allocation -- avoiding the self-referential page-table race that a manual
++         * per-page remap hits -- and is then cleaned to the PoC. This block is
++         * master-only and the only post-barrier work, so the live bitmap cannot
++         * change underneath the copy.
++         */
++        memcpy(image_cpy, &_image_start, image_size);
++        cache_flush_range((vaddr_t)image_cpy, image_size);
+     }
+     cpu_sync_barrier(&cpu_glb_sync);
+ 
+@@ -903,14 +922,14 @@ void mem_color_hypervisor(const paddr_t load_addr, struct mem_region* root_regio
+         memset((void*)va, 0, p_image.num_pages * PAGE_SIZE);
+         mem_unmap(&cpu()->as, va, p_image.num_pages, MEM_FREE_PAGES);
+ 
+-        p_bitmap = mem_ppages_get(load_addr + image_size + vm_image_size +
+-                (cpu_boot_size * platform.cpu_num),
+-            NUM_PAGES(bitmap_size));
+-
+-        va = mem_alloc_vpage(&cpu()->as, SEC_HYP_GLOBAL, INVALID_VA, p_bitmap.num_pages);
+-        mem_map(&cpu()->as, va, &p_bitmap, p_bitmap.num_pages, PTE_HYP_FLAGS);
+-        memset((void*)va, 0, p_bitmap.num_pages * PAGE_SIZE);
+-        mem_unmap(&cpu()->as, va, p_bitmap.num_pages, MEM_FREE_PAGES);
++        /*
++         * NOTE: upstream additionally zeroes+frees a standalone root-pool bitmap
++         * region at load_addr+image_size+vm_image_size+cpu_boot_size*cpu_num. On
++         * this build the bitmap lives in .bss inside the image, so its old copy was
++         * already zeroed and freed by the image-noload cleanup just above; there is
++         * no separate region to reclaim. Freeing that phantom range would corrupt
++         * live colored pool memory, so it is intentionally omitted.
++         */
+     }
+ 
+     p_cpu = mem_ppages_get(load_addr + image_size + vm_image_size + (cpu_boot_size * cpu()->id),

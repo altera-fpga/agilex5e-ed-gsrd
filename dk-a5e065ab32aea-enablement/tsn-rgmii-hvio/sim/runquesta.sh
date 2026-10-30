@@ -8,7 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DESIGN_ROOT_DIR="$(realpath $SCRIPT_DIR/..)"
 
 # Toplevel sim script generation
-SIM_SCRIPT_GEN_DIR=$DESIGN_ROOT_DIR/tsn_rgmii_hvio_top/sim
+SIM_SCRIPT_GEN_DIR=$DESIGN_ROOT_DIR/sim_setup_tsn_rgmii_hvio
+VDS_TOP_SIM_DIR=$DESIGN_ROOT_DIR/gen/vds/tsn_rgmii_hvio_top/sim
 
 # # TOP-LEVEL TEMPLATE - BEGIN
 # #
@@ -63,6 +64,23 @@ SIM_SCRIPT_GEN_DIR=$DESIGN_ROOT_DIR/tsn_rgmii_hvio_top/sim
 # #
 # # TOP-LEVEL TEMPLATE - END
 
+# Ensure nios_mem.hex is present in *this* simulation run directory.
+if [ ! -f "nios_mem.hex" ]; then
+  echo "INFO: nios_mem.hex not found in $(pwd). Searching under DESIGN_ROOT_DIR=$DESIGN_ROOT_DIR"
+  NIOS_HEX_PATH="$(
+    find "$DESIGN_ROOT_DIR" \
+      -type d \( -name .git -o -name sim_setup_tsn_rgmii_hvio -o -name work -o -name output_files \) -prune -false \
+      -o -type f -name "nios_mem.hex" -print \
+    | head -n 1
+  )"
+  if [ -z "${NIOS_HEX_PATH}" ]; then
+    echo "ERROR: Could not locate nios_mem.hex anywhere under: $DESIGN_ROOT_DIR" >&2
+    exit 2
+  fi
+  echo "INFO: Found nios_mem.hex at: ${NIOS_HEX_PATH}"
+  cp -f "${NIOS_HEX_PATH}" "./nios_mem.hex"
+fi
+
 # vsim option
 # 	-c   runs the simulator in console mode
 # 	-gui launches the simulator in GUI mode
@@ -72,19 +90,22 @@ vsim -c -do "
 	set TOP_LEVEL_NAME testbench;
 	dev_com;
 	com;
+	set VDS_TOP_SIM_DIR $DESIGN_ROOT_DIR/gen/vds/tsn_rgmii_hvio_top/sim;
+	set QSYS_SIMDIR $VDS_TOP_SIM_DIR;
+	source $VDS_TOP_SIM_DIR/mentor/msim_setup.tcl;
+	com;
 	vlog -sv $DESIGN_ROOT_DIR/src/debounce.sv;
 	vlog -sv $DESIGN_ROOT_DIR/src/clocks_and_resets.sv;
 	vlog -sv $DESIGN_ROOT_DIR/tsn_rgmii_hvio.sv;
 	vlog -sv ./hps_h2f_pkg.sv;
 	vlog -sv ./hps_h2f_lw_pkg.sv;
 	vlog -sv -timescale 1ps/1ps ./tsn_rgmii_hvio_tb.sv -L altera_lnsim_ver;
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/sim/sys_pll.v;
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/sim/user_rst_clkgate.v;
-	vlog -sv $DESIGN_ROOT_DIR/ip/shell_subsys/user_rst_clkgate/intel_user_rst_clkgate_101/sim/intel_user_rst_clkgate.sv;
-	vlog $DESIGN_ROOT_DIR/ip/shell_subsys/sys_pll/altera_iopll_*/synth/sys_pll_altera_iopll_*.v;
-	vlog $DESIGN_ROOT_DIR/ip/ddr_gpio/sim/ddr_gpio.v;
-	vlog $DESIGN_ROOT_DIR/ip/ddr_gpio/altera_gpio_2300/sim/ddr_gpio_altera_gpio_2300_*.v;
-
+	vlog $DESIGN_ROOT_DIR/src/ip/sys_pll/sim/sys_pll.v;
+	vlog $DESIGN_ROOT_DIR/src/ip/user_rst_clkgate/sim/user_rst_clkgate.v;
+	vlog -sv $DESIGN_ROOT_DIR/src/ip/user_rst_clkgate/intel_user_rst_clkgate_101/sim/intel_user_rst_clkgate.sv;
+	vlog $DESIGN_ROOT_DIR/src/ip/sys_pll/altera_iopll_*/synth/sys_pll_altera_iopll_*.v;
+	vlog $DESIGN_ROOT_DIR/src/ip/ddr_gpio/sim/ddr_gpio.v;
+	vlog $DESIGN_ROOT_DIR/src/ip/ddr_gpio/altera_gpio_2300/sim/ddr_gpio_altera_gpio_2300_*.v;
 	set USER_DEFINED_ELAB_OPTIONS \"-suppress 14408,16154 -voptargs=-svext=+adta\";
 	elab_debug;
 	run -all"

@@ -1,0 +1,42 @@
+header:
+  version: 17
+
+repos:
+  meta-openembedded:
+    url: https://github.com/openembedded/meta-openembedded
+    branch: wrynose
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+      meta-filesystems:
+  meta-virtualization:
+    url: https://git.yoctoproject.org/meta-virtualization
+    branch: wrynose
+
+env:
+    DOCKER_USERNAME: null
+    DOCKER_PASSWORD: null
+    REGISTRY_USERNAME: null
+    REGISTRY_PASSWORD: null
+    ftp_proxy: null
+    http_proxy: null
+    https_proxy: null
+    DOCKER_CREDENTIALS_FILE: null
+    DOCKER_IMAGES_OVERRIDE_FILE: null
+    DOCKER_STATE_START_DAEMON: null
+    DOCKER_LIST_IMAGES: null
+    DOCKER_LIST_RUN_ARGS: null
+    DOCKER_BOOT_WAIT_ITER: null
+    BB_ENVIRONMENT_PASSTHROUGH_ADDITIONS: 'http_proxy https_proxy ftp_proxy DOCKER_USERNAME DOCKER_PASSWORD REGISTRY_USERNAME REGISTRY_PASSWORD DOCKER_CREDENTIALS_FILE DOCKER_IMAGES_OVERRIDE_FILE DOCKER_STATE_START_DAEMON DOCKER_LIST_IMAGES DOCKER_LIST_RUN_ARGS DOCKER_BOOT_WAIT_ITER'
+
+local_conf_header:
+  docker-support: |
+    VIRTUALIZATION_PROFILE = "docker"
+    DISTRO_FEATURES:append = " virtualization"
+    IMAGE_INSTALL:append = " docker docker-container-support"
+    IMAGE_FEATURES += " ssh-server-openssh"
+    SD_ONLY = "1"
+    HOSTTOOLS:append = " python3 tar sed"
+    DOCKER_BUILD = "1"
+    DOCKER_BOOT_WAIT_ITER ?= "60"

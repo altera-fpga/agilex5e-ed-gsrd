@@ -1,0 +1,135 @@
+cmake_minimum_required(VERSION 3.14...3.28)
+
+# ---------------------------------------------------------------------------
+# HPS Baremetal Hello World - QSPI boot example (DDR)
+#
+# With build.sh, produces baremetal.elf and a bootable QSPI JIC:
+#   ATF BL2 (FSBL, embedded in the SOF) -> BL31 (in fip.bin) -> application.
+# For SD boot see CMakeLists_sd.txt; build.sh stages the selected file as
+# CMakeLists.txt via BOOT_SOURCE_TYPE.
+# ---------------------------------------------------------------------------
+
+# main.c lives in the example source tree; build.sh stages this file into the
+# build dir and passes -DEXAMPLE_ROOT. Default to this dir for a direct configure.
+if(NOT DEFINED EXAMPLE_ROOT)
+    set(EXAMPLE_ROOT "${CMAKE_CURRENT_LIST_DIR}")
+endif()
+
+# Baremetal config
+set(PLAT            "agilex5" CACHE STRING "Target platform")
+set(BUILD_MODE      "DDR"     CACHE STRING "Memory layout: OCRAM or DDR")
+
+# Fetch the baremetal repo
+include(FetchContent)
+FetchContent_Declare(
+    baremetal
+    GIT_REPOSITORY https://github.com/altera-fpga/baremetal-drivers.git
+    GIT_TAG        66bdcc347564c5698a8997169bce83a31647d618
+)
+FetchContent_MakeAvailable(baremetal)
+FetchContent_GetProperties(baremetal)
+
+# Add project
+project(hps_baremetal C ASM)
+
+add_executable(${PROJECT_NAME}.elf)
+
+# Build flags
+target_compile_options(${PROJECT_NAME}.elf PRIVATE
+    # Keep printf("...\n") from becoming puts() (no puts in -nostdlib build).
+    -fno-builtin-printf
+)
+
+# Generate .bin/.hex/.dump via the baremetal repo helper
+bm_generate_artifacts(${PROJECT_NAME}.elf)
+
+# Link baremetal. Mirror the km-hps ELF's own library set; --start-group/
+# --end-group resolves the cross-archive references between them. bm_app carries
+# the freestanding lib/ (string/printf/parse/time), i.e. memcpy, memset, cstrcmp,
+# lib_vprintf, parse_hex/parse_dec and clock_ticks/ticks_to_* used by bm_api.
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE
+    -Wl,--start-group
+    bm_app
+    platform
+    bm_api
+    -Wl,--end-group
+)
+
+# Sources
+target_sources(${PROJECT_NAME}.elf PRIVATE
+    "${EXAMPLE_ROOT}/main.c"
+    "${baremetal_SOURCE_DIR}/src/crt0.c"
+    "${baremetal_SOURCE_DIR}/src/startup.S"
+    "${baremetal_SOURCE_DIR}/src/vectors.S"
+    "${baremetal_SOURCE_DIR}/examples/hello/hello_selftest.c"
+)
+
+# hello_selftest.c pulls in examples/example_register.h and api/console/
+# console_api.h -> lib_parse.h. km-hps sets include/ and lib/ globally for its
+# own targets, but those don't propagate to this downstream target, so add them
+# here alongside examples/ (api/ and platform/ come via the linked libraries).
+target_include_directories(${PROJECT_NAME}.elf PRIVATE
+    "${baremetal_SOURCE_DIR}/examples"
+    "${baremetal_SOURCE_DIR}/lib"
+)
+
+# Link options. LD_SCRIPT is resolved from BUILD_MODE by the baremetal library.
+target_link_options(${PROJECT_NAME}.elf PRIVATE
+    -T "${LD_SCRIPT}"
+    -nostdlib
+    -no-pie
+    -Wl,-L${baremetal_SOURCE_DIR}
+    -Wl,-Map=${CMAKE_BINARY_DIR}/${PROJECT_NAME}.map
+)
+
+# ---------------------------------------------------------------------------
+# Boot image (QSPI JIC)
+# ATF machinery lives in the baremetal repo (cmake/bm_boot.cmake); here we wire
+# bl2/bl31 + fiptool into fip.bin, and build.sh runs quartus_pfg for the JIC.
+# ---------------------------------------------------------------------------
+include("${baremetal_SOURCE_DIR}/cmake/bm_boot.cmake")
+
+set(FPGA_BINARIES_DIR "${CMAKE_BINARY_DIR}/fpga_binaries")
+
+# Copy ATF QSPI bl2.bin/bl31.bin into fpga_binaries. Kept as two single-output
+# commands so parallel (-j) consumers don't collide on a shared copy step.
+add_custom_command(
+    OUTPUT "${FPGA_BINARIES_DIR}/bl2.bin"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${FPGA_BINARIES_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${QSPI_ARTIFACTS_DIR}/bl2.bin"  "${FPGA_BINARIES_DIR}/bl2.bin"
+    DEPENDS atf-bl2-bl31-qspi
+    COMMENT "Copying ATF bl2.bin to fpga_binaries"
+)
+add_custom_command(
+    OUTPUT "${FPGA_BINARIES_DIR}/bl31.bin"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${FPGA_BINARIES_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${QSPI_ARTIFACTS_DIR}/bl31.bin" "${FPGA_BINARIES_DIR}/bl31.bin"
+    DEPENDS atf-bl2-bl31-qspi
+    COMMENT "Copying ATF bl31.bin to fpga_binaries"
+)
+
+# Convert bl2.bin -> bl2.hex (embedded into the FPGA SOF as the FSBL).
+add_custom_command(
+    OUTPUT "${FPGA_BINARIES_DIR}/bl2.hex"
+    COMMAND ${CMAKE_OBJCOPY}
+            -I binary -O ihex --change-addresses 0x0
+            "${FPGA_BINARIES_DIR}/bl2.bin"
+            "${FPGA_BINARIES_DIR}/bl2.hex"
+    DEPENDS "${FPGA_BINARIES_DIR}/bl2.bin"
+    COMMENT "Generating bl2.hex"
+)
+add_custom_target(generate-bl2-hex ALL DEPENDS "${FPGA_BINARIES_DIR}/bl2.hex")
+
+# Package BL31 + the application .bin into a Firmware Image Package (fip.bin).
+add_custom_command(
+    OUTPUT "${FPGA_BINARIES_DIR}/fip.bin"
+    COMMAND "${CMAKE_BINARY_DIR}/fiptool" create
+            --soc-fw "${FPGA_BINARIES_DIR}/bl31.bin"
+            --nt-fw  "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin"
+            "${FPGA_BINARIES_DIR}/fip.bin"
+    DEPENDS "${FPGA_BINARIES_DIR}/bl31.bin" atf-fiptool ${PROJECT_NAME}.elf
+    COMMENT "Generating fip.bin"
+)
+add_custom_target(generate-fip ALL DEPENDS "${FPGA_BINARIES_DIR}/fip.bin")

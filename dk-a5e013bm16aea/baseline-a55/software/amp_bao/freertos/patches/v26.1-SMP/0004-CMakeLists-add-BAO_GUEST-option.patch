@@ -1,0 +1,144 @@
+From 29a83c9ea69e1b4ba15607c1f960f019dea3d0b5 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 09:52:00 +0800
+Subject: [PATCH 4/6] CMakeLists: split BAO_GUEST into
+ HV_GUEST_EL1/BIN/NO_CLKMGR + umbrella
+
+The previous single BAO_GUEST option conflated three independent
+concerns: guest enters at EL1 (architectural), image is loaded as a
+raw .bin at a parametric IPA (build plumbing), and clock-manager /
+reset-manager MMIO is not passed through (partition policy). Split
+them into three orthogonal CMake options so other hypervisor ports
+can pick exactly the subset they need:
+
+  HV_GUEST_EL1         guarded by patches 0001 and 0006
+                       (cpu_init.S: skip MSR ICC_SRE_EL2 and the
+                       MSR SP_EL1 / MSR SP_EL0 stack pre-seed).
+  HV_GUEST_BIN         drives the --defsym=HV_GUEST_LOAD_ADDR= and
+                       --defsym=HV_GUEST_MEM_SIZE= injection picked
+                       up by lscript.ld (patch 0002); gates the
+                       SD / QSPI / SOF / PFG image targets
+                       (patch 0005 plus first-party hps-amp apps).
+  HV_GUEST_NO_CLKMGR   guarded by patch 0003 (drivers/uart/
+                       socfpga_uart_ll.c: skip clkmgr / rstmgr
+                       touches and stub uart_set_baud).
+
+BAO_GUEST is now a convenience umbrella that FORCEs all three
+HV_GUEST_* options ON via cache-FORCE sets, plus retains
+add_compile_definitions(BAO_GUEST=1) so first-party hps-amp apps
+can still key Bao-specific glue off the umbrella.
+
+Backwards-compatibility shim: the in-tree hps-amp Makefile passes
+-DBAO_LOAD_ADDR=$(MEM_BASE_INST_0) / -DBAO_MEM_SIZE=$(MEM_SIZE_INST_0)
+to the FreeRTOS CMake invocation (configs/*/config.mk override the
+defaults per topology). If those legacy cache variables are defined
+and the new HV_GUEST_LOAD_ADDR / HV_GUEST_MEM_SIZE are not, mirror
+the values onto the new names so the same invocation produces a
+byte-identical .bin to the pre-rename build.
+
+Backwards compatibility contract:
+  -DBAO_GUEST=ON                       -> byte-identical .bin to the
+  -DBAO_LOAD_ADDR=X -DBAO_MEM_SIZE=Y      pre-rename build (legacy
+                                          cache vars mirrored to the
+                                          new HV_GUEST_* names).
+  All four flags OFF                   -> byte-identical to upstream
+                                          standalone bare-metal.
+---
+ CMakeLists.txt | 81 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 81 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8a73cf6..bbb02d4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -56,6 +56,87 @@ else()
+     message(STATUS "SMP : OFF")
+ endif()
+ 
++# ---------------------------------------------------------------------------
++# Hypervisor-guest build options
++# ---------------------------------------------------------------------------
++# The three HV_GUEST_* flags each enable one independent aspect of
++# hypervisor-guest behaviour. They are orthogonal and hypervisor-agnostic:
++#
++#   HV_GUEST_EL1         architectural: guest enters at EL1; skip MSR SP_EL1,
++#                        MSR SP_EL0, MSR ICC_SRE_EL2 (those require EL2+).
++#   HV_GUEST_BIN         build plumbing: image is a raw .bin loaded at a
++#                        parametric IPA (HV_GUEST_LOAD_ADDR /
++#                        HV_GUEST_MEM_SIZE injected via --defsym=); skip
++#                        the SD / QSPI / SOF / PFG image targets.
++#   HV_GUEST_NO_CLKMGR   partition policy: clock-manager and reset-manager
++#                        MMIO are NOT mapped to this guest; compile out the
++#                        clkmgr / rstmgr touches in the UART low-level driver
++#                        and stub uart_set_baud.
++#
++# BAO_GUEST is a convenience umbrella: when ON it FORCEs all three
++# HV_GUEST_* options ON via cache-FORCE sets and additionally enables
++# first-party hps-amp apps to key Bao-specific glue off the umbrella.
++# Existing -DBAO_GUEST=ON invocations stay byte-compatible.
++#
++# When all four flags are OFF (the default) the build is byte-identical
++# to the upstream standalone bare-metal image.
++option(HV_GUEST_EL1       "Guest enters at EL1 (any AArch64 hypervisor)"                       OFF)
++option(HV_GUEST_BIN       "Build as a raw .bin at a parametric IPA (HV_GUEST_LOAD_ADDR/SIZE)" OFF)
++option(HV_GUEST_NO_CLKMGR "Clock/reset manager not passed through to this guest"               OFF)
++option(BAO_GUEST          "Build as a Bao hypervisor guest (umbrella: forces all HV_GUEST_*)" OFF)
++
++if(BAO_GUEST)
++    set(HV_GUEST_EL1       ON CACHE BOOL "Guest enters at EL1 (any AArch64 hypervisor)"                       FORCE)
++    set(HV_GUEST_BIN       ON CACHE BOOL "Build as a raw .bin at a parametric IPA (HV_GUEST_LOAD_ADDR/SIZE)" FORCE)
++    set(HV_GUEST_NO_CLKMGR ON CACHE BOOL "Clock/reset manager not passed through to this guest"               FORCE)
++endif()
++
++# Backwards-compat shim. The old single-flag scheme accepted
++# -DBAO_LOAD_ADDR=... / -DBAO_MEM_SIZE=... on the CMake command line; the
++# in-tree hps-amp Makefile still passes those (configs/*/config.mk's
++# MEM_BASE_INST_0 / MEM_SIZE_INST_0 -> -DBAO_LOAD_ADDR= / -DBAO_MEM_SIZE=).
++# Mirror those onto the new HV_GUEST_* names if the caller didn't already
++# pass them, so `cmake -DBAO_GUEST=ON -DBAO_LOAD_ADDR=X -DBAO_MEM_SIZE=Y`
++# stays byte-compatible with the pre-rename build.
++if(DEFINED BAO_LOAD_ADDR AND NOT DEFINED HV_GUEST_LOAD_ADDR)
++    set(HV_GUEST_LOAD_ADDR "${BAO_LOAD_ADDR}" CACHE STRING "Hypervisor-guest load address (IPA)" FORCE)
++endif()
++if(DEFINED BAO_MEM_SIZE AND NOT DEFINED HV_GUEST_MEM_SIZE)
++    set(HV_GUEST_MEM_SIZE  "${BAO_MEM_SIZE}" CACHE STRING "Hypervisor-guest memory size in bytes" FORCE)
++endif()
++
++if(HV_GUEST_BIN)
++    if(NOT DEFINED HV_GUEST_LOAD_ADDR)
++        set(HV_GUEST_LOAD_ADDR "0x90000000" CACHE STRING "Hypervisor-guest load address (IPA)"   FORCE)
++    endif()
++    if(NOT DEFINED HV_GUEST_MEM_SIZE)
++        set(HV_GUEST_MEM_SIZE  "0x04000000" CACHE STRING "Hypervisor-guest memory size in bytes" FORCE)
++    endif()
++    add_link_options(
++        "LINKER:--defsym=HV_GUEST_LOAD_ADDR=${HV_GUEST_LOAD_ADDR}"
++        "LINKER:--defsym=HV_GUEST_MEM_SIZE=${HV_GUEST_MEM_SIZE}"
++    )
++    add_compile_definitions(HV_GUEST_BIN=1)
++endif()
++
++if(HV_GUEST_EL1)
++    add_compile_definitions(HV_GUEST_EL1=1)
++endif()
++
++if(HV_GUEST_NO_CLKMGR)
++    add_compile_definitions(HV_GUEST_NO_CLKMGR=1)
++endif()
++
++if(BAO_GUEST)
++    add_compile_definitions(BAO_GUEST=1)
++    message(STATUS "BAO_GUEST : ON (umbrella) load=${HV_GUEST_LOAD_ADDR} size=${HV_GUEST_MEM_SIZE}")
++else()
++    message(STATUS "BAO_GUEST : OFF")
++endif()
++message(STATUS "  HV_GUEST_EL1       : ${HV_GUEST_EL1}")
++message(STATUS "  HV_GUEST_BIN       : ${HV_GUEST_BIN}")
++message(STATUS "  HV_GUEST_NO_CLKMGR : ${HV_GUEST_NO_CLKMGR}")
++
+ include(${CMAKE_CURRENT_SOURCE_DIR}/tools/socfpga_build.cmake)
+ 
+ project(RTOSApp C CXX ASM)
+-- 
+2.25.1
+

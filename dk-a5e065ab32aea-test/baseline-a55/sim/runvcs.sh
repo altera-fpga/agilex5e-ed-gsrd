@@ -57,31 +57,6 @@ vlogan -sverilog $DESIGN_ROOT_DIR/baseline_a55.sv
 vlogan -sverilog $DESIGN_ROOT_DIR/sim/hps_h2f_pkg.sv
 vlogan -sverilog $DESIGN_ROOT_DIR/sim/hps_h2f_lw_pkg.sv
 vlogan -sverilog $DESIGN_ROOT_DIR/sim/baseline_a55_tb.sv
-# ------------------------------------------------------------------------------
-# Ensure nios_mem.hex is present in *this* simulation run directory.
-# VCS/memory init typically looks for it relative to the current working dir.
-# ------------------------------------------------------------------------------
-if [ ! -f "nios_mem.hex" ]; then
-  echo "INFO: nios_mem.hex not found in $(pwd). Searching under DESIGN_ROOT_DIR=$DESIGN_ROOT_DIR"
-
-  # Find the first matching file under the design root (skip common huge dirs to speed up)
-  NIOS_HEX_PATH="$(
-    find "$DESIGN_ROOT_DIR" \
-      -type d \( -name .git -o -name sim_setup_baseline_a55 -o -name work -o -name output_files \) -prune -false \
-      -o -type f -name "nios_mem.hex" -print \
-    | head -n 1
-  )"
-
-  if [ -z "${NIOS_HEX_PATH}" ]; then
-    echo "ERROR: Could not locate nios_mem.hex anywhere under: $DESIGN_ROOT_DIR" >&2
-    echo "       Nios memory init file is required for baseline_a55_tb.sv to see nios_start." >&2
-    exit 2
-  fi
-
-  echo "INFO: Found nios_mem.hex at: ${NIOS_HEX_PATH}"
-  cp -f "${NIOS_HEX_PATH}" "./nios_mem.hex"
-  echo "INFO: Copied to: $(pwd)/nios_mem.hex"
-fi
 #
 # TOP_LEVEL_NAME is used in this script to set the top-level simulation or
 # testbench module/entity name.

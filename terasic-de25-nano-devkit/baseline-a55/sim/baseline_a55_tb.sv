@@ -1,5 +1,4 @@
 `timescale 1 ps / 1 ps
-//
 `default_nettype none
 
 // import libraries
@@ -14,8 +13,9 @@ import hps_h2f_lw_pkg::*;
 `define f2sdram_test_s dut.u_baseline_top.u_shell_subsys.u_hps_subsys.u_agilex_hps.intel_agilex_5_soc_inst.sm_mpfe.sundancemesa_mpfe_inst.f2sdram_bfm_gen.f2sdram_axi4_slave_inst
 `define f2h_sub_bfm dut.u_baseline_top.u_shell_subsys.u_hps_subsys.u_agilex_hps.intel_agilex_5_soc_inst.sm_mpfe.sundancemesa_mpfe_inst.f2soc_bfm_gen.f2h_ace5lite_slave_inst
 
-
 module testbench ();
+
+    //import verbosity_pkg::*;
 
     //==================================================================================================
     // Local Signals
@@ -25,27 +25,23 @@ module testbench ();
     logic clk100M;
     wire system_clock;
     wire system_reset;
+    bit reset_done;
 
     // DUT signals
     logic fpga_reset_n;
     wire [7:0] fpga_led_pio;
-    logic [3:0] fpga_dipsw_pio;
-    logic [1:0] fpga_button_pio;
-
-    // Tie off inputs to HPS
-    assign fpga_button_pio = '0;
-    assign fpga_dipsw_pio = '0;
+    wire [3:0] fpga_dipsw_pio = '0;
+    wire [1:0] fpga_button_pio = '0;
 
     // Test flag
     bit h2f_pass = 1;
     bit lwh2f_pass = 1;
     bit f2sdram_pass = 1;
     bit f2h_pass = 1;
+    bit test_pass = 1;
     int f2h_txn_count = 0;
     int f2h_r_count = 0;
     logic [255:0] f2h_rd_data[2];
-    bit test_pass = 1;
-    bit reset_done;
 
     // hps2fpga test flag
     bit h2f_f1 = 0;
@@ -74,6 +70,7 @@ module testbench ();
         string formattedMsg = $sformatf("[%0t] %s", $time, msg);
         lwh2f_messageQueue.push_back(formattedMsg);
     endtask
+
     // F2SDRAM
     string f2sdram_messageQueue[$];
     task automatic f2sdram_storeMessage(input string msg);
@@ -527,7 +524,7 @@ module testbench ();
                 lwh2f_wr_tr.set_write_strobes(4'hf, 0);
                 `lwh2f_bfm_m.AXI4MAN.bfm.put_transaction(lwh2f_wr_tr);
                 `lwh2f_bfm_m.AXI4MAN.bfm.drive_transaction();
-                lwh2f_storeMessage("*************** END OF Second Write TEST ***************\n");
+                lwh2f_storeMessage("*************** END OF First Write TEST ***************\n");
 
                 /////////////////////////////////////////////////////////////////////////////////
 

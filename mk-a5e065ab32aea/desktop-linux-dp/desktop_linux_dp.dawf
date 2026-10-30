@@ -1,0 +1,69 @@
+::drc::add_waiver \
+	-description {The register mem_used[0] in the ace5lite_cache_coherency_translator write_rsp_fifo exhibits high timing path endpoint tension due to how the Quartus fitter routes its high fanout connections. This is intermittent and does not indicate a functional or timing violation.} \
+	-rule_id {TMC-20602} \
+	-query_string {"Register Name" =~ 'u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_0|u_ace5lite_cache_coherency_translator_s_axi_agent|ready_done'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-04-29*10:06:00} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {Multiple reset synchronizers are detected within the design and this means some part of the design may come out of reset at different clock cycle. This is not likely to cause any design issues since the HPS will not initiate communication with the fabric core logic immediately after reset is released.} \
+	-rule_id {RDC-50003} \
+	-query_string {"Reset Clock Domain" == 'u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|u_sys_pll|iopll_0_outclk0' && "Number of Reset Chains" == 25 && "Reset Chain Register Heads" == 'u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|sys_reset_sync_inst|din_s1   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_006|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_008|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_010|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_007|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_011|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_009|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_004|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_001|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_002|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|sink_crosser|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|mm_interconnect_4|crosser|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_005|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_003|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|mm_interconnect_4|crosser_001|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_niosv_subsys|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_niosv_subsys|u_niosv_m|niosv_m|dbg_mod|dtm_inst|rsp_clk_xer|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_niosv_subsys|u_niosv_m|niosv_m|dbg_mod|dtm_inst|cmd_clk_xer|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_niosv_subsys|u_jtag_avalon_master|jtag_avalon_master|jtag_phy_embedded_in_jtag_master|normal.jtag_dc_streaming|jtag_streaming|clock_sense_reset_n_synchronizer|din_s1   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_0|dp_0|intel_dp_inst|g_dp_tx.u_dp_tx_encoder|u_dp1p4_encoder|dp_encoder.tx_top|stream_source[0].bitec_dp_tx_stream_source_blk.tx0_reset_vid_u|gen_rst_clk_reg_async.rst_clk_reg0[0]   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_0|dp_0|intel_dp_inst|g_dp_tx.u_dp_tx_encoder|u_dp1p4_encoder|dp_encoder.tx_top|stream_source[0].bitec_dp_tx_stream_source_blk.bitec_dp_tx_stream_source_i|im_if.bitec_dp_tx_im_if_i|bitec_cc_vidsyncs_i|reset_wrclk_sync[0]   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_0|dp_0|intel_dp_inst|g_dp_tx.u_dp_tx_encoder|u_dp1p4_encoder|dp_encoder.tx_top|stream_source[0].bitec_dp_tx_stream_source_blk.bitec_dp_tx_stream_source_i|im_if.bitec_dp_tx_im_if_i|tx_gen_mvid_u|reset_y_cc|gen_rst_clk_reg_async.rst_clk_reg0[0]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-07-29*14:53:00} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {Multiple reset synchronizers are detected within the design and this means some part of the design may come out of reset at different clock cycle. This is not likely to cause any design issues since the HPS will not initiate communication with the fabric core logic immediately after reset is released.} \
+	-rule_id {RDC-50003} \
+	-query_string {"Reset Clock Domain" == 'u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|u_sys_pll|iopll_0_outclk1' && "Number of Reset Chains" == 21 && "Reset Chain Register Heads" == 'u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|rst_controller|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|mgmt_reset_sync_inst|din_s1   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_0|dp_0|intel_dp_inst|g_dp_tx.u_dp_tx_encoder|u_aux_ctrl|av_reset_sync|gen_rst_clk_reg_async.rst_clk_reg0[0]   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_gts_0|dp_gts_0|i_hip|dphy|g1.n.sys[0].n_channel_superset_ip_inst|n_channel_superset_top_wrapper|ncss_common_sip_top_1|src_lane|sm_src_csr|sclr_d1   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_gts_0|dp_gts_0|i_hip|dphy|g1.n.sys[0].n_channel_superset_ip_inst|n_channel_superset_top_wrapper|ncss_common_sip_top_2|src_lane|sm_src_csr|sclr_d1   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_gts_0|dp_gts_0|i_hip|dphy|g1.n.sys[0].n_channel_superset_ip_inst|n_channel_superset_top_wrapper|ncss_common_sip_top_3|src_lane|sm_src_csr|sclr_d1   u_desktop_linux_dp_top|mm_interconnect_4|crosser|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|mm_interconnect_4|crosser_001|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_004|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_001|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_008|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_009|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_005|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_002|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_011|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_010|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_007|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_006|clock_xer|alt_rst_req_sync_in_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_0|dp_0|intel_dp_inst|g_dp_tx.u_dp_tx_encoder|u_dp1p4_encoder|tx_mac.reset_sync|gen_rst_clk_reg_async.rst_clk_reg0[0]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|mm_interconnect_4|crosser_003|clock_xer|alt_rst_req_sync_out_rst|altera_reset_synchronizer_int_chain[1]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-07-29*16:26:23} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {Multiple reset synchronizers are detected within the design and this means some part of the design may come out of reset at different clock cycle. This is not likely to cause any design issues since the HPS will not initiate communication with the fabric core logic immediately after reset is released.} \
+	-rule_id {RDC-50003} \
+	-query_string {"Reset Clock Domain" == 'u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|u_sys_pll|iopll_0_outclk2' && "Number of Reset Chains" == 3 && "Reset Chain Register Heads" == 'u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|rst_controller_001|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]   u_desktop_linux_dp_top|u_fabric_subsys|u_displayport_subsys|dp_0|dp_0|intel_dp_inst|g_dp_tx.u_dp_tx_encoder|u_aux_ctrl|aux_reset_sync|gen_rst_clk_reg_async.rst_clk_reg0[0]   u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|aux_reset_sync_inst|din_s1'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-07-29*16:27:29} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {Treat these as aysnchronous path.} \
+	-rule_id {RES-50101} \
+	-query_string {To =~ '|alt_rst_sync_uq1|altera_reset_synchronizer_int_chain[1]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-07-29*16:21:18} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {Covered by other timing constraints} \
+	-rule_id {TMC-20025} \
+	-query_string {"Ignored Constraint" == 'set_false_path -to [get_keepers {*altera_std_synchronizer:*|din_s1}]'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-07-29*16:24:45} \
+	-owner {user} \
+	-no_warn
+
+::drc::add_waiver \
+	-description {This is a reset synchronizer. So it does not matter if the reset is driven from multiple clock domains as the reset synchronizer will synchronize this reset to the destination clock domain. } \
+	-rule_id {CDC-50012} \
+	-query_string {From == 'u_desktop_linux_dp_top|u_shell_subsys|u_hps_subsys|u_agilex_hps|intel_agilex_5_soc_inst|sm_hps|sundancemesa_hps_inst~intosc_clk.reg   u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|u_sys_pll|iopll_0|tennm_ph2_iopll~pll_ctrl_reg' && To == 'u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|system_reset_extend_inst|reset_sync[0]' && "From Clock" == 'hps_internal_osc   u_desktop_linux_dp_top|u_shell_subsys|u_clocks_and_resets|u_sys_pll|iopll_0|tennm_ph2_iopll|ref_clk0'} \
+	-stages {{Timing Signoff}} \
+	-tag {} \
+	-timestamp {2026-07-30*14:01:16} \
+	-owner {user} \
+	-no_warn

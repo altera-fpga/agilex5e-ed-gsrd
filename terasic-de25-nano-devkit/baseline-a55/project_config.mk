@@ -5,7 +5,14 @@ PROJECT_NAME := top
 REVISION_NAMES := \
 	baseline_a55 \
 
+# Define the base revision
+BASE_REVISION := $(firstword $(REVISION_NAMES))
+
 # Enable functional simulation
 SIM_ENABLED := 0
+
+# Disable strict validation of README.md
+NO_ENFORCE_README_VALIDATION := 1
+
 include $(THIS_MK_DIR)/niosv_build.mk
 $(foreach revision,$(REVISION_NAMES),$(eval output_files/prep-$(revision).done: nios_mem.hex | $(NIOSV_FW_TARGET)-install))

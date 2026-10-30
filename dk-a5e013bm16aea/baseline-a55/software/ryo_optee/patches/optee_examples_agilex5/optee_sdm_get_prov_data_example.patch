@@ -1,0 +1,770 @@
+diff --git a/optee_examples/sdm_get_prov_data/Android.mk b/optee_examples/sdm_get_prov_data/Android.mk
+new file mode 100644
+index 000000000000..7557bd528406
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/Android.mk
+@@ -0,0 +1,16 @@
++###################### optee-sdm-get-prov-data ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_get_prov_data
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_get_prov_data/CMakeLists.txt b/optee_examples/sdm_get_prov_data/CMakeLists.txt
+new file mode 100644
+index 000000000000..21122bd8de63
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_get_prov_data C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_get_prov_data/Makefile b/optee_examples/sdm_get_prov_data/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_get_prov_data/host/Makefile b/optee_examples/sdm_get_prov_data/host/Makefile
+new file mode 100644
+index 000000000000..db77cdc5cf4d
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_get_prov_data
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_get_prov_data/host/main.c b/optee_examples/sdm_get_prov_data/host/main.c
+new file mode 100644
+index 000000000000..a44c5fce715f
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/host/main.c
+@@ -0,0 +1,183 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_get_prov_data - Linux host that drives the sdm_get_prov_data TA.
++ *
++ * Flow:
++ *   1. Allocate a 512-byte output buffer (SDM_PROV_DATA_MAX_SIZE).
++ *   2. Open a session to the sdm_get_prov_data TA.
++ *   3. Register the host buffer as TEEC shared memory (TEEC_MEM_OUTPUT).
++ *   4. Invoke TA_SDM_GET_PROV_DATA_CMD_GET with TEEC_MEMREF_WHOLE.
++ *      The TA validates the request, forwards to PTA_SDM_SVC, validates
++ *      the structure of the SDM response, and only then copies it back.
++ *   5. Parse and pretty-print the returned blob, in the same format the
++ *      Quartus programmer prints for `--status --status_type=PROV`.
++ *
++ * Usage:
++ *   sdm_get_prov_data
++ *
++ * Exit status:
++ *   0 - provisioning data retrieved and displayed
++ *   1 - error
++ */
++
++#include <err.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++
++#include <sdm_get_prov_data_ta.h>
++
++/*
++ * print_prov_data - display provisioning data from a raw word array.
++ *
++ * Layout (also enforced by the TA before this is reached):
++ *   3 header words + N*(SDM_PROV_HASH_WORDS + 1 cancel) + 6 tail words
++ */
++static void print_prov_data(const uint32_t *w, uint32_t actual_bytes)
++{
++	uint32_t num_words = actual_bytes / 4;
++	uint32_t cosign_info, hash_type, hash_count;
++	uint32_t wi = 0;
++	int i, j;
++
++	if (num_words < 3) {
++		fprintf(stderr, "Error: provisioning data too short (%u bytes)\n",
++			actual_bytes);
++		return;
++	}
++
++	printf("%08X CMD_SKIPPED, PROV_STATUS\n", w[wi++]);
++	printf("%08X Intel explicit key cancellation\n", w[wi++]);
++	cosign_info = w[wi++];
++	printf("%08X CO_SIGN, HASH_CANCELLED, HASH_VALID, HASH_COUNT, HASH_TYPE\n",
++	       cosign_info);
++
++	hash_type  = SDM_PROV_HASH_TYPE(cosign_info);
++	hash_count = SDM_PROV_HASH_COUNT(cosign_info);
++
++	if (hash_type != SDM_PROV_HASH_TYPE_SECP384R1)
++		fprintf(stderr, "Note: hash type %u (expected %u=secp384r1)\n",
++			hash_type, SDM_PROV_HASH_TYPE_SECP384R1);
++
++	for (i = 0; i < (int)hash_count; i++) {
++		if (wi + SDM_PROV_HASH_WORDS + 1 > num_words) {
++			fprintf(stderr,
++				"Warning: response truncated before hash %d\n",
++				i);
++			return;
++		}
++		for (j = 0; j < (int)SDM_PROV_HASH_WORDS; j++, wi++) {
++			if (j == 0)
++				printf("%08X Owner root public key hash %d\n",
++				       w[wi], i);
++			else
++				printf("%08X\n", w[wi]);
++		}
++		printf("%08X Owner explicit key cancellation %d\n", w[wi++], i);
++	}
++
++	if (wi + 6 > num_words) {
++		fprintf(stderr, "Warning: response truncated before tail fields\n");
++		return;
++	}
++	printf("%08X PTS_COUNTER_BASE, PTS_COUNTER\n", w[wi++]);
++	printf("%08X SVN_COUNTER_0, SVN_COUNTER_1, SVN_COUNTER_2, SVN_COUNTER_3\n",
++	       w[wi++]);
++	printf("%08X EFUSE_IFP_SLOT_0, EFUSE_IFP_SLOT_1, EFUSE_IFP_SLOT_2, EFUSE_IFP_SLOT_3, EFUSE_IFP_SLOT_4, EFUSE_IFP_SLOT_5\n",
++	       w[wi++]);
++	printf("%08X FLASH_IFP_SLOT_0, FLASH_IFP_SLOT_1, FLASH_IFP_SLOT_2, FLASH_IFP_SLOT_3, FLASH_IFP_SLOT_4, FLASH_IFP_SLOT_5\n",
++	       w[wi++]);
++	printf("%08X Flash Protection Counter\n", w[wi++]);
++	printf("%08X OWNERSHIP_TRANSFER_MODE, OWNERSHIP_TRANSFER_OPPORTUNITIES_REMAINING\n",
++	       w[wi++]);
++}
++
++int main(int argc, char *argv[])
++{
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_SharedMemory out_shm = { };
++	TEEC_UUID uuid = TA_SDM_GET_PROV_DATA_UUID;
++	uint32_t err_origin = 0;
++	uint32_t prov[SDM_PROV_DATA_MAX_SIZE / 4];
++	int exit_code = 1;
++
++	if (argc != 1) {
++		fprintf(stderr,
++			"Usage: %s\n\n"
++			"Retrieve and display SDM provisioning data.\n"
++			"Output format matches Quartus programmer PROV_STATUS.\n",
++			argv[0]);
++		return 1;
++	}
++
++	memset(prov, 0, sizeof(prov));
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_OpenSession: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_ctx;
++	}
++
++	/*
++	 * Register the host buffer as shared memory.
++	 *
++	 * TEEC_RegisterSharedMemory + TEEC_MEMREF_WHOLE explicitly hands
++	 * the NW-owned buffer to the TEE driver once, which can then map
++	 * it for the invocation - the right pattern for known-size
++	 * output buffers like this 512-byte prov-data blob.  TEEC_MEM_OUTPUT
++	 * tells the framework the TA may write into it.
++	 */
++	out_shm.buffer = prov;
++	out_shm.size   = sizeof(prov);
++	out_shm.flags  = TEEC_MEM_OUTPUT;
++	res = TEEC_RegisterSharedMemory(&ctx, &out_shm);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr, "TEEC_RegisterSharedMemory: 0x%x\n", res);
++		goto out_sess;
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_WHOLE,
++					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
++	op.params[0].memref.parent = &out_shm;
++	op.params[0].memref.size   = sizeof(prov);
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_GET_PROV_DATA_CMD_GET,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		fprintf(stderr,
++			"TA_SDM_GET_PROV_DATA_CMD_GET: 0x%x (origin 0x%x)\n",
++			res, err_origin);
++		goto out_shm;
++	}
++
++	printf("\nSDM Provisioning Data (%u bytes):\n\n",
++	       (unsigned int)op.params[0].memref.size);
++	print_prov_data(prov, (uint32_t)op.params[0].memref.size);
++	printf("\n");
++
++	exit_code = 0;
++
++out_shm:
++	TEEC_ReleaseSharedMemory(&out_shm);
++out_sess:
++	TEEC_CloseSession(&sess);
++out_ctx:
++	TEEC_FinalizeContext(&ctx);
++	return exit_code;
++}
+diff --git a/optee_examples/sdm_get_prov_data/ta/Android.mk b/optee_examples/sdm_get_prov_data/ta/Android.mk
+new file mode 100644
+index 000000000000..05ed175b19e0
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := 0bdada7a-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_get_prov_data/ta/Makefile b/optee_examples/sdm_get_prov_data/ta/Makefile
+new file mode 100644
+index 000000000000..1a96d445152e
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/ta/Makefile
+@@ -0,0 +1,13 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_GET_PROV_DATA_UUID in include/sdm_get_prov_data_ta.h
++BINARY=0bdada7a-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_get_prov_data/ta/include/sdm_get_prov_data_ta.h b/optee_examples/sdm_get_prov_data/ta/include/sdm_get_prov_data_ta.h
+new file mode 100644
+index 000000000000..4166e368a2f8
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/ta/include/sdm_get_prov_data_ta.h
+@@ -0,0 +1,74 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_get_prov_data TA - public interface shared with the host.
++ *
++ * Wraps PTA_CMD_SDM_GET_PROV_DATA.  The PTA hands back a variable-length
++ * provisioning blob assembled by the SDM:
++ *
++ *   3 fixed header words
++ *   + N * (SDM_PROV_HASH_WORDS hash words + 1 cancel word)
++ *   + 6 fixed tail words
++ *
++ * where N is the number of provisioned owner root hashes, derived from
++ * cosign_info (word index 2).  This TA validates that the response the
++ * PTA produced is structurally consistent before letting the normal
++ * world see it.
++ */
++
++#ifndef TA_SDM_GET_PROV_DATA_H
++#define TA_SDM_GET_PROV_DATA_H
++
++#include <stdint.h>
++
++/*
++ * UUID for the sdm_get_prov_data Trusted Application.
++ * The leading "0bdada7a" reads as "0B-DA-DA-7A" ~= "OB-DATA-DATA" -
++ * a mnemonic for the SDM provisioning data feature.
++ */
++#define TA_SDM_GET_PROV_DATA_UUID \
++	{ 0x0bdada7a, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_GET_PROV_DATA_CMD_GET - retrieve and validate SDM prov data.
++ *
++ * param[0] (in/out memref)
++ *     IN:  caller's output buffer; must be >= SDM_PROV_DATA_MAX_SIZE.
++ *     OUT: filled with the prov-data blob; memref.size updated to the
++ *          actual byte count returned by the SDM.
++ * param[1..3] unused.
++ *
++ * Result:
++ *   TEE_SUCCESS              - data retrieved and structurally validated
++ *   TEE_ERROR_BAD_PARAMETERS - bad param types / null buffer
++ *   TEE_ERROR_SHORT_BUFFER   - caller buffer < SDM_PROV_DATA_MAX_SIZE
++ *   TEE_ERROR_ACCESS_DENIED  - caller buffer not writable from secure world
++ *   TEE_ERROR_OUT_OF_MEMORY  - TA-local buffer allocation failed
++ *   TEE_ERROR_BAD_FORMAT     - PTA-returned blob failed structural checks
++ *                              (size, alignment, hash_count out of range,
++ *                              or size doesn't match the structural formula)
++ *   TEE_ERROR_GENERIC / BUSY - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_GET_PROV_DATA_CMD_GET	0
++
++/*
++ * SDM provisioning data constants, re-exported from the PTA header
++ * (pta_sdm_svc.h) so that NW callers don't need OP-TEE OS internals.
++ * Suppressed when pta_sdm_svc.h is also visible (TA build) via its
++ * include guard.
++ */
++#ifndef __PTA_SDM_SVC_H
++#define SDM_PROV_MAX_HASHES		8U	/* max owner root hash slots */
++#define SDM_PROV_HASH_WORDS		12U	/* secp384r1: 384 bits = 12 uint32_t */
++#define SDM_PROV_DATA_MAX_SIZE		512U
++
++#define SDM_PROV_HASH_COUNT(cosign)	((((cosign) >> 8) & 0xFFU) + 1U)
++#define SDM_PROV_HASH_TYPE(cosign)	((cosign) & 0xFFU)
++#endif /* __PTA_SDM_SVC_H */
++
++/* Hash algorithm code the SDM uses for provisioned owner root hashes. */
++#define SDM_PROV_HASH_TYPE_SECP384R1	2U
++
++#endif /* TA_SDM_GET_PROV_DATA_H */
+diff --git a/optee_examples/sdm_get_prov_data/ta/sdm_get_prov_data_ta.c b/optee_examples/sdm_get_prov_data/ta/sdm_get_prov_data_ta.c
+new file mode 100644
+index 000000000000..939d18b4202f
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/ta/sdm_get_prov_data_ta.c
+@@ -0,0 +1,318 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_get_prov_data Trusted Application.
++ *
++ * Wraps PTA_CMD_SDM_GET_PROV_DATA with two layers of validation:
++ *
++ *   On the way in (caller -> TA):
++ *     - GP-TEE parameter types match (MEMREF_OUTPUT + NONE x3)
++ *     - memref.buffer != NULL
++ *     - memref.size >= SDM_PROV_DATA_MAX_SIZE (PTA requirement)
++ *     - NW destination buffer is genuinely writable for `size` bytes
++ *       (TEE_CheckMemoryAccessRights)
++ *
++ *   On the way out (PTA -> TA -> caller):
++ *     - Forward the call using a TA-local buffer so the PTA writes into
++ *       TA-private memory first.
++ *     - Validate the PTA-returned blob:
++ *         * actual_size is non-zero, <= SDM_PROV_DATA_MAX_SIZE,
++ *           and 4-byte aligned
++ *         * hash_count derived from cosign_info[2] is in [1, SDM_PROV_MAX_HASHES]
++ *         * actual_size matches the structural formula
++ *           (3 + N*(SDM_PROV_HASH_WORDS+1) + 6) * 4
++ *     - Only then copy the local buffer into the caller's NW memref and
++ *       update memref.size.
++ *
++ * A malformed response is rejected with TEE_ERROR_BAD_FORMAT without
++ * leaking any partial bytes to the normal world.
++ */
++
++#include <inttypes.h>
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_get_prov_data_ta.h>
++
++struct prov_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_get_prov_data TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_get_prov_data TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct prov_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_get_prov_data TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct prov_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_get_prov_data TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * Structural validation of the PTA-returned blob
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result validate_prov_blob(const uint32_t *w, size_t actual_size)
++{
++	uint32_t cosign = 0;
++	uint32_t hash_count = 0;
++	uint32_t hash_type = 0;
++	uint32_t expected_words = 0;
++	uint32_t expected_size = 0;
++
++	if (actual_size == 0 || actual_size > SDM_PROV_DATA_MAX_SIZE) {
++		EMSG("prov size %zu out of range (max %u)",
++		     actual_size, SDM_PROV_DATA_MAX_SIZE);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (actual_size & 0x3U) {
++		EMSG("prov size %zu not 4-byte aligned", actual_size);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	/* Must hold at least the 3-word header to extract cosign_info */
++	if (actual_size < 3U * 4U) {
++		EMSG("prov size %zu < 3-word header", actual_size);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	cosign     = w[2];
++	hash_count = SDM_PROV_HASH_COUNT(cosign);
++	hash_type  = SDM_PROV_HASH_TYPE(cosign);
++
++	if (hash_count < 1U || hash_count > SDM_PROV_MAX_HASHES) {
++		EMSG("prov: hash_count %u out of [1, %u] (cosign=0x%08x)",
++		     hash_count, SDM_PROV_MAX_HASHES, cosign);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	/* The exact size dictated by the layout for this hash_count */
++	expected_words = 3U + hash_count * (SDM_PROV_HASH_WORDS + 1U) + 6U;
++	expected_size  = expected_words * 4U;
++
++	if ((uint32_t)actual_size != expected_size) {
++		EMSG("prov: size %zu != expected %u (hash_count=%u, cosign=0x%08x)",
++		     actual_size, expected_size, hash_count, cosign);
++		return TEE_ERROR_BAD_FORMAT;
++	}
++
++	if (hash_type != SDM_PROV_HASH_TYPE_SECP384R1)
++		IMSG("prov: hash_type %u (expected %u=secp384r1)",
++		     hash_type, SDM_PROV_HASH_TYPE_SECP384R1);
++
++	DMSG("prov OK: %zu bytes, hash_count=%u, hash_type=%u",
++	     actual_size, hash_count, hash_type);
++	return TEE_SUCCESS;
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - validate input, forward to PTA, validate response, copy out
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_get_prov_data(struct prov_sess_ctx *ctx,
++				   uint32_t param_types, TEE_Param params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	void *ns_out = NULL;
++	size_t ns_out_size = 0;
++	void *local_buf = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	size_t actual_size = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	ns_out      = params[0].memref.buffer;
++	ns_out_size = params[0].memref.size;
++
++	if (!ns_out) {
++		EMSG("output memref buffer is NULL");
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (ns_out_size < SDM_PROV_DATA_MAX_SIZE) {
++		EMSG("output memref size %zu < SDM_PROV_DATA_MAX_SIZE (%u)",
++		     ns_out_size, SDM_PROV_DATA_MAX_SIZE);
++		return TEE_ERROR_SHORT_BUFFER;
++	}
++
++	/*
++	 * Confirm the NW destination memref is genuinely writable for the
++	 * full size before we copy anything into it.  Catches a "lying
++	 * memref" before TEE_MemMove faults the secure world.
++	 */
++	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_WRITE |
++					  TEE_MEMORY_ACCESS_ANY_OWNER,
++					  ns_out, ns_out_size);
++	if (res != TEE_SUCCESS) {
++		EMSG("output memref not writable: buf=%p size=%zu res=0x%08x",
++		     ns_out, ns_out_size, res);
++		return res;
++	}
++
++	/*
++	 * Allocate a TA-local buffer so the PTA writes into TA-private
++	 * memory.  This lets us validate the response shape before any
++	 * byte reaches the NW caller; it also bounds any hypothetical
++	 * over-write to a region the NW does not control.
++	 */
++	local_buf = TEE_Malloc(SDM_PROV_DATA_MAX_SIZE, TEE_MALLOC_FILL_ZERO);
++	if (!local_buf) {
++		EMSG("alloc local_buf (%u) failed", SDM_PROV_DATA_MAX_SIZE);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	pta_params[0].memref.buffer = local_buf;
++	pta_params[0].memref.size   = SDM_PROV_DATA_MAX_SIZE;
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_GET_PROV_DATA, exp_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_GET_PROV_DATA failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(local_buf);
++		return res;
++	}
++
++	actual_size = pta_params[0].memref.size;
++
++	res = validate_prov_blob((const uint32_t *)local_buf, actual_size);
++	if (res != TEE_SUCCESS) {
++		/* Don't leak a malformed blob to NW; report and bail */
++		TEE_Free(local_buf);
++		return res;
++	}
++
++	/*
++	 * actual_size is guaranteed <= SDM_PROV_DATA_MAX_SIZE by validation
++	 * above, and ns_out_size was already checked >= SDM_PROV_DATA_MAX_SIZE,
++	 * so this fits.  Defensive check anyway in case constants change.
++	 */
++	if (actual_size > ns_out_size) {
++		EMSG("internal: actual %zu > ns_out_size %zu",
++		     actual_size, ns_out_size);
++		TEE_Free(local_buf);
++		return TEE_ERROR_GENERIC;
++	}
++
++	TEE_MemMove(ns_out, local_buf, actual_size);
++	params[0].memref.size = actual_size;
++
++	TEE_Free(local_buf);
++
++	DMSG("sdm_get_prov_data: returned %zu bytes to NW", actual_size);
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct prov_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_GET_PROV_DATA_CMD_GET:
++		return do_get_prov_data(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_get_prov_data/ta/sub.mk b/optee_examples/sdm_get_prov_data/ta/sub.mk
+new file mode 100644
+index 000000000000..76f3784b7760
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_get_prov_data_ta.c
+diff --git a/optee_examples/sdm_get_prov_data/ta/user_ta_header_defines.h b/optee_examples/sdm_get_prov_data/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..15e8ff01473d
+--- /dev/null
++++ b/optee_examples/sdm_get_prov_data/ta/user_ta_header_defines.h
+@@ -0,0 +1,37 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_get_prov_data_ta.h>
++
++#define TA_UUID			TA_SDM_GET_PROV_DATA_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++
++/*
++ * Heap must hold one TA-local copy of the prov-data blob
++ * (SDM_PROV_DATA_MAX_SIZE = 512 B) plus session context plus dev-kit
++ * overhead.  32 KB is far more than needed but matches the other SDM TAs.
++ */
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM provisioning-data wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_get_prov_data.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Reads SDM provisioning data via PTA_SDM_SVC and validates layout" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

@@ -1,0 +1,529 @@
+diff --git a/optee_examples/sdm_efuse_write_disable/Android.mk b/optee_examples/sdm_efuse_write_disable/Android.mk
+new file mode 100644
+index 000000000000..7e36eb868e25
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/Android.mk
+@@ -0,0 +1,18 @@
++###################### optee-sdm-efuse-write-disable ######################
++LOCAL_PATH := $(call my-dir)
++
++include $(CLEAR_VARS)
++LOCAL_CFLAGS += -DANDROID_BUILD
++LOCAL_CFLAGS += -Wall
++
++LOCAL_SRC_FILES += host/main.c
++
++LOCAL_C_INCLUDES := $(LOCAL_PATH)/ta/include
++
++LOCAL_SHARED_LIBRARIES := libteec
++LOCAL_MODULE := sdm_efuse_write_disable
++LOCAL_VENDOR_MODULE := true
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
++
++include $(LOCAL_PATH)/ta/Android.mk
+diff --git a/optee_examples/sdm_efuse_write_disable/CMakeLists.txt b/optee_examples/sdm_efuse_write_disable/CMakeLists.txt
+new file mode 100644
+index 000000000000..81cf6137eb7f
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/CMakeLists.txt
+@@ -0,0 +1,13 @@
++project (sdm_efuse_write_disable C)
++
++set (SRC host/main.c)
++
++add_executable (${PROJECT_NAME} ${SRC})
++
++target_include_directories(${PROJECT_NAME}
++			   PRIVATE ta/include
++			   PRIVATE include)
++
++target_link_libraries (${PROJECT_NAME} PRIVATE teec)
++
++install (TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+diff --git a/optee_examples/sdm_efuse_write_disable/Makefile b/optee_examples/sdm_efuse_write_disable/Makefile
+new file mode 100644
+index 000000000000..abcb0356e6b2
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/Makefile
+@@ -0,0 +1,17 @@
++export V?=0
++
++# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
++HOST_CROSS_COMPILE ?= $(CROSS_COMPILE)
++TA_CROSS_COMPILE   ?= $(CROSS_COMPILE)
++
++.PHONY: all
++all:
++	$(MAKE) -C host CROSS_COMPILE="$(HOST_CROSS_COMPILE)" \
++		TEEC_EXPORT="$(TEEC_EXPORT)" \
++		--no-builtin-variables
++	$(MAKE) -C ta   CROSS_COMPILE="$(TA_CROSS_COMPILE)" LDFLAGS=""
++
++.PHONY: clean
++clean:
++	$(MAKE) -C host clean
++	$(MAKE) -C ta   clean
+diff --git a/optee_examples/sdm_efuse_write_disable/host/Makefile b/optee_examples/sdm_efuse_write_disable/host/Makefile
+new file mode 100644
+index 000000000000..1d0e9cfbd4cf
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/host/Makefile
+@@ -0,0 +1,27 @@
++CC      ?= $(CROSS_COMPILE)gcc
++LD      ?= $(CROSS_COMPILE)ld
++AR      ?= $(CROSS_COMPILE)ar
++NM      ?= $(CROSS_COMPILE)nm
++OBJCOPY ?= $(CROSS_COMPILE)objcopy
++OBJDUMP ?= $(CROSS_COMPILE)objdump
++READELF ?= $(CROSS_COMPILE)readelf
++
++OBJS = main.o
++
++CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include
++LDADD  += -lteec -L$(TEEC_EXPORT)/lib
++
++BINARY = sdm_efuse_write_disable
++
++.PHONY: all
++all: $(BINARY)
++
++$(BINARY): $(OBJS)
++	$(CC) $(LDFLAGS) -o $@ $< $(LDADD)
++
++.PHONY: clean
++clean:
++	rm -f $(OBJS) $(BINARY)
++
++%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/optee_examples/sdm_efuse_write_disable/host/main.c b/optee_examples/sdm_efuse_write_disable/host/main.c
+new file mode 100644
+index 000000000000..8f13ffc2b4bb
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/host/main.c
+@@ -0,0 +1,116 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_efuse_write_disable - Linux host application that puts the SDM into
++ * eFuse-write-disabled / test mode via the sdm_efuse_write_disable
++ * Trusted Application.
++ *
++ * Call chain:
++ *   host -> sdm_efuse_write_disable TA -> PTA_SDM_SVC ->
++ *           ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE (0x42000177) ->
++ *           SDM
++ *
++ * After a successful invocation the SDM refuses all subsequent physical
++ * eFuse-write commands.  Any further fuse programming is redirected to
++ * virtual (cache-only) fuses for the remainder of the current power
++ * cycle; the state is cleared on the next cold reset / power-off.
++ *
++ * Usage:
++ *   sdm_efuse_write_disable
++ *
++ * Exit status:
++ *   0 - SDM accepted the request (writes -> virtual only)
++ *   1 - error
++ */
++
++#include <err.h>
++#include <inttypes.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include <tee_client_api.h>
++#include <sdm_efuse_write_disable_ta.h>
++
++static void print_banner(void)
++{
++	fprintf(stderr,
++		"\n"
++		"  ****************************************************************\n"
++		"  *                     ***** TEST MODE *****                    *\n"
++		"  *                                                              *\n"
++		"  *  sdm_efuse_write_disable: about to invoke.                   *\n"
++		"  *                                                              *\n"
++		"  *  After this call the SDM will refuse all subsequent          *\n"
++		"  *  physical eFuse-write commands; any further fuse             *\n"
++		"  *  programming will be redirected to virtual (cache-only)      *\n"
++		"  *  fuses.                                                      *\n"
++		"  *                                                              *\n"
++		"  *  This state holds for the current power cycle only and is    *\n"
++		"  *  cleared on the next cold reset / power-off.                 *\n"
++		"  *                                                              *\n"
++		"  *  Within this session the transition is one-way - eFuse       *\n"
++		"  *  writes cannot be re-enabled without a power-cycle.          *\n"
++		"  ****************************************************************\n"
++		"\n");
++}
++
++int main(int argc, char *argv[])
++{
++	TEEC_Result res = 0;
++	TEEC_Context ctx = { };
++	TEEC_Session sess = { };
++	TEEC_Operation op = { };
++	TEEC_UUID uuid = TA_SDM_EFUSE_WRITE_DISABLE_UUID;
++	uint32_t err_origin = 0;
++
++	if (argc != 1) {
++		fprintf(stderr,
++			"Usage: %s\n\n"
++			"Put the SDM into eFuse-write-disabled (test) mode via the\n"
++			"sdm_efuse_write_disable TA.  No arguments are taken.\n\n"
++			"After the call succeeds, subsequent physical eFuse writes\n"
++			"are refused and any fuse programming is redirected to\n"
++			"virtual (cache-only) fuses for the remainder of the power\n"
++			"cycle.\n",
++			argv[0]);
++		return 1;
++	}
++
++	print_banner();
++
++	res = TEEC_InitializeContext(NULL, &ctx);
++	if (res != TEEC_SUCCESS)
++		errx(1, "TEEC_InitializeContext: 0x%x", res);
++
++	res = TEEC_OpenSession(&ctx, &sess, &uuid,
++			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		TEEC_FinalizeContext(&ctx);
++		errx(1, "TEEC_OpenSession(sdm_efuse_write_disable TA): "
++		     "0x%x (origin 0x%x)", res, err_origin);
++	}
++
++	memset(&op, 0, sizeof(op));
++	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE,
++					 TEEC_NONE, TEEC_NONE);
++
++	res = TEEC_InvokeCommand(&sess, TA_SDM_EFUSE_WRITE_DISABLE_CMD_APPLY,
++				 &op, &err_origin);
++	if (res != TEEC_SUCCESS) {
++		TEEC_CloseSession(&sess);
++		TEEC_FinalizeContext(&ctx);
++		errx(1, "TA_SDM_EFUSE_WRITE_DISABLE_CMD_APPLY: 0x%x (origin 0x%x)",
++		     res, err_origin);
++	}
++
++	printf("SDM eFuse write-disable: PASS\n");
++	printf("  SDM is now in test mode - subsequent fuse writes go to\n"
++	       "  virtual (cache-only) fuses; power-cycle to restore.\n");
++
++	TEEC_CloseSession(&sess);
++	TEEC_FinalizeContext(&ctx);
++	return 0;
++}
+diff --git a/optee_examples/sdm_efuse_write_disable/ta/Android.mk b/optee_examples/sdm_efuse_write_disable/ta/Android.mk
+new file mode 100644
+index 000000000000..3b744dab052c
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/ta/Android.mk
+@@ -0,0 +1,4 @@
++LOCAL_PATH := $(call my-dir)
++
++local_module := efbd0000-7b2a-4e5d-9c1a-100c012ec01d.ta
++include $(BUILD_OPTEE_MK)
+diff --git a/optee_examples/sdm_efuse_write_disable/ta/Makefile b/optee_examples/sdm_efuse_write_disable/ta/Makefile
+new file mode 100644
+index 000000000000..f0d25fe4dd22
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/ta/Makefile
+@@ -0,0 +1,14 @@
++CFG_TEE_TA_LOG_LEVEL ?= 4
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
++
++# Must match TA_SDM_EFUSE_WRITE_DISABLE_UUID in
++# include/sdm_efuse_write_disable_ta.h
++BINARY=efbd0000-7b2a-4e5d-9c1a-100c012ec01d
++
++-include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
++
++ifeq ($(wildcard $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk), )
++clean:
++	@echo 'Note: $$(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk not found, cannot clean TA'
++	@echo 'Note: TA_DEV_KIT_DIR=$(TA_DEV_KIT_DIR)'
++endif
+diff --git a/optee_examples/sdm_efuse_write_disable/ta/include/sdm_efuse_write_disable_ta.h b/optee_examples/sdm_efuse_write_disable/ta/include/sdm_efuse_write_disable_ta.h
+new file mode 100644
+index 000000000000..1c07b7cf3b84
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/ta/include/sdm_efuse_write_disable_ta.h
+@@ -0,0 +1,44 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_efuse_write_disable TA - public interface shared with the host.
++ *
++ * Side-effect-only wrapper around PTA_CMD_SDM_EFUSE_WRITE_DISABLE.
++ *
++ * After this command the SDM enters "eFuse write disabled" / test mode:
++ *   - all subsequent physical eFuse-write requests are refused;
++ *   - any fuse programming attempts are redirected to virtual (cache-only)
++ *     fuses.
++ *
++ * No input is consumed and no data is returned beyond the SDM accept /
++ * reject status (surfaced as the GP-TEE result code).
++ */
++
++#ifndef TA_SDM_EFUSE_WRITE_DISABLE_H
++#define TA_SDM_EFUSE_WRITE_DISABLE_H
++
++/*
++ * TA UUID.  Mnemonic "EFBD" = eFuse Block/Write Disable, suffix 0000 to
++ * keep room for future variants while staying in the SDM TA family
++ * suffix (-7b2a-4e5d-9c1a-100c012ec01d).
++ */
++#define TA_SDM_EFUSE_WRITE_DISABLE_UUID \
++	{ 0xefbd0000, 0x7b2a, 0x4e5d, \
++		{ 0x9c, 0x1a, 0x10, 0x0c, 0x01, 0x2e, 0xc0, 0x1d } }
++
++/*
++ * TA_SDM_EFUSE_WRITE_DISABLE_CMD_APPLY - put SDM into eFuse-write-disabled
++ *                                        ("test mode") state.
++ *
++ * All four GP-TEE parameters must be TEE_PARAM_TYPE_NONE.
++ *
++ * Result:
++ *   TEE_SUCCESS                  - SDM accepted; physical eFuse writes
++ *                                  are now refused, virtual fuses only
++ *   TEE_ERROR_BAD_PARAMETERS     - non-NONE parameter types supplied
++ *   TEE_ERROR_GENERIC / BUSY     - forwarded from PTA / ATF / SDM
++ */
++#define TA_SDM_EFUSE_WRITE_DISABLE_CMD_APPLY	0
++
++#endif /* TA_SDM_EFUSE_WRITE_DISABLE_H */
+diff --git a/optee_examples/sdm_efuse_write_disable/ta/sdm_efuse_write_disable_ta.c b/optee_examples/sdm_efuse_write_disable/ta/sdm_efuse_write_disable_ta.c
+new file mode 100644
+index 000000000000..2e316a2743ac
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/ta/sdm_efuse_write_disable_ta.c
+@@ -0,0 +1,177 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * sdm_efuse_write_disable Trusted Application.
++ *
++ * Side-effect-only wrapper around PTA_CMD_SDM_EFUSE_WRITE_DISABLE.
++ *
++ * Behaviour:
++ *   After a successful call the SDM refuses all subsequent physical
++ *   eFuse-write commands.  Any further fuse programming attempts are
++ *   redirected to virtual (cache-only) fuses for the remainder of the
++ *   current power cycle.  This is a one-way transition within a session
++ *   (cleared on cold reset / power-off).
++ *
++ * Validation performed:
++ *   1. GP-TEE parameter types are all TEE_PARAM_TYPE_NONE.
++ *   2. PTA_SDM_SVC session is open (established at TA_OpenSession).
++ *
++ * No other input is consumed - the SDM only needs the accept-status
++ * back from the SiP service.  Forward the call to the PTA verbatim
++ * and return its status to the host.
++ */
++
++#include <tee_internal_api.h>
++#include <tee_internal_api_extensions.h>
++
++#include <pta_sdm_svc.h>
++#include <sdm_efuse_write_disable_ta.h>
++
++struct efuse_wd_sess_ctx {
++	TEE_TASessionHandle pta_sess;
++};
++
++/* ---------------------------------------------------------------------------
++ * Session lifecycle
++ * ---------------------------------------------------------------------------
++ */
++
++TEE_Result TA_CreateEntryPoint(void)
++{
++	DMSG("sdm_efuse_write_disable TA: create");
++	return TEE_SUCCESS;
++}
++
++void TA_DestroyEntryPoint(void)
++{
++	DMSG("sdm_efuse_write_disable TA: destroy");
++}
++
++TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
++				    TEE_Param __unused params[4],
++				    void **sess_ctx)
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	const TEE_UUID pta_uuid = PTA_SDM_SVC_UUID;
++	struct efuse_wd_sess_ctx *ctx = NULL;
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	uint32_t pta_pt = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	ctx = TEE_Malloc(sizeof(*ctx), TEE_MALLOC_FILL_ZERO);
++	if (!ctx)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	res = TEE_OpenTASession(&pta_uuid, TEE_TIMEOUT_INFINITE,
++				TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE),
++				pta_params, &ctx->pta_sess, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("TEE_OpenTASession(PTA_SDM_SVC) failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	pta_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE,
++				 TEE_PARAM_TYPE_NONE);
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_GET_VERSION, pta_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_GET_VERSION failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return res;
++	}
++
++	if (pta_params[0].value.a < PTA_SDM_SVC_API_VERSION) {
++		EMSG("PTA API version %u too old (need %u)",
++		     pta_params[0].value.a, PTA_SDM_SVC_API_VERSION);
++		TEE_CloseTASession(ctx->pta_sess);
++		TEE_Free(ctx);
++		return TEE_ERROR_NOT_SUPPORTED;
++	}
++
++	IMSG("sdm_efuse_write_disable TA: session opened, PTA API v%u",
++	     pta_params[0].value.a);
++	*sess_ctx = ctx;
++	return TEE_SUCCESS;
++}
++
++void TA_CloseSessionEntryPoint(void *sess_ctx)
++{
++	struct efuse_wd_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return;
++
++	TEE_CloseTASession(ctx->pta_sess);
++	TEE_Free(ctx);
++	IMSG("sdm_efuse_write_disable TA: session closed");
++}
++
++/* ---------------------------------------------------------------------------
++ * Main command - forward verbatim to PTA, with audit banner
++ * ---------------------------------------------------------------------------
++ */
++
++static TEE_Result do_efuse_write_disable(struct efuse_wd_sess_ctx *ctx,
++					 uint32_t param_types,
++					 TEE_Param __unused params[4])
++{
++	const uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE,
++						TEE_PARAM_TYPE_NONE);
++	TEE_Param pta_params[4] = { };
++	uint32_t pta_origin = 0;
++	TEE_Result res = TEE_ERROR_GENERIC;
++
++	if (param_types != exp_pt) {
++		EMSG("bad param types 0x%08x (expected all NONE)", param_types);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	res = TEE_InvokeTACommand(ctx->pta_sess, TEE_TIMEOUT_INFINITE,
++				  PTA_CMD_SDM_EFUSE_WRITE_DISABLE, exp_pt,
++				  pta_params, &pta_origin);
++	if (res != TEE_SUCCESS) {
++		EMSG("PTA_CMD_SDM_EFUSE_WRITE_DISABLE failed: 0x%08x (origin 0x%x)",
++		     res, pta_origin);
++		return res;
++	}
++
++	DMSG("sdm_efuse_write_disable: SDM accepted (eFuse writes now disabled)");
++	return TEE_SUCCESS;
++}
++
++TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
++				      uint32_t param_types,
++				      TEE_Param params[4])
++{
++	struct efuse_wd_sess_ctx *ctx = sess_ctx;
++
++	if (!ctx)
++		return TEE_ERROR_BAD_STATE;
++
++	switch (cmd_id) {
++	case TA_SDM_EFUSE_WRITE_DISABLE_CMD_APPLY:
++		return do_efuse_write_disable(ctx, param_types, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
+diff --git a/optee_examples/sdm_efuse_write_disable/ta/sub.mk b/optee_examples/sdm_efuse_write_disable/ta/sub.mk
+new file mode 100644
+index 000000000000..e010df67035b
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/ta/sub.mk
+@@ -0,0 +1,2 @@
++global-incdirs-y += include
++srcs-y += sdm_efuse_write_disable_ta.c
+diff --git a/optee_examples/sdm_efuse_write_disable/ta/user_ta_header_defines.h b/optee_examples/sdm_efuse_write_disable/ta/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..782ca8521337
+--- /dev/null
++++ b/optee_examples/sdm_efuse_write_disable/ta/user_ta_header_defines.h
+@@ -0,0 +1,31 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2026, Intel Corporation
++ *
++ * The name of this file must not be modified - it is included by the
++ * TA dev kit to populate the gpd.ta.* property table for this TA.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include <sdm_efuse_write_disable_ta.h>
++
++#define TA_UUID			TA_SDM_EFUSE_WRITE_DISABLE_UUID
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION | \
++				 TA_FLAG_INSTANCE_KEEP_ALIVE)
++
++#define TA_STACK_SIZE		(2 * 1024)
++#define TA_DATA_SIZE		(32 * 1024)
++
++#define TA_VERSION		"1.0"
++#define TA_DESCRIPTION		"Intel SDM eFuse write-disable wrapper TA"
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "com.intel.optee.examples.sdm_efuse_write_disable.description", \
++	  USER_TA_PROP_TYPE_STRING, \
++	  "Puts SDM into eFuse-write-disabled (test) mode via PTA_SDM_SVC" }
++
++#endif /* USER_TA_HEADER_DEFINES_H */

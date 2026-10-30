@@ -1,0 +1,46 @@
+From 2c7ebfa98772b3742bdc2da6ed0b023fdc24ad4c Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 09:43:00 +0800
+Subject: [PATCH 1/6] cpu_init: guard ICC_SRE_EL2 under HV_GUEST_EL1
+
+ICC_SRE_EL2 is an EL2/EL3-only register. Any AArch64 hypervisor that
+lands the guest at EL1 (e.g. Bao) has
+already programmed ICC_SRE_EL2.SRE on the guest's behalf, and the
+MSR ICC_SRE_EL2 instruction issued from EL1 in the freertos-socfpga
+_core_setup traps to EL2. On Bao that injects an UNDEF and the guest
+spins on its sync-exception vector forever.
+
+Guard the write with #ifndef HV_GUEST_EL1. Pure rename of the
+previous #ifndef BAO_GUEST guard - the umbrella BAO_GUEST CMake
+option (declared in patch 0004) forces HV_GUEST_EL1=ON so existing
+-DBAO_GUEST=ON invocations stay byte-identical.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+index 08ec6d5..cfbb61c 100644
+--- a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
++++ b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+@@ -146,7 +146,16 @@ _core_setup:
+     MOV x1, #1             // Set NS bit, to access Non-secure registers
+ 
+     ISB
++#ifndef HV_GUEST_EL1
++    /* ICC_SRE_EL2 is only accessible from EL2/EL3. When this image is built
++     * as a hypervisor guest that enters at EL1 (HV_GUEST_EL1=ON, e.g. for
++     * Bao) ICC_SRE_EL2.SRE has already been
++     * programmed by the hypervisor; executing this MSR from EL1 traps to
++     * EL2 and on Bao injects an UNDEF that aborts the VM. Skip the write
++     * entirely - the currentEL fallthrough below handles the EL1 entry
++     * path. */
+     MSR ICC_SRE_EL2, x0
++#endif
+     ISB
+     MSR ICC_SRE_EL1, x1    // SRE = 1, Enable the Ssystem register interface for the current security level.
+ 
+-- 
+2.25.1
+

@@ -3,7 +3,7 @@ header:
 
 local_conf_header:
   machine: |
-    MACHINE = "agilex5e_de25_nano"
+    MACHINE = "agilex5e_de25"
     LINUX_DTS_FILE = "socfpga_agilex5_de25_nano.dts"
     CUSTOM_LINUX_DTS_FILE = "baseline_a55.dts"
     UBOOT_DEFCONFIG = "socfpga_agilex5_de25_nano_defconfig"

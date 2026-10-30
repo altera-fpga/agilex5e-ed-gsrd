@@ -1,0 +1,500 @@
+/dts-v1/;
+
+/ {
+        #address-cells = <0x2>;
+        #size-cells = <0x2>;
+        interrupt-parent = <&gic>;
+
+        cpus {
+                #address-cells = <0x1>;
+                #size-cells = <0x0>;
+
+                /* Linux SMP across both A76 cores.
+                 * Bao's cpu_affinity = 0xc in
+                 * configs/linux_freertos/config.c maps:
+                 *   vCPU0 (reg = 0x0) -> pCPU2 (first  A76)
+                 *   vCPU1 (reg = 0x1) -> pCPU3 (second A76)
+                 *
+                 * The DT `reg` value is the MPIDR.Aff0 that Bao presents
+                 * to the guest for that vCPU; Bao numbers vCPUs linearly
+                 * from 0 regardless of which physical core(s) back them.
+                 *
+                 * Both compatibles MUST be "arm,cortex-a76" so Linux
+                 * picks the A76 errata workarounds and feature paths
+                 * (cache topology, MIDR-keyed cpu_errata tables, …).
+                 * Cortex-A76 MIDR part = 0xd0b (verify with
+                 * `grep -c 'CPU part.*0xd0b' /proc/cpuinfo` = 2).
+                 *
+                 * enable-method = "psci" + the psci node below
+                 * (method = "hvc") routes secondary CPU bring-up through
+                 * Bao's PSCI handler, which then issues the underlying
+                 * SMC to ATF on the chosen pCPU. */
+                cpu@0 {
+                        compatible = "arm,cortex-a76";
+                        device_type = "cpu";
+                        enable-method = "psci";
+                        reg = <0x0>;
+                };
+
+                cpu@1 {
+                        compatible = "arm,cortex-a76";
+                        device_type = "cpu";
+                        enable-method = "psci";
+                        reg = <0x1>;
+                };
+        };
+
+        psci {
+                compatible = "arm,psci-0.2";
+                method = "hvc";
+        };
+
+        memory@0 {
+                device_type = "memory";
+                /* 1 GiB guest IPA: 0x82000000 – 0xC2000000. Cache-colored by
+                 * Bao (IPA != PA; see config.c). Bao is loaded at 0xE0000000;
+                 * shmem IPC at IPA 0xC4000000. */
+                reg = <0x0 0x82000000 0x0 0x40000000>;
+        };
+
+        gic: interrupt-controller@1d000000 {
+                compatible = "arm,gic-v3";
+                #interrupt-cells = <0x3>;
+                #address-cells = <0x2>;
+                #size-cells = <0x2>;
+                interrupt-controller;
+                reg = <0x0 0x1d000000 0x0 0x10000>,
+                      <0x0 0x1d060000 0x0 0x40000>;
+                interrupts = <0x1 0x9 0xf04>;
+        };
+
+        timer {
+                compatible = "arm,armv8-timer";
+                always-on;
+                interrupts = <0x1 0xd 0xf08>,
+                             <0x1 0xe 0xf08>,
+                             <0x1 0xb 0xf08>,
+                             <0x1 0xa 0xf08>;
+        };
+
+        uartclk: uartclk {
+                compatible = "fixed-clock";
+                #clock-cells = <0x0>;
+                clock-frequency = <100000000>;
+        };
+
+        serial@10c02000 {
+                compatible = "snps,dw-apb-uart";
+                reg = <0x0 0x10c02000 0x0 0x100>;
+                reg-shift = <2>;
+                reg-io-width = <4>;
+                clock-frequency = <100000000>;
+                interrupts = <0x0 0x6c 0x4>;
+                /* GIC SPI 108, irqid 140, level-high.
+                 * This is intentionally enabled now that Bao preserves an
+                 * in-flight HW-linked LR across guest GICD mask/unmask writes.
+                 * Without that vGIC fix, Linux's 8250 IRQ flow could leave the
+                 * physical UART SPI stuck Active and systemd would stall in
+                 * tcsetattr(TCSADRAIN) waiting for TX-drain interrupts. */
+                /* resets = <&rst 80> (UART0_RESET) intentionally omitted.
+                 * U-Boot deasserts UART0 reset before Linux handoff and leaves
+                 * the UART fully configured at 115200 baud.  Adding the reset
+                 * property causes dw_apb_uart_probe() to hardware-reset the
+                 * UART mid-boot while it is the active kernel console; the TX
+                 * FIFO stalls waiting to drain at the wrong (post-reset) baud
+                 * rate, producing 30–60 s delays between every log line. */
+                status = "okay";
+        };
+
+        vcc_qspi: vcc-qspi-regulator {
+                compatible = "regulator-fixed";
+                regulator-name = "vcc-qspi";
+                regulator-min-microvolt = <3300000>;
+                regulator-max-microvolt = <3300000>;
+                regulator-always-on;
+        };
+
+        qspi_clk: qspi-clk {
+                #clock-cells = <0>;
+                compatible = "fixed-clock";
+                clock-frequency = <0x17d78400>;
+        };
+
+        qspi: spi@108d2000 {
+                compatible = "intel,socfpga-qspi", "cdns,qspi-nor";
+                reg = <0x0 0x108d2000 0x0 0x100>,
+                      <0x0 0x10900000 0x0 0x100000>;
+                #address-cells = <1>;
+                #size-cells = <0>;
+                interrupts = <0x0 0x3 0x4>;
+                cdns,fifo-depth = <128>;
+                cdns,fifo-width = <4>;
+                cdns,trigger-address = <0x00000000>;
+                clocks = <&qspi_clk>;
+                status = "okay";
+
+                flash@0 {
+                        compatible = "micron,mt25qu02g", "jedec,spi-nor";
+                        reg = <0>;
+                        spi-max-frequency = <100000000>;
+                        m25p,fast-read;
+                        cdns,read-delay = <2>;
+                        cdns,tshsl-ns = <50>;
+                        cdns,tsd2d-ns = <50>;
+                        cdns,tchsh-ns = <4>;
+                        cdns,tslch-ns = <4>;
+                        vcc-supply = <&vcc_qspi>;
+
+                        partitions {
+                                compatible = "fixed-partitions";
+                                #address-cells = <1>;
+                                #size-cells = <1>;
+
+                                qspi_boot: partition@0 {
+                                        label = "u-boot";
+                                        reg = <0x0 0x04200000>;
+                                };
+
+                                root: partition@4200000 {
+                                        label = "root";
+                                        reg = <0x04200000 0x0be00000>;
+                                };
+                        };
+                };
+        };
+
+        /* Clocks for Ethernet */
+        emac0_clk: emac-clk {
+                #clock-cells = <0x00>;
+                compatible = "fixed-clock";
+                clock-frequency = <400000000>;
+        };
+
+        emac_ptp_clk: emac-ptp-clk {
+                #clock-cells = <0x00>;
+                compatible = "fixed-clock";
+                clock-frequency = <400000000>;
+        };
+
+        /* Clocks for SDMMC */
+        mmc_biu_clk: mmc-biu-clk {
+                #clock-cells = <0>;
+                compatible = "fixed-clock";
+                clock-frequency = <100000000>;
+        };
+
+        mmc_ciu_clk: mmc-ciu-clk {
+                #clock-cells = <0>;
+                compatible = "fixed-clock";
+                clock-frequency = <200000000>;
+        };
+
+        /* Regulators for SDMMC */
+        sd_emmc_power: regulator-sd-power {
+                compatible = "regulator-fixed";
+                regulator-name = "card-power";
+                regulator-min-microvolt = <3300000>;
+                regulator-max-microvolt = <3300000>;
+                regulator-always-on;
+        };
+
+        sd_io_1v8_reg: regulator-sd-io {
+                compatible = "regulator-gpio";
+                regulator-name = "sd-bus-io-power";
+                regulator-min-microvolt = <1800000>;
+                regulator-max-microvolt = <3300000>;
+                gpios = <&portb 3 0>;   /* GPIO_ACTIVE_HIGH = 0 */
+                states = <1800000 0x1>, <3300000 0x0>;
+        };
+
+        gpio1: gpio@10c03300 {
+                compatible = "snps,dw-apb-gpio";
+                reg = <0x0 0x10c03300 0x0 0x100>;
+                #address-cells = <1>;
+                #size-cells = <0>;
+                /* GPIO1_RESET = 89 in altr,rst-mgr-s10.h (Stratix10/Agilex5).
+                 * The old value of 58 was taken from the base altr,rst-mgr.h
+                 * which covers a different SoC family; it left GPIO1 permanently
+                 * in hardware reset, so portb never came up and the regulator-gpio
+                 * for vqmmc could not claim its GPIO pin. */
+                resets = <&rst 89>;
+                status = "okay";
+
+                portb: gpio-controller@0 {
+                        compatible = "snps,dw-apb-gpio-port";
+                        reg = <0>;
+                        gpio-controller;
+                        #gpio-cells = <2>;
+                        snps,nr-gpios = <24>;
+                };
+        };
+
+        sysmgr: sysmgr@10d12000 {
+                compatible = "altr,sys-mgr-s10", "altr,sys-mgr";
+                reg = <0x0 0x10d12000 0x0 0x500>;
+                status = "okay";
+        };
+
+        rst: rstmgr@10d11000 {
+                compatible = "altr,stratix10-rst-mgr", "altr,rst-mgr";
+                reg = <0x0 0x10d11000 0x0 0x1000>;
+                #reset-cells = <1>;
+        };
+
+        gmac2: ethernet@10830000 {
+                compatible = "altr,socfpga-stmmac-agilex5", "snps,dwxgmac-2.10";
+                reg = <0x0 0x10830000 0x0 0x3500>;
+                interrupts = <0x0 0xe0 0x4>,
+                             <0x0 0xe1 0x4>,
+                             <0x0 0xe2 0x4>,
+                             <0x0 0xe3 0x4>,
+                             <0x0 0xe4 0x4>,
+                             <0x0 0xe5 0x4>,
+                             <0x0 0xe6 0x4>,
+                             <0x0 0xe7 0x4>,
+                             <0x0 0xe8 0x4>,
+                             <0x0 0xe9 0x4>,
+                             <0x0 0xea 0x4>,
+                             <0x0 0xeb 0x4>,
+                             <0x0 0xec 0x4>,
+                             <0x0 0xed 0x4>,
+                             <0x0 0xee 0x4>,
+                             <0x0 0xef 0x4>,
+                             <0x0 0xf0 0x4>;
+                interrupt-names = "macirq",
+                                  "macirq_tx0",
+                                  "macirq_tx1",
+                                  "macirq_tx2",
+                                  "macirq_tx3",
+                                  "macirq_tx4",
+                                  "macirq_tx5",
+                                  "macirq_tx6",
+                                  "macirq_tx7",
+                                  "macirq_rx0",
+                                  "macirq_rx1",
+                                  "macirq_rx2",
+                                  "macirq_rx3",
+                                  "macirq_rx4",
+                                  "macirq_rx5",
+                                  "macirq_rx6",
+                                  "macirq_rx7";
+                resets = <&rst 34>, <&rst 42>;   /* EMAC2_RESET, EMAC2_OCP_RESET */
+                reset-names = "stmmaceth", "ahb";
+                clocks = <&emac0_clk>, <&emac_ptp_clk>;
+                clock-names = "stmmaceth", "ptp_ref";
+                mac-address = [00 00 00 00 00 00];
+                tx-fifo-depth = <32768>;
+                rx-fifo-depth = <16384>;
+                snps,multicast-filter-bins = <64>;
+                snps,perfect-filter-entries = <64>;
+                snps,axi-config = <&stmmac_axi_emac2_setup>;
+                snps,mtl-rx-config = <&mtl_rx_emac2_setup>;
+                snps,mtl-tx-config = <&mtl_tx_emac2_setup>;
+                snps,pbl = <32>;
+                snps,pblx8;
+                snps,multi-irq-en;
+                snps,tso;
+                snps,rx-vlan-offload;
+                snps,pagepool-tx-buf-quirk;
+                altr,sysmgr-syscon = <&sysmgr 0x4c 0>;
+                altr,smtg-hub;
+                snps,clk-csr = <0>;
+                phy-mode = "rgmii";
+                phy-handle = <&emac2_phy0>;
+                max-frame-size = <9000>;
+                status = "okay";
+
+                stmmac_axi_emac2_setup: stmmac-axi-config {
+                        snps,wr_osr_lmt = <31>;
+                        snps,rd_osr_lmt = <31>;
+                        snps,blen = <0 0 0 32 16 8 4>;
+                };
+
+                mtl_rx_emac2_setup: rx-queues-config {
+                        snps,rx-queues-to-use = <8>;
+                        snps,rx-sched-sp;
+                        queue0 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x0>; };
+                        queue1 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x1>; };
+                        queue2 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x2>; };
+                        queue3 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x3>; };
+                        queue4 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x4>; };
+                        queue5 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x5>; };
+                        queue6 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x6>; };
+                        queue7 { snps,dcb-algorithm; snps,map-to-dma-channel = <0x7>; };
+                };
+
+                mtl_tx_emac2_setup: tx-queues-config {
+                        snps,tx-queues-to-use = <8>;
+                        snps,tx-queues-with-coe = <2>;
+                        snps,tx-sched-wrr;
+                        queue0 { snps,weight = <0x09>; snps,dcb-algorithm; };
+                        queue1 { snps,weight = <0x0A>; snps,dcb-algorithm; };
+                        queue2 { snps,weight = <0x0B>; snps,coe-unsupported; snps,dcb-algorithm; };
+                        queue3 { snps,weight = <0x0C>; snps,coe-unsupported; snps,dcb-algorithm; };
+                        queue4 { snps,weight = <0x0D>; snps,coe-unsupported; snps,dcb-algorithm; };
+                        queue5 { snps,weight = <0x0E>; snps,coe-unsupported; snps,dcb-algorithm; };
+                        queue6 { snps,weight = <0x0F>; snps,coe-unsupported; snps,dcb-algorithm; snps,tbs-enable; };
+                        queue7 { snps,weight = <0x10>; snps,coe-unsupported; snps,dcb-algorithm; snps,tbs-enable; };
+                };
+
+                mdio0 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        compatible = "snps,dwmac-mdio";
+                        emac2_phy0: ethernet-phy@0 {
+                                reg = <0>;
+                        };
+                };
+        };
+
+        mmc: mmc0@10808000 {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                compatible = "altr,agilex5-sd6hc", "cdns,sd6hc";
+                reg = <0x0 0x10808000 0x0 0x1000>;
+                interrupts = <0x0 0x60 0x4>;   /* SPI 96 */
+                fifo-depth = <0x800>;
+                resets = <&rst 39>, <&rst 38>, <&rst 47>;
+                reset-names = "sdhc-reset", "combophy", "sdmmc-ocp";
+                clocks = <&mmc_biu_clk>, <&mmc_ciu_clk>;
+                clock-names = "biu", "ciu";
+
+                /* SMMU / coherency: the SoC's NCAIU2 port does not snoop the
+                 * LLC, so dma-coherent is omitted; Linux uses dma_map_single()
+                 * cache flushes instead. No iommus property and no smmu node:
+                 * the guest must not touch the SMMU — Bao/ATF manage it. */
+
+                /* SD6HC PHY parameters for sdhci-cadence6.c.
+                 *
+                 * Linux kernel ≥ 6.6 uses a new sdhci-cadence6.c driver
+                 * (altr,agilex5-sd6hc match) that computes all PHY register
+                 * values algorithmically from three board-level picosecond
+                 * delays.  The U-Boot cdns,phy-dqs-timing-delay-* properties
+                 * are for U-Boot's own mmc-sd6hc driver and are silently
+                 * ignored by Linux — do NOT copy them here.
+                 *
+                 * Values below match the SoCDK board (same as sdhci-cadence6.c
+                 * compile-time defaults, made explicit for documentation):
+                 *   iocell-input-delay  : 2500 ps — PCB + IO cell input path
+                 *   iocell-output-delay : 2500 ps — PCB + IO cell output path
+                 *   delay-element       :   24 ps — PHY DLL tap size */
+                cdns,iocell-input-delay = <2500>;
+                cdns,iocell-output-delay = <2500>;
+                cdns,delay-element = <24>;
+
+                no-mmc;
+                disable-wp;
+                /* Disable 1.8 V UHS signalling entirely.  The Cadence SD6HC
+                 * controller advertises re-tuning capability in its CAPS
+                 * register.  When any UHS mode (SDR50/SDR104) is enabled the
+                 * SDHCI core arms a periodic re-tuning timer and fires it on
+                 * every significant I/O burst.  sdhci_cdns_execute_tuning()
+                 * finds no valid window at the HS clock and returns -EIO,
+                 * causing repeated "no tuning point found" log spam.  HS mode
+                 * (50 MHz, 3.3 V) does not require tuning per the SD spec;
+                 * setting no-1-8-v prevents the MMC core from ever attempting
+                 * the 3.3 V→1.8 V voltage switch and disables the re-tuning
+                 * timer, eliminating the noise with no functional regression. */
+                no-1-8-v;
+                cap-sd-highspeed;
+                /* sd-uhs-sdr50/sdr104 intentionally omitted for initial bring-up:
+                 * SDR104 requires a successful 3.3V→1.8V voltage switch via
+                 * the regulator-gpio on portb.3.  Start with HS-only (50 MHz,
+                 * 3.3 V, no voltage switching) to confirm the data path works
+                 * end-to-end before exercising UHS modes.  To enable UHS:
+                 *   1. Remove no-1-8-v above.
+                 *   2. Add sd-uhs-sdr50 and verify voltage switch succeeds.
+                 *   3. Then add sd-uhs-sdr104 and resolve the tuning window. */
+                bus-width = <4>;
+                vmmc-supply = <&sd_emmc_power>;
+                vqmmc-supply = <&sd_io_1v8_reg>;
+                max-frequency = <200000000>;
+                sdhci-caps = <0x00000000 0x0000c800>;
+                sdhci-caps-mask = <0x00002000 0x0000ff00>;
+                status = "okay";
+        };
+
+        usbphy0: usbphy {
+                #phy-cells = <0>;
+                compatible = "usb-nop-xceiv";
+        };
+
+        /* USB3.1 controller (DWC3 wrapper).
+         * intel,agilex5-dwc3 is handled by dwc3-of-simple.c:
+         *   - resets are deasserted by the driver (optional — no-op if omitted)
+         *   - clocks are optional (bulk_get_all returns 0 if absent)
+         * U-Boot brings the controller up before Linux; the driver re-asserts
+         * and deasserts the reset during probe to ensure a clean state.
+         * iommus omitted: Bao does not expose the SMMU to the Linux guest.
+         * Reset IDs from include/dt-bindings/reset/altr,rst-mgr-s10.h:
+         *   USB1_RESET = 36, USB1_OCP_RESET = 44 */
+        usb31: usb@11000000 {
+                compatible = "intel,agilex5-dwc3", "snps,dwc3";
+                reg = <0x0 0x11000000 0x0 0x100000>;
+                ranges;
+                #address-cells = <1>;
+                #size-cells = <1>;
+                interrupts = <0x0 0x5e 0x4>;   /* GIC SPI 94 → irqid 126 */
+                resets = <&rst 36>, <&rst 44>;
+                reset-names = "dwc3", "dwc3-ecc";
+                phys = <&usbphy0>, <&usbphy0>;
+                phy-names = "usb2-phy", "usb3-phy";
+                maximum-speed = "super-speed";
+                snps,dis_u2_susphy_quirk;
+                snps,dis_u3_susphy_quirk;
+                snps,dma_set_40_bit_mask_quirk;
+                dr_mode = "host";
+                status = "okay";
+        };
+
+        /*
+         * Bao inter-VM remoteproc shim.
+         *
+         * Backed by the 64 KiB IPC shmem at IPA 0xC4000000 declared in
+         * configs/linux_freertos/config.c:
+         *   .ipcs[0] = { base=0xC4000000, size=0x10000, shmem_id=0,
+         *                interrupts=[52] }
+         *
+         * Bao identity-maps this region into both VMs at the same IPA
+         * (Stage-2 = Normal Cacheable WB Inner-Shareable).
+         *
+         * The "interrupts" property mirrors Bao's irqid 52, written
+         * here in standard 3-cell GIC form:
+         *   <SPI=0, intid=20 (= 52 - 32), edge-rising=1>
+         *
+         * The "bao,ipc-id" property is the index into the partition
+         * config's .ipcs[] array (single-shmem layout -> 0).  The
+         * driver passes it as x1 of the SMCCC vendor-hyp HVC fid
+         * 0x86000001 so Bao injects the peer-side notification.
+         */
+        bao_rproc: bao-rproc@c4000000 {
+                compatible  = "bao,rproc";
+                reg         = <0x0 0xc4000000 0x0 0x10000>;
+                /*
+                 * GIC SPI 20 -> irqid 52, EDGE rising (=1).  Bao's IPC
+                 * kick is logically edge-triggered: every peer
+                 * libmetal_bao_kick() HVC produces one fresh
+                 * vcpu_inject_irq() which momentarily asserts pending,
+                 * Linux acks via EOI, and the next HVC re-asserts.
+                 * Declaring it as level-high (=4) plus the matching
+                 * IRQF_ONESHOT in the bao_rproc driver kept the IRQ
+                 * masked at the GIC after the first delivery
+                 * (NS_ANNOUNCE) -- subsequent kicks set the vGIC
+                 * pending bit but never refilled an LR, so cat
+                 * /dev/rpmsg0 saw zero bytes despite vring0.used.idx
+                 * climbing to 17 in shmem.  Edge-rising matches the
+                 * actual semantics and lets every kick fan out cleanly.
+                 */
+                interrupts  = <0x0 0x14 0x1>;
+                bao,ipc-id  = <0x0>;
+                status      = "okay";
+        };
+
+        chosen {
+                /* rootfs on mmcblk0p2 (partition 2 of the SD card). rootwait is
+                 * required: SDHCI enumeration is async and the card is not
+                 * detected until a few hundred ms after the controller probes. */
+                bootargs = "console=ttyS0,115200 root=/dev/mmcblk0p2 rw rootwait vm_id=1 iomem=relaxed loglevel=8";
+                stdout-path = "/serial@10c02000";
+        };
+};

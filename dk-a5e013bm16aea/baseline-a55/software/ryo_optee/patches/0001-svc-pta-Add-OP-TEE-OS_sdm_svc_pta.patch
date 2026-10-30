@@ -1,0 +1,3517 @@
+diff --git a/optee_os/core/pta/sdm_svc.c b/optee_os/core/pta/sdm_svc.c
+new file mode 100644
+index 000000000000..b8d460e62909
+--- /dev/null
++++ b/optee_os/core/pta/sdm_svc.c
+@@ -0,0 +1,2516 @@
++// SPDX-License-Identifier: BSD-2-Clause
++/*
++ * Copyright (C) 2024, Intel Corporation
++ *
++ * Pseudo-TA: SDM Services
++ *
++ * Provides a secure enclave for accessing Intel SDM (Secure Device Manager)
++ * functions.	SDM operations are dispatched to ATF (EL3) via thread_smccc()
++ * and results are returned to the normal-world caller.
++ *
++ * Clients should call PTA_CMD_GET_VERSION first to validate the API version
++ * before invoking SDM-specific commands.
++ */
++
++#include <initcall.h>
++#include <inttypes.h>
++#include <io.h>
++#include <kernel/delay.h>
++#include <kernel/pseudo_ta.h>
++#include <kernel/thread_arch.h>
++#include <malloc.h>
++#include <mm/core_memprot.h>
++#include <platform_config.h>
++#include <pta_sdm_svc.h>
++#include <string.h>
++#include <string_ext.h>
++#include <tee/tee_svc.h>
++#include <trace.h>
++
++/*
++ * Agilex5 System Manager registers used to manage SDM DMA path.
++ * The SDM DMA hardware has a ~29-bit address output: smmu_src must be in
++ * [0x00000000, 0x20000000).  AWADDR_REMAP and ARADDR_REMAP are adders:
++ *   SDM_write_phys = smmu_dst + AWADDR_REMAP
++ *   SDM_read_phys  = smmu_src + ARADDR_REMAP
++ * Both must be DRAM_BASE (0x80000000) for the DMA to reach TZDRAM.
++ * Both are managed together via INTEL_SIP_SMC_REG_WRITE (whitelisted in
++ * ATF is_out_of_sec_range for Agilex5).
++ */
++#define SYSMGR_SDM_AWADDR_REMAP_OFF	0x280	/* SDM_BE_AWADDR_REMAP */
++#define SYSMGR_SDM_ARADDR_REMAP_OFF	0x284	/* SDM_BE_ARADDR_REMAP */
++#define SYSMGR_SDM_STREAM_CTRL_OFF	0x184	/* SDM_TBU_STREAM_CTRL_REG_1_SDM */
++
++#define SDM_STREAM_NS			0x03U	/* WSTREAMIDEN	| RSTREAMIDEN (non-secure) */
++#define SDM_STREAM_SECURE		0x33U	/* + WMMUSECSID | RMMUSECSID (secure) */
++#define SDM_REMAP_DRAM_BASE		0x80000000U
++
++#define PTA_NAME "sdm_svc.pta"
++
++/* ATF SiP: async SDOS crypto (yielding calls, route directly to SiP handler) */
++#define ALTERA_SIP_SMC_ASYNC_GET_IDCODE				0x420000D3
++#define ALTERA_SIP_SMC_ASYNC_FCS_OPEN_CS_SESSION			0x4200013A
++#define ALTERA_SIP_SMC_ASYNC_FCS_CLOSE_CS_SESSION			0x4200013B
++#define ALTERA_SIP_SMC_ASYNC_FCS_RANDOM_NUMBER_EXT			0x4200012D
++#define ALTERA_SIP_SMC_ASYNC_FCS_CRYPTION_EXT				0x4200012F
++#define ALTERA_SIP_SMC_ASYNC_FCS_SEND_CERTIFICATE			0x42000131
++#define ALTERA_SIP_SMC_ASYNC_FCS_GET_PROVISION_DATA			0x42000132
++#define ALTERA_SIP_SMC_ASYNC_FCS_CHIP_ID				0x42000135
++#define ALTERA_SIP_SMC_ASYNC_FCS_PROGRAM_OWNER_PUBKEY			0x4200016D
++#define ALTERA_SIP_SMC_ASYNC_SDM_EFUSE_RELOAD_CACHE			0x4200016C
++#define ALTERA_SIP_SMC_ASYNC_FCS_EFUSE_USER_SECURITY_OPTION		0x42000170
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE		0x42000177
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2	0x42000178
++#define ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED		0x42000179
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD				0x4200017E
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE				0x4200017F
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_CLEAR				0x42000180
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE			0x42000181
++#define ALTERA_SIP_SMC_ASYNC_RESP_POLL					0x420000C8
++/* Generic async SDM mailbox command */
++#define ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD				0x420000EE
++
++/*
++ * Sent by the Linux stratix10-soc FPGA manager (drivers/fpga/stratix10-soc.c)
++ * during its probe via COMMAND_FIRMWARE_VERSION (FAST_CALL_VAL(31)). If the
++ * NS-FILTER blocks it the fpga-mgr probe reports
++ *   "timeout waiting for firmware version"
++ * and fails with -110 (-ETIMEDOUT).  Implemented in ATF as
++ * intel_smc_fw_version() (socfpga_sip_svc.c).
++ */
++#define INTEL_SIP_SMC_FIRMWARE_VERSION					0xC200001F
++
++/* Always called during every boot */
++/* Board ID from JTAG usercode unconditional */
++#define INTEL_SIP_SMC_GET_USERCODE					0xC200003D
++/* PHY register masked write (ethernet init) */
++#define INTEL_SIP_SMC_REG_UPDATE					0xC2000009
++/* Register read (ETH/PHY negotiation helpers) */
++#define INTEL_SIP_SMC_REG_READ						0xC2000007
++/* Register write (ETH/PHY negotiation helpers) used by U-Boot for PHY init */
++#define INTEL_SIP_SMC_REG_WRITE					0xC2000008
++/* Direct SDM mailbox (legacy path) */
++#define INTEL_SIP_SMC_MBOX_SEND_CMD					0xC200003C
++
++/* Called when loading an FPGA bitstream (ghrd.core.rbf) */
++/* Begin FPGA config */
++#define INTEL_SIP_SMC_FPGA_CONFIG_START				0xC2000001
++/* Stream bitstream (STD/yielding 64-bit call) */
++#define INTEL_SIP_SMC_FPGA_CONFIG_WRITE				0x42000002
++/* Signal last chunk */
++#define INTEL_SIP_SMC_FPGA_CONFIG_COMPLETED_WRITE			0xC2000003
++/* Poll completion */
++#define INTEL_SIP_SMC_FPGA_CONFIG_ISDONE				0xC2000004
++/* Get DMA buffer for bitstream */
++#define INTEL_SIP_SMC_FPGA_CONFIG_GET_MEM				0xC2000005
++/* Enable HPS-FPGA bridges after load */
++#define INTEL_SIP_SMC_HPS_SET_BRIDGES					0xC2000032
++
++/* Called for RSU (Remote System Update) boot flow: */
++/* Read current RSU slot */
++#define INTEL_SIP_SMC_RSU_STATUS					0xC200000B
++/* Request next boot image */
++#define INTEL_SIP_SMC_RSU_UPDATE					0xC200000C
++/* Notify SDM of boot result */
++#define INTEL_SIP_SMC_RSU_NOTIFY					0xC200000E
++/* Retry counter */
++#define INTEL_SIP_SMC_RSU_RETRY_COUNTER				0xC200000F
++/* Max retry threshold */
++#define INTEL_SIP_SMC_RSU_MAX_RETRY					0xC2000012
++/* DCMF firmware version */
++#define INTEL_SIP_SMC_RSU_DCMF_VERSION					0xC2000010
++/* DCMF health status */
++#define INTEL_SIP_SMC_RSU_DCMF_STATUS					0xC2000014
++/* Copy DCMF version */
++#define INTEL_SIP_SMC_RSU_COPY_DCMF_VERSION				0xC2000011
++/* Copy DCMF status */
++#define INTEL_SIP_SMC_RSU_COPY_DCMF_STATUS				0xC2000015
++/* Copy max retry */
++#define INTEL_SIP_SMC_RSU_COPY_MAX_RETRY				0xC2000013
++/* ECC double-bit error handler */
++#define INTEL_SIP_SMC_ECC_DBE						0xC200000D
++
++/*
++ * Issued at Linux stratix10-svc probe time when the agilex5-svc node is bound:
++ * configures the SDM remapper (DISABLE when SMMU is present, ENABLE otherwise).
++ * Without this entry in the NS whitelist, ATF blocks the SMC with
++ *   "NS-FILTER: FID 0xc2000201 BLOCKED"
++ * and the Linux SVC probe returns -ENODEV, so none of the svc child devices
++ * (fpga-mgr, hwmon, fcs-config) are populated and /sys/kernel/fcs_sysfs/ is
++ * never created.
++ */
++#define INTEL_SIP_SMC_SDM_REMAPPER_CONFIG				0xC2000201
++
++/*
++ * Queried by the Linux stratix10-svc driver in stratix10_svc_async_init()
++ * (FAST_CALL_VAL(512)).  The driver requires async ATF API >= 3.0; if this
++ * SMC is blocked by the NS-FILTER it reports
++ *   "ATF version is not compatible for async operation"
++ * sets actrl->supported = false, and stratix10_svc_add_async_client() then
++ * returns -EOPNOTSUPP (-95).	That fails fcs-config probe with -95, so
++ * /sys/kernel/fcs_sysfs/ is never created and fcs_client -e fails with -9.
++ */
++#define INTEL_SIP_SMC_SVC_VERSION					0xC2000200
++
++/*
++ * Sent during fcs-config probe by hal_read_version_from_atf()
++ * (FCS_DEV_ATF_VERSION -> COMMAND_SMC_ATF_BUILD_VER, FAST_CALL_VAL(155)).
++ */
++#define INTEL_SIP_SMC_ATF_BUILD_VER					0xC200009B
++
++/*
++ * Async response polling FIDs used by stratix10-svc once an async client is
++ * active.  POLL_ON_IRQ (0x420000C9) is used when the svc IRQ is registered;
++ * RESP_POLL (0x420000C8, defined above as ALTERA_SIP_SMC_ASYNC_RESP_POLL) is
++ * used in polling fallback.  Both are required for any async FCS command
++ * (e.g. open/close crypto session) to complete.
++ */
++#define INTEL_SIP_SMC_ASYNC_POLL_ON_IRQ				0x420000C9
++
++/* ATF SiP: chip ID (fast call, a0=status, a1=mbox_status, a2=id_lo, a3=id_hi) */
++#define INTEL_SIP_SMC_FCS_CHIP_ID					0xC2000065
++
++/*
++ * ATF SiP SMC function IDs that the PTA installs on the SDM Non-Secure-world
++ * allowed list at boot via ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD (0x4200017E).
++ *
++ * NOTE: each entry passed in x1 of that SMC is a complete 32-bit SiP SMC
++ * function ID, NOT a raw SDM mailbox opcode.	ATF gates its own SiP services
++ * against this list and forwards the underlying SDM mailbox command to the
++ * SDM on the caller's behalf.
++ *
++ * The list is installed once from boot_final() (see
++ * sdm_ns_allowed_list_boot_init at the bottom of this file); extending it is
++ * a one-line change below — the static array sdm_ns_allowed_list_default[]
++ * picks the new entries up automatically.
++ */
++#define SDM_NS_ALLOWED_LIST_DEFAULT { \
++	INTEL_SIP_SMC_GET_USERCODE, \
++	INTEL_SIP_SMC_REG_UPDATE, \
++	INTEL_SIP_SMC_REG_READ, \
++	INTEL_SIP_SMC_REG_WRITE, \
++	INTEL_SIP_SMC_MBOX_SEND_CMD, \
++	INTEL_SIP_SMC_FPGA_CONFIG_START, \
++	INTEL_SIP_SMC_FPGA_CONFIG_WRITE, \
++	INTEL_SIP_SMC_FPGA_CONFIG_COMPLETED_WRITE, \
++	INTEL_SIP_SMC_FPGA_CONFIG_ISDONE, \
++	INTEL_SIP_SMC_FPGA_CONFIG_GET_MEM, \
++	INTEL_SIP_SMC_HPS_SET_BRIDGES, \
++	INTEL_SIP_SMC_RSU_STATUS, \
++	INTEL_SIP_SMC_RSU_UPDATE, \
++	INTEL_SIP_SMC_RSU_NOTIFY, \
++	INTEL_SIP_SMC_RSU_RETRY_COUNTER, \
++	INTEL_SIP_SMC_RSU_MAX_RETRY, \
++	INTEL_SIP_SMC_RSU_DCMF_VERSION, \
++	INTEL_SIP_SMC_RSU_DCMF_STATUS, \
++	INTEL_SIP_SMC_RSU_COPY_DCMF_VERSION, \
++	INTEL_SIP_SMC_RSU_COPY_DCMF_STATUS, \
++	INTEL_SIP_SMC_RSU_COPY_MAX_RETRY, \
++	INTEL_SIP_SMC_ECC_DBE, \
++	INTEL_SIP_SMC_SDM_REMAPPER_CONFIG, \
++	INTEL_SIP_SMC_SVC_VERSION, \
++	INTEL_SIP_SMC_ATF_BUILD_VER, \
++	ALTERA_SIP_SMC_ASYNC_RESP_POLL, \
++	INTEL_SIP_SMC_ASYNC_POLL_ON_IRQ, \
++	ALTERA_SIP_SMC_ASYNC_FCS_OPEN_CS_SESSION, \
++	ALTERA_SIP_SMC_ASYNC_FCS_CLOSE_CS_SESSION, \
++	INTEL_SIP_SMC_FIRMWARE_VERSION, \
++	ALTERA_SIP_SMC_ASYNC_GET_IDCODE,  \
++	ALTERA_SIP_SMC_ASYNC_FCS_CHIP_ID, \
++}
++
++/*
++ * Synchronous-SMC status codes for ALTERA_SIP_SMC_NS_ALLOWED_LIST_{CLEAR,ADD}.
++ * These differ from INTEL_SIP_SMC_STATUS_BUSY (=1) used by async SiP services;
++ * here, status 2 means "command only allowed from the Secure World / busy".
++ */
++ #define INTEL_SIP_SMC_NS_LIST_STATUS_OK		0
++ #define INTEL_SIP_SMC_NS_LIST_STATUS_BUSY		2
++
++/* Absolute physical addresses of System Manager registers writable via
++ * INTEL_SIP_SMC_REG_WRITE (whitelisted in ATF is_out_of_sec_range).
++ * Base = 0x10d12000; offsets: AWADDR_REMAP=0x280, ARADDR_REMAP=0x284,
++ *				SDM_TBU_STREAM_CTRL_REG_1_SDM=0x184.
++ */
++#define SDM_STREAM_CTRL_REG						0x10D12184U
++#define SDM_BE_AWADDR_REMAP_REG					0x10D12280U
++#define SDM_BE_ARADDR_REMAP_REG					0x10D12284U
++
++#define INTEL_SIP_SMC_STATUS_OK				0
++#define INTEL_SIP_SMC_STATUS_BUSY			1
++
++/* FCS crypto direction codes (match ATF FCS_MODE_* defines) */
++#define FCS_MODE_DECRYPT				0
++#define FCS_MODE_ENCRYPT				1
++
++/* Maximum number of poll iterations before giving up (~10 ms @ 1 µs/iteration) */
++#define SDM_CRYPT_POLL_MAX				10000
++
++/*
++ * SDM RNG output buffer layout (ATF writes via CPU stores at EL3):
++ *   [0..11]  : 3-word response header (session_id, context_id, crypto_header)
++ *   [12..12+size-1] : requested random bytes
++ * FCS_RANDOM_EXT_OFFSET = 3 words = 12 bytes; this mirrors the ATF define.
++ */
++#define SDM_RNG_HDR_BYTES				12U
++
++/*
++ * thread_smccc_ext - issue an SMC using registers x0..x11
++ *
++ * thread_smccc() only covers a0..a7.	The async SDOS crypto call passes
++ * dst_size in x8, owner_id in x9, smmu_src in x10, smmu_dst in x11.
++ * This helper uses inline assembly to load all twelve registers before
++ * the SMC instruction so ATF can read them from the saved CPU context.
++ *
++ * Return values (x0..x3) are written back to args->a0..a3.
++ * The a4..a7 fields of args carry the x4..x7 inputs.
++ */
++static void thread_smccc_ext(struct thread_smc_args *args,
++			     uint64_t a8, uint64_t a9,
++			     uint64_t a10, uint64_t a11)
++{
++	register uint64_t x0  asm("x0")	 = args->a0;
++	register uint64_t x1  asm("x1")	 = args->a1;
++	register uint64_t x2  asm("x2")	 = args->a2;
++	register uint64_t x3  asm("x3")	 = args->a3;
++	register uint64_t x4  asm("x4")	 = args->a4;
++	register uint64_t x5  asm("x5")	 = args->a5;
++	register uint64_t x6  asm("x6")	 = args->a6;
++	register uint64_t x7  asm("x7")	 = args->a7;
++	register uint64_t x8  asm("x8")	 = a8;
++	register uint64_t x9  asm("x9")	 = a9;
++	register uint64_t x10 asm("x10") = a10;
++	register uint64_t x11 asm("x11") = a11;
++
++	asm volatile(
++		"smc #0"
++		: "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3)
++		: "r"(x4),  "r"(x5),  "r"(x6),	"r"(x7),
++		  "r"(x8),  "r"(x9),  "r"(x10), "r"(x11)
++		: "memory", "x12", "x13", "x14", "x15", "x16", "x17"
++	);
++
++	args->a0 = x0;
++	args->a1 = x1;
++	args->a2 = x2;
++	args->a3 = x3;
++}
++
++/*
++ * poll_until_done - spin-poll ALTERA_SIP_SMC_ASYNC_RESP_POLL until not BUSY.
++ *
++ * trans_id: the same value passed to the async submit call.
++ * out:      if non-NULL, receives the full SMC result on success.
++ *
++ * Returns TEE_SUCCESS on poll success, TEE_ERROR_BUSY on timeout,
++ * TEE_ERROR_GENERIC on SDM error.
++ */
++static TEE_Result poll_until_done(uint64_t trans_id, struct thread_smc_args *out)
++{
++	struct thread_smc_args args = { };
++	int i = 0;
++
++	for (i = 0; i < SDM_CRYPT_POLL_MAX; i++) {
++		args.a0 = ALTERA_SIP_SMC_ASYNC_RESP_POLL;
++		args.a1 = trans_id;
++		thread_smccc(&args);
++		/*
++		 * In the ATF V3 SiP protocol the poll handler returns
++		 * STATUS_OK (0) when the SDM has responded (result in a1..a3)
++		 * and STATUS_ERROR (4) via the smc_ret() default case when no
++		 * response is in the mailbox FIFO yet.	 Any non-zero a0 means
++		 * "not done yet"; keep looping.
++		 */
++		if ((uint32_t)args.a0 == INTEL_SIP_SMC_STATUS_OK)
++			break;
++	}
++
++	if (i == SDM_CRYPT_POLL_MAX) {
++		EMSG("SDM async poll timed out after %d iterations", SDM_CRYPT_POLL_MAX);
++		return TEE_ERROR_BUSY;
++	}
++
++	/* a0=0: SDM responded; a1=mailbox err_code (0=success) */
++	if (args.a1 != 0) {
++		EMSG("SDM mailbox error: a1=0x%" PRIx64, args.a1);
++		return TEE_ERROR_GENERIC;
++	}
++
++	if (out)
++		*out = args;
++
++	return TEE_SUCCESS;
++}
++
++/*
++ * send_pubkey_program_phase2 -
++ * This function is called when provisioning flow (such as NJP via HPS) where physical fuses are blown
++ * such that it changes the device state or it affects the wrapping base key derivation in BootROM,
++ * a Soft POR must be performed.
++ * This must be performed before FW generating wrapping keys to wrap customer assets and stored to
++ * target storage device.
++ *	ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2 (0x42000178)
++ *	to ATF and poll for the SDM mailbox completion.
++ *
++ * This is an async SiP service: ATF queues the request to the SDM and
++ * returns INTEL_SIP_SMC_STATUS_OK once accepted; the SDM result must then
++ * be drained with ALTERA_SIP_SMC_ASYNC_RESP_POLL (handled here by
++ * poll_until_done()).	 No SDM payload buffer is required — the operation
++ * is fully described by the function ID in x0 and the request header in x1.
++ *
++ *   x0 = ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2
++ *   x1 = request_header (caller-supplied; commonly the client_id:job_id
++ *	   transaction tag used by the ATF async dispatcher)
++ *
++ * Returns:
++ *   TEE_SUCCESS	- SDM accepted and completed the phase-2 program
++ *   TEE_ERROR_GENERIC - ATF rejected the submit (a0 != STATUS_OK)
++ *   TEE_ERROR_BUSY	- SDM async poll timed out (see poll_until_done())
++ */
++static TEE_Result send_pubkey_program_phase2(uint64_t request_header)
++{
++	struct thread_smc_args args = { };
++	TEE_Result res = TEE_SUCCESS;
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2;
++	args.a1 = request_header;
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("secure_efuse_pubkey_program_phase2 submit failed: a0=0x%" PRIx64,
++		     args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	res = poll_until_done(0, NULL);
++	if (res != TEE_SUCCESS) {
++		EMSG("secure_efuse_pubkey_program_phase2: SDM rejected request_header=0x%" PRIx64,
++		     request_header);
++		return res;
++	}
++
++	DMSG("secure_efuse_pubkey_program_phase2: SDM accepted (request_header=0x%" PRIx64 ")",
++	     request_header);
++	return TEE_SUCCESS;
++}
++
++/*
++ * trigger_pubkey_program_phase2_finalize - common eFuse-finalize helper.
++ *
++ * Called by command handlers that program SDM owner-root eFuses after the
++ * underlying SDM mailbox command has returned SUCCESS.  This helper:
++ *
++ *   1. Holds the calling thread for 1 second (mdelay) so the host's
++ *	 preceding SUCCESS response is fully consumed before any Soft POR
++ *	 can be triggered, and so the SDM mailbox has time to settle.
++ *   2. Issues ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2
++ *	 (0x42000178) via send_pubkey_program_phase2().
++ *   3. Writes the phase-2 outcome into *phase2_status_out so the command
++ *	 handler can forward it to the caller:
++ *	   - physical / NON-VOLATILE fusing → SDM_PHASE2_STATUS_SUCCESS
++ *	     (a Soft POR is now imminent and the host may not see a reply)
++ *	   - virtual / cache-only fusing    → SDM_PHASE2_STATUS_NOP
++ *	     (the SDM completes phase-2 without resetting the system)
++ *	   - phase-2 SMC submit/poll error  → SDM_PHASE2_STATUS_FAILED
++ *
++ * The phase-2 SMC is sent the same way regardless of @non_volatile because
++ * the SDM itself decides whether to trigger Soft POR or NOP based on the
++ * fuse mode it used for the previous command.	 @non_volatile only tells us
++ * how to label the outcome reported back to the caller.
++ *
++ * NOTE: mdelay() is an active poll on the architecture timer, which blocks
++ * the PTA thread for the entire 1-second hold.  This is intentional and
++ * matches the platform spec requirement that the host be allowed to consume
++ * the prior SUCCESS response before phase-2 (and a possible Soft POR) is
++ * triggered.
++ */
++static TEE_Result trigger_pubkey_program_phase2_finalize(bool non_volatile,
++							 uint32_t *phase2_status_out)
++{
++	TEE_Result res = TEE_SUCCESS;
++
++	if (phase2_status_out)
++		*phase2_status_out = SDM_PHASE2_STATUS_FAILED;
++
++	DMSG("phase2_finalize: holding 1s before phase-2 trigger (mode=%s)",
++	     non_volatile ? "physical/NON-VOLATILE" : "virtual/cache-only");
++	mdelay(1000);
++
++	res = send_pubkey_program_phase2(0);
++	if (res != TEE_SUCCESS) {
++		EMSG("phase2_finalize: phase-2 SMC failed (0x%" PRIx32 ")",
++		     (uint32_t)res);
++		return res;
++	}
++
++	if (phase2_status_out)
++		*phase2_status_out = non_volatile ? SDM_PHASE2_STATUS_SUCCESS
++						  : SDM_PHASE2_STATUS_NOP;
++
++	DMSG("phase2_finalize: complete (%s)",
++	     non_volatile ? "SUCCESS / Soft POR will be triggered"
++			  : "NOP / Soft POR suppressed (virtual fusing)");
++	return TEE_SUCCESS;
++}
++
++static TEE_Result get_version(uint32_t ptypes,
++			      TEE_Param params[TEE_NUM_PARAMS])
++{
++	if (ptypes != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				      TEE_PARAM_TYPE_NONE,
++				      TEE_PARAM_TYPE_NONE,
++				      TEE_PARAM_TYPE_NONE)) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	params[0].value.a = PTA_SDM_SVC_API_VERSION;
++	return TEE_SUCCESS;
++}
++
++static TEE_Result get_id_code(uint32_t ptypes,
++			      TEE_Param params[TEE_NUM_PARAMS])
++{
++	struct thread_smc_args args = { };
++	struct thread_smc_args poll_result = { };
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				      TEE_PARAM_TYPE_NONE,
++				      TEE_PARAM_TYPE_NONE,
++				      TEE_PARAM_TYPE_NONE)) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_GET_IDCODE;
++	args.a1 = 0; /* trans_id */
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("get_idcode submit failed: a0=0x%" PRIx64, args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	/* Wait for the SDM async response; a1=mbox_err, a2=jtag_idcode */
++	res = poll_until_done(0, &poll_result);
++	if (res != TEE_SUCCESS)
++		return res;
++
++	/*
++	 * IEEE 1149.1 mandates bit 0 of a valid JTAG IDCODE is always 1.
++	 * A value of 0 (or any value with bit 0 clear) means the SDM did
++	 * not return a real IDCODE — treat it as a hardware error.
++	 */
++	if (!((uint32_t)poll_result.a2 & 1U)) {
++		EMSG("invalid JTAG IDCODE 0x%" PRIx64 " (bit 0 must be 1)",
++		     poll_result.a2);
++		return TEE_ERROR_GENERIC;
++	}
++
++	params[0].value.a = (uint32_t)poll_result.a2;
++	params[0].value.b = 0;
++
++	return TEE_SUCCESS;
++}
++
++static TEE_Result get_chip_id(uint32_t ptypes,
++			      TEE_Param params[TEE_NUM_PARAMS])
++{
++	struct thread_smc_args args = { };
++
++	if (ptypes != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
++				      TEE_PARAM_TYPE_NONE,
++				      TEE_PARAM_TYPE_NONE,
++				      TEE_PARAM_TYPE_NONE)) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	args.a0 = INTEL_SIP_SMC_FCS_CHIP_ID;
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("ATF returned status 0x%" PRIx64 " mbox_error 0x%" PRIx64,
++		     args.a0, args.a1);
++		return TEE_ERROR_GENERIC;
++	}
++
++	/* a1 = mailbox status (0 = success), a2 = id_lo, a3 = id_hi */
++	if (args.a1 != 0) {
++		EMSG("mailbox status 0x%" PRIx64, args.a1);
++		return TEE_ERROR_GENERIC;
++	}
++
++	params[0].value.a = (uint32_t)args.a2;
++	params[0].value.b = (uint32_t)args.a3;
++
++	return TEE_SUCCESS;
++}
++
++static TEE_Result cmd_sdm_sdos_crypt(uint32_t ptypes,
++				     TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_types =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_MEMREF_INPUT,
++				TEE_PARAM_TYPE_MEMREF_OUTPUT,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	struct thread_smc_args poll_result = { };
++	TEE_Result res = TEE_SUCCESS;
++	uint32_t direction = 0;
++	void *src_buf = NULL;	/* NS shared memory from CA (input) */
++	size_t src_size = 0;
++	void *dst_buf = NULL;	/* NS shared memory from CA (output) */
++	size_t dst_size = 0;
++	void *sec_src = NULL;	/* TZDRAM bounce buffer — SDM DMA source */
++	void *sec_dst = NULL;	/* TZDRAM bounce buffer — SDM DMA destination */
++	paddr_t sec_src_phys = 0;
++	paddr_t sec_dst_phys = 0;
++	uint32_t smmu_src = 0;
++	uint32_t smmu_dst = 0;
++	uint32_t session_id = 0;
++	size_t out_size = 0;
++	vaddr_t sysmgr = 0;
++	uint32_t awaddr_remap = 0;
++	uint32_t araddr_remap = 0;
++	uint32_t stream_ctrl = 0;
++	uint32_t saved_stream_ctrl = 0;
++	bool changed_remap = false;
++	bool changed_stream = false;
++
++	if (ptypes != exp_types) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	direction = params[0].value.a;
++	src_buf	 = params[1].memref.buffer;
++	src_size = params[1].memref.size;
++	dst_buf	 = params[2].memref.buffer;
++	dst_size = params[2].memref.size;
++
++	if (!src_buf || !src_size || !dst_buf || !dst_size)
++		return TEE_ERROR_BAD_PARAMETERS;
++
++	if (direction != FCS_MODE_ENCRYPT && direction != FCS_MODE_DECRYPT) {
++		EMSG("invalid direction %" PRIu32, direction);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	sysmgr = (vaddr_t)phys_to_virt(SYSMGR_BASE, MEM_AREA_IO_NSEC,
++					SYSMGR_SIZE);
++	awaddr_remap = io_read32(sysmgr + SYSMGR_SDM_AWADDR_REMAP_OFF);
++	araddr_remap = io_read32(sysmgr + SYSMGR_SDM_ARADDR_REMAP_OFF);
++	stream_ctrl  = io_read32(sysmgr + SYSMGR_SDM_STREAM_CTRL_OFF);
++	saved_stream_ctrl = stream_ctrl;
++
++	/*
++	 * Allocate 32-byte-aligned TZDRAM bounce buffers for the SDM DMA.
++	 * The NS shared memory buffers from the CA live in NS DRAM; the Secure
++	 * SMMU only maps TZDRAM, so SDM DMA must target TZDRAM addresses.
++	 */
++	sec_src = memalign(32, src_size);
++	if (!sec_src)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	sec_dst = memalign(32, dst_size);
++	if (!sec_dst) {
++		free(sec_src);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	sec_src_phys = virt_to_phys(sec_src);
++	sec_dst_phys = virt_to_phys(sec_dst);
++	smmu_src = (uint32_t)(sec_src_phys - SDM_REMAP_DRAM_BASE);
++	smmu_dst = (uint32_t)(sec_dst_phys - SDM_REMAP_DRAM_BASE);
++
++	/* Copy NS input → TZDRAM and flush so SDM DMA sees clean data in RAM */
++	memmove(sec_src, src_buf, src_size);
++	cache_op_inner(DCACHE_AREA_CLEAN, sec_src, src_size);
++	/* Clean+invalidate dst so no stale dirty lines cover the DMA write */
++	cache_op_inner(DCACHE_AREA_CLEAN_INV, sec_dst, dst_size);
++
++	/* ------------------------------------------------------------------ */
++	/* Step 1: Open crypto session					      */
++	/* ------------------------------------------------------------------ */
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_OPEN_CS_SESSION;
++	args.a1 = 0;
++	thread_smccc(&args);
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("open_cs_session submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bounce;
++	}
++
++	res = poll_until_done(0, &poll_result);
++	if (res != TEE_SUCCESS)
++		goto free_bounce;
++
++	session_id = (uint32_t)poll_result.a2;
++
++	/* ------------------------------------------------------------------ */
++	/* Step 2: Submit encrypt or decrypt using TZDRAM bounce addresses    */
++	/* ------------------------------------------------------------------ */
++	memset(&args, 0, sizeof(args));
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_CRYPTION_EXT;
++	args.a1 = 0;
++	args.a2 = session_id;
++	args.a3 = 0;
++	args.a4 = direction;
++	args.a5 = (uint64_t)sec_src_phys;   /* TZDRAM phys — ATF DDR range check */
++	args.a6 = (uint64_t)src_size;
++	args.a7 = (uint64_t)sec_dst_phys;   /* TZDRAM phys — ATF DDR range check */
++
++	/*
++	 * Ensure AWADDR_REMAP and ARADDR_REMAP = DRAM_BASE and Secure stream
++	 * are active for the SDM DMA.	Both remap registers are set and
++	 * restored together; only change them if either is not already at the
++	 * required value.  Restore the original values afterward if changed.
++	 *
++	 * Both registers are managed via INTEL_SIP_SMC_REG_WRITE (whitelisted
++	 * in ATF is_out_of_sec_range for Agilex5).
++	 *
++	 * Secure stream (0x33) routes SDM DMA through the Secure SMMU.	 On
++	 * Agilex5 the Secure SMMU is disabled (S_CR0.SMMUEN=0), so Secure
++	 * stream transactions bypass SMMU entirely and reach the physical
++	 * address produced by the REMAP registers.  This avoids the NS SMMU
++	 * stream-10 STE whose IOVA window covers only service_reserved, not TZDRAM.
++	 */
++	if (awaddr_remap != SDM_REMAP_DRAM_BASE ||
++	    araddr_remap != SDM_REMAP_DRAM_BASE) {
++		struct thread_smc_args smc = { };
++
++		smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++		smc.a1 = SDM_BE_AWADDR_REMAP_REG;
++		smc.a2 = SDM_REMAP_DRAM_BASE;
++		thread_smccc(&smc);
++		memset(&smc, 0, sizeof(smc));
++		smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++		smc.a1 = SDM_BE_ARADDR_REMAP_REG;
++		smc.a2 = SDM_REMAP_DRAM_BASE;
++		thread_smccc(&smc);
++		changed_remap = true;
++	}
++
++	if (stream_ctrl != SDM_STREAM_SECURE) {
++		struct thread_smc_args smc = { };
++
++		smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++		smc.a1 = SDM_STREAM_CTRL_REG;
++		smc.a2 = SDM_STREAM_SECURE;
++		thread_smccc(&smc);
++		changed_stream = true;
++	}
++
++	thread_smccc_ext(&args, (uint64_t)dst_size, 0,
++			 (uint64_t)smmu_src, (uint64_t)smmu_dst);
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("crypt submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto close_session;
++	}
++
++	res = poll_until_done(0, &poll_result);
++	if (res != TEE_SUCCESS)
++		goto close_session;
++
++	out_size = (size_t)poll_result.a2;
++	DMSG("sdos_crypt: dir=%u complete; output_size=%zu", direction, out_size);
++
++	/* Invalidate TZDRAM dst so CPU sees what SDM DMA wrote, then copy out.
++	 * out_size is reported by ATF/SDM; reject anything larger than the
++	 * caller's buffer before TEE_MemMove so a bad response cannot overflow.
++	 */
++	cache_op_inner(DCACHE_AREA_INVALIDATE, sec_dst, dst_size);
++	if (out_size > dst_size) {
++		EMSG("sdm_crypt: ATF output size %zu exceeds caller buffer %zu",
++		     out_size, dst_size);
++		res = TEE_ERROR_BAD_PARAMETERS;
++		goto close_session;
++	}
++	memmove(dst_buf, sec_dst, out_size);
++	params[2].memref.size = out_size;
++
++close_session:
++	/* Restore any registers we changed, in reverse order. */
++	if (changed_stream) {
++		struct thread_smc_args smc = { };
++
++		smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++		smc.a1 = SDM_STREAM_CTRL_REG;
++		smc.a2 = saved_stream_ctrl;
++		thread_smccc(&smc);
++	}
++
++	if (changed_remap) {
++		struct thread_smc_args smc = { };
++
++		smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++		smc.a1 = SDM_BE_AWADDR_REMAP_REG;
++		smc.a2 = awaddr_remap;	/* restore original value */
++		thread_smccc(&smc);
++		memset(&smc, 0, sizeof(smc));
++		smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++		smc.a1 = SDM_BE_ARADDR_REMAP_REG;
++		smc.a2 = araddr_remap;	/* restore original value */
++		thread_smccc(&smc);
++	}
++
++	/* Close crypto session (best-effort) */
++	{
++		struct thread_smc_args close_args = { };
++
++		close_args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_CLOSE_CS_SESSION;
++		close_args.a1 = 0;
++		close_args.a2 = session_id;
++		thread_smccc(&close_args);
++		if (close_args.a0 == INTEL_SIP_SMC_STATUS_OK)
++			poll_until_done(0, NULL);
++	}
++
++free_bounce:
++	/* Wipe plaintext/ciphertext from the TZDRAM bounce buffers before free
++	 * (TEE_ClearSecureMem equivalent for sensitive cryptographic data).
++	 */
++	if (sec_src)
++		memzero_explicit(sec_src, src_size);
++	if (sec_dst)
++		memzero_explicit(sec_dst, dst_size);
++	free(sec_src);
++	free(sec_dst);
++	return res;
++}
++
++static TEE_Result cmd_sdm_get_random(uint32_t ptypes,
++				     TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_types =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_MEMREF_OUTPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	struct thread_smc_args poll_result = { };
++	TEE_Result res = TEE_SUCCESS;
++	uint32_t size = 0;
++	void *out_buf = NULL;
++	size_t out_size = 0;
++	uint8_t *bounce = NULL;
++	paddr_t bounce_phys = 0;
++	uint32_t session_id = 0;
++
++	if (ptypes != exp_types) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	size	= params[0].value.a;
++	out_buf = params[1].memref.buffer;
++	out_size = params[1].memref.size;
++
++	if (size == 0 || (size % 4) != 0 || size > SDM_RNG_MAX_BYTES) {
++		EMSG("invalid size %" PRIu32 ": must be 4-aligned, 4..%u",
++		     size, SDM_RNG_MAX_BYTES);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++	if (!out_buf || out_size < size) {
++		EMSG("output buffer too small: %zu < %" PRIu32, out_size, size);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Allocate a TZDRAM bounce buffer for the SDM RNG output.
++	 *
++	 * ATF writes the result via CPU stores at EL3 (not SDM DMA), so any
++	 * secure physical address works — no SMMU or remapper configuration
++	 * is required.	 The buffer layout is:
++	 *   [0..SDM_RNG_HDR_BYTES-1]  : 3-word response header (session/ctx/flags)
++	 *   [SDM_RNG_HDR_BYTES..+size] : requested random bytes
++	 *
++	 * The random data stays in TZDRAM until we copy it to the caller's
++	 * normal-world output buffer at the end of this function.
++	 */
++	bounce = memalign(4, SDM_RNG_HDR_BYTES + size);
++	if (!bounce)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	memset(bounce, 0, SDM_RNG_HDR_BYTES + size);
++	cache_op_inner(DCACHE_AREA_CLEAN, bounce, SDM_RNG_HDR_BYTES + size);
++	bounce_phys = virt_to_phys(bounce);
++
++	/* ------------------------------------------------------------------ */
++	/* Step 1: Open crypto session					      */
++	/* ------------------------------------------------------------------ */
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_OPEN_CS_SESSION;
++	args.a1 = 0;
++	thread_smccc(&args);
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("open_cs_session submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bounce;
++	}
++
++	res = poll_until_done(0, &poll_result);
++	if (res != TEE_SUCCESS)
++		goto free_bounce;
++
++	session_id = (uint32_t)poll_result.a2;
++
++	/* ------------------------------------------------------------------- */
++	/* Step 2: Request random data; ATF writes output to TZDRAM bounce buf */
++	/* ------------------------------------------------------------------- */
++	memset(&args, 0, sizeof(args));
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_RANDOM_NUMBER_EXT;
++	args.a1 = 0;			/* trans_id */
++	args.a2 = session_id;
++	args.a3 = 0;			/* context_id */
++	args.a4 = (uint64_t)bounce_phys;/* destination (TZDRAM) */
++	args.a5 = (uint64_t)size;	/* byte count */
++	thread_smccc(&args);
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("get_random submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto close_session;
++	}
++
++	res = poll_until_done(0, NULL);
++	if (res != TEE_SUCCESS)
++		goto close_session;
++
++	/*
++	 * Invalidate the bounce buffer so we read what ATF wrote (EL3 CPU
++	 * stores) rather than any stale OP-TEE S-EL1 cache lines.
++	 */
++	cache_op_inner(DCACHE_AREA_INVALIDATE, bounce, SDM_RNG_HDR_BYTES + size);
++
++	/* Copy random data (past the 12-byte header) to the caller's buffer */
++	memmove(out_buf, bounce + SDM_RNG_HDR_BYTES, size);
++	params[1].memref.size = size;
++	DMSG("sdm_get_random: %" PRIu32 " bytes of random data returned", size);
++
++close_session:
++	{
++		struct thread_smc_args close_args = { };
++
++		close_args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_CLOSE_CS_SESSION;
++		close_args.a1 = 0;
++		close_args.a2 = session_id;
++		thread_smccc(&close_args);
++		if (close_args.a0 == INTEL_SIP_SMC_STATUS_OK)
++			poll_until_done(0, NULL);
++	}
++
++free_bounce:
++	/* Random output is sensitive — wipe the bounce buffer before free
++	 * (TEE_ClearSecureMem equivalent).
++	 */
++	if (bounce)
++		memzero_explicit(bounce, SDM_RNG_HDR_BYTES + size);
++	free(bounce);
++	return res;
++}
++
++/*
++ * cert_rd32 - Read a little-endian 32-bit certificate field
++ *
++ * Byte-wise so the read stays alignment-safe regardless of where the
++ * certificate sits inside the bounce buffer.
++ */
++static uint32_t cert_rd32(const uint8_t *cert, size_t off)
++{
++	return (uint32_t)cert[off] |
++	       ((uint32_t)cert[off + 1] << 8) |
++	       ((uint32_t)cert[off + 2] << 16) |
++	       ((uint32_t)cert[off + 3] << 24);
++}
++
++/*
++ * cert_is_key_cancellation - Decide whether a certificate cancels a key
++ *
++ * Only key-cancellation certificates alter fuse state in a way that needs the
++ * phase-2 finalize; counter updates and provisioning certificates must not
++ * trigger it.  Classification rules are documented with the SDM_CERT_*
++ * offsets in pta_sdm_svc.h.
++ *
++ * @cert must point at the PTA's own TZDRAM copy, never at the caller's
++ * non-secure memref, so the host cannot alter the blob between this check and
++ * the mailbox submission.
++ *
++ * A blob too short to hold the header, or one whose magic does not match, is
++ * classified as "not a cancellation": the fields cannot be trusted, and
++ * skipping phase-2 is the conservative outcome.
++ */
++static bool cert_is_key_cancellation(const uint8_t *cert, size_t cert_size)
++{
++	uint32_t magic = 0;
++	uint32_t cert_type = 0;
++	uint32_t counter_type = 0;
++
++	if (cert_size < SDM_CERT_MIN_HDR_BYTES) {
++		IMSG("sdm_send_cert: %zu-byte blob is too short to classify (need %u)",
++		     cert_size, SDM_CERT_MIN_HDR_BYTES);
++		return false;
++	}
++
++	magic = cert_rd32(cert, SDM_CERT_OFF_MAGIC);
++	if (magic != SDM_CERT_MAGIC_NUM) {
++		IMSG("sdm_send_cert: unexpected cert magic 0x%08" PRIx32
++		     " (expected 0x%08" PRIx32 ")", magic, SDM_CERT_MAGIC_NUM);
++		return false;
++	}
++
++	cert_type = cert_rd32(cert, SDM_CERT_OFF_TYPE);
++
++	switch (cert_type) {
++	case SDM_CERT_TYPE_CANCEL_SDOS_ROOT:
++		IMSG("sdm_send_cert: cert_type=0x%02" PRIx32
++		     " cancellation (SDOS / service root key)", cert_type);
++		return true;
++
++	case SDM_CERT_TYPE_CANCEL_AES_ROOT:
++		IMSG("sdm_send_cert: cert_type=0x%02" PRIx32
++		     " cancellation (user AES root key)", cert_type);
++		return true;
++
++	case SDM_CERT_TYPE_COUNTER:
++		counter_type = cert_rd32(cert, SDM_CERT_OFF_COUNTER) &
++			       SDM_CERT_COUNTER_TYPE_MASK;
++
++		if (counter_type == SDM_CERT_COUNTER_KEYID_CANCEL) {
++			uint32_t owner = (cert_rd32(cert, SDM_CERT_OFF_COUNTER) >>
++					  SDM_CERT_KEY_OWNER_SHIFT) &
++					 SDM_CERT_KEY_OWNER_MASK;
++
++			IMSG("sdm_send_cert: cert_type=0x%02" PRIx32
++			     " cancellation (explicit KEY-ID cancel, owner=%s, id=%" PRIu32 ")",
++			     cert_type, owner ? "Intel" : "user",
++			     cert_rd32(cert, SDM_CERT_OFF_ID));
++			return true;
++		}
++
++		if (counter_type == SDM_CERT_COUNTER_ROOT_HASH_CANCEL) {
++			IMSG("sdm_send_cert: cert_type=0x%02" PRIx32
++			     " cancellation (owner root-hash slot %" PRIu32 ")",
++			     cert_type, cert_rd32(cert, SDM_CERT_OFF_ID));
++			return true;
++		}
++
++		IMSG("sdm_send_cert: cert_type=0x%02" PRIx32
++		     " counter update (counter type %" PRIu32 "), not a cancellation",
++		     cert_type, counter_type);
++		return false;
++
++	default:
++		IMSG("sdm_send_cert: cert_type=0x%02" PRIx32
++		     " is not a key cancellation", cert_type);
++		return false;
++	}
++}
++
++/*
++ * cmd_sdm_send_cert - Submit a certificate blob to the SDM
++ *			(PTA_CMD_SDM_SEND_CERT)
++ *
++ * Submits ALTERA_SIP_SMC_ASYNC_FCS_SEND_CERTIFICATE (0x42000131) to ATF
++ * with a TZDRAM bounce buffer holding `4 zero bytes || cert_blob || zero-pad`.
++ * The SDM mailbox protocol for MBOX_CMD_VAB_SRC_CERT requires this 4-byte
++ * zero-valued header word prepended to the certificate data.
++ *
++ * After the SDM accepts the certificate, and only when the blob is a key
++ * cancellation (see cert_is_key_cancellation), the PTA issues the phase-2
++ * finalize SMC (ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2 =
++ * 0x42000178) so the SDM commits the eFuse operation.	The SDM itself decides
++ * whether to trigger a Soft POR or return NOP based on the fuse mode encoded
++ * in the certificate — the PTA sends the phase-2 SMC with non_volatile=true so
++ * the SDM can make that decision.  The phase-2 outcome is logged internally; a
++ * Soft POR may follow acceptance of a NON-VOLATILE cancellation.  Counter
++ * updates and provisioning certificates skip phase-2 entirely.
++ *
++ * The inline poll (not poll_until_done) preserves the SDM mailbox result
++ * from the poll response, since fcs_send_cert_cb sets poll-a0=OK regardless
++ * of acceptance; the real result lives in a1 (mailbox error) and a2 (detail).
++ *
++ * params[0] MEMREF_INPUT   certificate blob (≤ SDM_CERT_MAX_SIZE bytes,
++ *			     4-byte aligned size)
++ * params[1] VALUE_OUTPUT   .a = SDM mailbox error code (0 = accepted)
++ *			     .b = SDM response detail word
++ * params[2..3] unused
++ */
++static TEE_Result cmd_sdm_send_cert(uint32_t ptypes,
++				    TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_types =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
++				TEE_PARAM_TYPE_VALUE_OUTPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	TEE_Result res = TEE_SUCCESS;
++	const void *cert_buf = NULL;
++	size_t cert_size = 0;
++	size_t cert_padded = 0;
++	size_t total_size = 0;
++	uint8_t *bounce = NULL;
++	uint32_t phase2_status = SDM_PHASE2_STATUS_SKIPPED;
++	paddr_t bounce_phys = 0;
++	bool is_cancellation = false;
++	int i = 0;
++
++	if (ptypes != exp_types) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	cert_buf  = params[0].memref.buffer;
++	cert_size = params[0].memref.size;
++
++	if (!cert_buf || cert_size == 0 || cert_size > SDM_CERT_MAX_SIZE) {
++		EMSG("invalid cert size %zu (max %u)", cert_size, SDM_CERT_MAX_SIZE);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Round cert_size up to a 4-byte boundary for the mailbox payload.
++	 * ATF requires is_size_4_bytes_aligned(total_size).
++	 */
++	cert_padded = ROUNDUP(cert_size, 4);
++	total_size  = 4 + cert_padded;	 /* 4-byte zero prefix + padded cert */
++
++	/*
++	 * Allocate a TZDRAM bounce buffer.
++	 *
++	 * The SDM mailbox protocol for MBOX_CMD_VAB_SRC_CERT requires a
++	 * 4-byte zero-valued word prepended to the certificate data.
++	 * ATF reads the buffer via CPU loads and copies word-by-word into
++	 * the mailbox FIFO registers — no SDM DMA, no SMMU concerns.
++	 * TZDRAM is within DDR range and passes ATF's is_address_in_ddr_range
++	 * check.  ATF also calls flush_dcache_range() after submission, so
++	 * our cache clean below ensures the data is in DRAM beforehand.
++	 */
++	bounce = memalign(4, total_size);
++	if (!bounce)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	memset(bounce, 0, total_size);
++	memmove(bounce + 4, cert_buf, cert_size);
++	/* Padding bytes (if any) remain zero from memset above */
++
++	/*
++	 * Classify from the TZDRAM copy, not from the caller's memref: the
++	 * host could otherwise rewrite the blob between this check and the
++	 * mailbox submission, and make a counter update look like a
++	 * cancellation (or the reverse).
++	 */
++	is_cancellation = cert_is_key_cancellation(bounce + 4, cert_size);
++
++	/* Clean TZDRAM to DRAM so ATF's CPU reads see the certificate */
++	cache_op_inner(DCACHE_AREA_CLEAN, bounce, total_size);
++	bounce_phys = virt_to_phys(bounce);
++
++	/* Submit certificate to SDM via ATF async service */
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_SEND_CERTIFICATE;
++	args.a1 = 0;			/* trans_id */
++	args.a2 = (uint64_t)bounce_phys;
++	args.a3 = (uint64_t)total_size;
++	thread_smccc(&args);
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("send_cert submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bounce;
++	}
++
++	/*
++	 * Inline poll — do NOT use poll_until_done() here.
++	 *
++	 * fcs_send_cert_cb always sets ret_args[0] = INTEL_SIP_SMC_STATUS_OK
++	 * (poll a0 = 0) regardless of whether the certificate was accepted or
++	 * rejected.  The authentication result is in a1 (mailbox error code)
++	 * and a2 (response detail).  poll_until_done() treats a1 != 0 as a
++	 * generic error and discards these values; we preserve them instead
++	 * and return them to the caller as the authentication outcome.
++	 */
++	for (i = 0; i < SDM_CRYPT_POLL_MAX; i++) {
++		args.a0 = ALTERA_SIP_SMC_ASYNC_RESP_POLL;
++		args.a1 = 0;
++		thread_smccc(&args);
++		if ((uint32_t)args.a0 == INTEL_SIP_SMC_STATUS_OK)
++			break;
++	}
++	if (i == SDM_CRYPT_POLL_MAX) {
++		EMSG("SDM cert auth poll timed out");
++		res = TEE_ERROR_BUSY;
++		goto free_bounce;
++	}
++
++	/* a1 = SDM mailbox error code (0 = accepted), a2 = response detail */
++	params[1].value.a = (uint32_t)args.a1;
++	params[1].value.b = (uint32_t)args.a2;
++
++	if (args.a1 == 0) {
++		IMSG("sdm_send_cert: certificate accepted");
++
++		/*
++		 * Only a key cancellation needs the phase-2 finalize.  For it
++		 * we pass non_volatile=true so the SDM decides Soft POR vs NOP
++		 * from the fuse mode in the cert; a NON-VOLATILE cancellation
++		 * will trigger a Soft POR after this call.  Counter updates and
++		 * provisioning certificates leave phase2_status at SKIPPED.
++		 */
++		if (is_cancellation) {
++			(void)trigger_pubkey_program_phase2_finalize(true,
++								     &phase2_status);
++			IMSG("sdm_send_cert: phase2_status=%u", phase2_status);
++		} else {
++			IMSG("sdm_send_cert: not a key cancellation — phase-2 finalize skipped");
++		}
++	} else {
++		IMSG("sdm_send_cert: certificate rejected mbox_err=0x%" PRIx64
++		     " detail=0x%" PRIx64, args.a1, args.a2);
++	}
++
++free_bounce:
++	memzero_explicit(bounce, total_size);
++	free(bounce);
++	return res;
++}
++
++/*
++ * cmd_sdm_get_prov_data - Retrieve SDM provisioning data (PTA_CMD_SDM_GET_PROV_DATA)
++ *
++ * Submits ALTERA_SIP_SMC_ASYNC_FCS_GET_PROVISION_DATA (0x42000132) to ATF
++ * with the physical address of a TZDRAM bounce buffer sized for the maximum
++ * possible response (SDM_PROV_DATA_MAX_SIZE).	 The SDM writes a variable-
++ * length blob; after polling, the actual byte count is computed from the
++ * cosign_info word (word[2]) and only that many bytes are copied to the
++ * caller's MEMREF_OUTPUT param[0].
++ *
++ * params[0] MEMREF_OUTPUT  caller output buffer, must be >= SDM_PROV_DATA_MAX_SIZE
++ */
++static TEE_Result cmd_sdm_get_prov_data(uint32_t ptypes,
++					TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	paddr_t bounce_phys = 0;
++	void *bounce = NULL;
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes)
++		return TEE_ERROR_BAD_PARAMETERS;
++	if (params[0].memref.size < SDM_PROV_DATA_MAX_SIZE)
++		return TEE_ERROR_SHORT_BUFFER;
++
++	bounce = memalign(4, SDM_PROV_DATA_MAX_SIZE);
++	if (!bounce)
++		return TEE_ERROR_OUT_OF_MEMORY;
++	memset(bounce, 0, SDM_PROV_DATA_MAX_SIZE);
++
++	/*
++	 * Clean TZDRAM so ATF sees our initialized buffer (it will overwrite
++	 * it with SDM provisioning data).
++	 */
++	cache_op_inner(DCACHE_AREA_CLEAN, bounce, SDM_PROV_DATA_MAX_SIZE);
++	bounce_phys = virt_to_phys(bounce);
++
++	/* Submit provisioning data request to ATF async service */
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_GET_PROVISION_DATA;
++	args.a1 = 0;			/* trans_id */
++	args.a2 = (uint64_t)bounce_phys;
++	thread_smccc(&args);
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("get_prov_data submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bounce;
++	}
++
++	/* Poll until SDM writes the data */
++	res = poll_until_done(0, &args);
++	if (res != TEE_SUCCESS) {
++		EMSG("get_prov_data poll failed");
++		goto free_bounce;
++	}
++
++	/* Invalidate CPU cache so we read what ATF/SDM wrote to TZDRAM */
++	cache_op_inner(DCACHE_AREA_INVALIDATE, bounce, SDM_PROV_DATA_MAX_SIZE);
++
++	/*
++	 * Compute actual response size from cosign_info (word index 2).
++	 * Layout: 3 header words + N*(SDM_PROV_HASH_WORDS + 1 cancel) + 6 tail,
++	 * where N = SDM_PROV_HASH_COUNT(cosign_info).
++	 */
++	{
++		const uint32_t *w = (const uint32_t *)bounce;
++		uint32_t hash_count = SDM_PROV_HASH_COUNT(w[2]);
++		uint32_t actual_words = 3U + hash_count * (SDM_PROV_HASH_WORDS + 1U) + 6U;
++		uint32_t actual_size = actual_words * 4U;
++
++		if (actual_size > SDM_PROV_DATA_MAX_SIZE) {
++			EMSG("get_prov_data: size %u > max %u (cosign=0x%08x)",
++			     actual_size, SDM_PROV_DATA_MAX_SIZE, w[2]);
++			res = TEE_ERROR_GENERIC;
++			goto free_bounce;
++		}
++
++		memmove(params[0].memref.buffer, bounce, actual_size);
++		params[0].memref.size = actual_size;
++		DMSG("get_prov_data: %u bytes (%u hashes)", actual_size, hash_count);
++	}
++
++free_bounce:
++	memzero_explicit(bounce, SDM_PROV_DATA_MAX_SIZE);
++	free(bounce);
++	return res;
++}
++
++/*
++ * cmd_sdm_read_user_fuses - Read all 16 user-defined eFuse words
++ * (PTA_CMD_SDM_READ_USER_FUSES)
++ *
++ * Submits ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD (0x420000EE) with SDM mailbox
++ * command efuse_read_user_defined_fuses (0x2D).  A TZDRAM bounce buffer holds
++ * the 1-word command payload and a 1 KiB response buffer.  After polling for
++ * completion the 16 response words are copied to the caller's MEMREF_OUTPUT.
++ *
++ * params[0] MEMREF_OUTPUT  caller output buffer, must be >= SDM_USER_FUSE_SIZE
++ */
++static TEE_Result cmd_sdm_read_user_fuses(uint32_t ptypes,
++					  TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	uint32_t *cmd_buf = NULL;
++	uint8_t *resp_buf = NULL;
++	paddr_t cmd_phys = 0;
++	paddr_t resp_phys = 0;
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes)
++		return TEE_ERROR_BAD_PARAMETERS;
++	if (params[0].memref.size < SDM_USER_FUSE_SIZE)
++		return TEE_ERROR_SHORT_BUFFER;
++
++	cmd_buf = memalign(4, SDM_EFUSE_READ_PAYLOAD_SIZE);
++	if (!cmd_buf)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	resp_buf = memalign(4, SDM_EFUSE_RESP_BUF_SIZE);
++	if (!resp_buf) {
++		free(cmd_buf);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	/* Command payload: [15:8]=0x10 (16 words), [7:0]=0x00 (start word 0) */
++	cmd_buf[0] = SDM_EFUSE_READ_CMD_WORD;
++	memset(resp_buf, 0, SDM_EFUSE_RESP_BUF_SIZE);
++
++	cache_op_inner(DCACHE_AREA_CLEAN, cmd_buf, SDM_EFUSE_READ_PAYLOAD_SIZE);
++	cache_op_inner(DCACHE_AREA_CLEAN, resp_buf, SDM_EFUSE_RESP_BUF_SIZE);
++
++	cmd_phys  = virt_to_phys(cmd_buf);
++	resp_phys = virt_to_phys(resp_buf);
++
++	/*
++	 * smc 420000EE 0 2D <cmd_phys> 4 <resp_phys> 400
++	 *   a0 = ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD
++	 *   a1 = client_id:job_id = 0
++	 *   a2 = SDM_EFUSE_READ_CMD (0x2D)
++	 *   a3 = cmd payload physical address
++	 *   a4 = cmd payload length (4 bytes)
++	 *   a5 = resp buffer physical address
++	 *   a6 = resp buffer length (0x400)
++	 */
++	args.a0 = ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD;
++	args.a1 = 0;
++	args.a2 = SDM_EFUSE_READ_CMD;
++	args.a3 = (uint64_t)cmd_phys;
++	args.a4 = SDM_EFUSE_READ_PAYLOAD_SIZE;
++	args.a5 = (uint64_t)resp_phys;
++	args.a6 = SDM_EFUSE_RESP_BUF_SIZE;
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("read_user_fuses submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bufs;
++	}
++
++	res = poll_until_done(0, &args);
++	if (res != TEE_SUCCESS) {
++		EMSG("read_user_fuses poll failed");
++		goto free_bufs;
++	}
++
++	/* Invalidate cache so we read what ATF/SDM wrote to TZDRAM */
++	cache_op_inner(DCACHE_AREA_INVALIDATE, resp_buf, SDM_EFUSE_RESP_BUF_SIZE);
++
++	/* Copy 16 user fuse words from response buffer to caller */
++	memmove(params[0].memref.buffer, resp_buf, SDM_USER_FUSE_SIZE);
++	params[0].memref.size = SDM_USER_FUSE_SIZE;
++
++	DMSG("read_user_fuses: %u bytes returned", SDM_USER_FUSE_SIZE);
++
++free_bufs:
++	memzero_explicit(cmd_buf, SDM_EFUSE_READ_PAYLOAD_SIZE);
++	memzero_explicit(resp_buf, SDM_EFUSE_RESP_BUF_SIZE);
++	free(cmd_buf);
++	free(resp_buf);
++	return res;
++}
++
++/*
++ * cmd_sdm_prog_user_fuses - Program all 16 user-defined eFuse words
++ * (PTA_CMD_SDM_PROG_USER_FUSES)
++ *
++ * Submits ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD (0x420000EE) with SDM mailbox
++ * command efuse_user_defined_fuses_program (0x2C).
++ *
++ * The host controls whether the SDM test flag (bit 31 of the program control
++ * word) is set, via SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE in
++ * params[1].value.a — mirroring the host_flags convention used by
++ * cmd_sdm_prog_pubkey / cmd_sdm_security_op / cmd_sdm_disable_owned_entry:
++ *
++ *   flag CLEAR (default)		      test=1 → virtual / cache-only
++ *					       (no physical eFuse written;
++ *					       state lost on cold reset)
++ *   SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE   test=0 → SDM permanently burns
++ *					       the 16 caller-supplied words
++ *					       into the physical eFuse.
++ *					       *** IRREVERSIBLE ***
++ *
++ * NON-VOLATILE MODE IS UNRECOVERABLE — selecting it causes the SDM to
++ * permanently burn each caller-supplied user-fuse word.  The PTA emits an
++ * EMSG audit line on every non-volatile invocation so the secure-world log
++ * records every irreversible programming attempt.
++ *
++ * 72-byte command payload constructed in a TZDRAM bounce buffer:
++ *   word 0	 : SDM_EFUSE_PROG_MAGIC		      ("User", 0x55736572)
++ *   word 1	 : SDM_EFUSE_PROG_CTRL_WORD	      (test=1, 16 words) or
++ *		   SDM_EFUSE_PROG_CTRL_WORD_BURN      (test=0, 16 words)
++ *   words 2..17: 16 user-supplied fuse data words from caller MEMREF_INPUT
++ *
++ * params[0] MEMREF_INPUT  caller fuse data, must be >= SDM_USER_FUSE_SIZE (64).
++ * params[1] VALUE_INPUT   .a = host_flags
++ *				   (SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE only)
++ *			    .b = reserved (must be 0)
++ * params[2..3] NONE
++ */
++static TEE_Result cmd_sdm_prog_user_fuses(uint32_t ptypes,
++					  TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
++				TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	uint32_t *cmd_buf = NULL;
++	uint8_t *resp_buf = NULL;
++	paddr_t cmd_phys = 0;
++	paddr_t resp_phys = 0;
++	uint32_t host_flags = 0;
++	uint32_t ctrl_word = 0;
++	bool non_volatile = false;
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes) {
++		EMSG("prog_user_fuses: bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (params[0].memref.size < SDM_USER_FUSE_SIZE) {
++		EMSG("prog_user_fuses: input size %zu < %u",
++		     params[0].memref.size, SDM_USER_FUSE_SIZE);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (params[1].value.b != 0) {
++		EMSG("prog_user_fuses: reserved param[1].b must be 0 (got 0x%" PRIx32 ")",
++		     params[1].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Only the NON_VOLATILE flag is meaningful: default (clear) keeps the
++	 * SDM test bit set so the write targets the virtual / cache-only fuse;
++	 * setting it clears the test bit (test=0) for a permanent eFuse burn.
++	 * Any other host_flags bits are ignored rather than rejected.
++	 */
++	host_flags = params[1].value.a;
++	non_volatile = (host_flags & SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE) != 0;
++
++	cmd_buf = memalign(4, SDM_EFUSE_PROG_PAYLOAD_SIZE);
++	if (!cmd_buf)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	resp_buf = memalign(4, SDM_EFUSE_RESP_BUF_SIZE);
++	if (!resp_buf) {
++		free(cmd_buf);
++		return TEE_ERROR_OUT_OF_MEMORY;
++	}
++
++	/*
++	 * Pick the control word.  Default = test/cache-only (T=1).  When the
++	 * host requests NON_VOLATILE we clear T so the SDM permanently burns
++	 * the physical eFuse — log this loudly for auditability.
++	 */
++	if (non_volatile) {
++		ctrl_word = SDM_EFUSE_PROG_CTRL_WORD_BURN;
++		EMSG("prog_user_fuses: NON_VOLATILE requested — permanent eFuse burn (T=0), ctrl=0x%08"
++		     PRIx32, ctrl_word);
++	} else {
++		ctrl_word = SDM_EFUSE_PROG_CTRL_WORD;
++	}
++
++	/*
++	 * Build 72-byte program payload in TZDRAM bounce buffer:
++	 *   [0] magic number
++	 *   [1] control word (test bit selected above), 16 words, start=0
++	 *   [2..17] 16 user-supplied fuse data words
++	 */
++	cmd_buf[0] = SDM_EFUSE_PROG_MAGIC;
++	cmd_buf[1] = ctrl_word;
++	memmove(&cmd_buf[2], params[0].memref.buffer, SDM_USER_FUSE_SIZE);
++
++	memset(resp_buf, 0, SDM_EFUSE_RESP_BUF_SIZE);
++
++	cache_op_inner(DCACHE_AREA_CLEAN, cmd_buf, SDM_EFUSE_PROG_PAYLOAD_SIZE);
++	cache_op_inner(DCACHE_AREA_CLEAN, resp_buf, SDM_EFUSE_RESP_BUF_SIZE);
++
++	cmd_phys  = virt_to_phys(cmd_buf);
++	resp_phys = virt_to_phys(resp_buf);
++
++	/*
++	 * smc 420000EE 0 2C <cmd_phys> 48 <resp_phys> 400
++	 *   a0 = ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD
++	 *   a1 = client_id:job_id = 0
++	 *   a2 = SDM_EFUSE_PROG_CMD (0x2C)
++	 *   a3 = cmd payload physical address
++	 *   a4 = cmd payload length (72 = 0x48 bytes)
++	 *   a5 = resp buffer physical address
++	 *   a6 = resp buffer length (0x400)
++	 */
++	args.a0 = ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD;
++	args.a1 = 0;
++	args.a2 = SDM_EFUSE_PROG_CMD;
++	args.a3 = (uint64_t)cmd_phys;
++	args.a4 = SDM_EFUSE_PROG_PAYLOAD_SIZE;
++	args.a5 = (uint64_t)resp_phys;
++	args.a6 = SDM_EFUSE_RESP_BUF_SIZE;
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("prog_user_fuses submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bufs;
++	}
++
++	res = poll_until_done(0, &args);
++	if (res != TEE_SUCCESS) {
++		EMSG("prog_user_fuses poll failed (mode=%s)",
++		     non_volatile ? "NON-VOLATILE / eFuse burn"
++				  : "test / cache-only");
++		goto free_bufs;
++	}
++
++	DMSG("prog_user_fuses: completed successfully (%s)",
++	     non_volatile ? "NON-VOLATILE / eFuse burned"
++			  : "test / cache-only");
++
++free_bufs:
++	memzero_explicit(cmd_buf, SDM_EFUSE_PROG_PAYLOAD_SIZE);
++	memzero_explicit(resp_buf, SDM_EFUSE_RESP_BUF_SIZE);
++	free(cmd_buf);
++	free(resp_buf);
++	return res;
++}
++
++/*
++ * cmd_sdm_prog_pubkey - Program owner-root public-key hash(es)
++ * (PTA_CMD_SDM_PROG_PUBKEY)
++ *
++ * Submits ALTERA_SIP_SMC_ASYNC_FCS_PROGRAM_OWNER_PUBKEY (0x4200016D) to ATF
++ * with a TZDRAM bounce buffer holding the SDM mailbox payload:
++ *
++ *   word[0..1]    reserved/header words (zero-filled)
++ *   word[2..N-1]  N hash words from the caller MEMREF_INPUT, concatenated,
++ *		      where
++ *		      N = 8	 for a single SECP256R1 hash (32-byte SHA-256)
++ *		      N = 12*k for k SECP384R1 hashes (48*k-byte SHA-384),
++ *			       1 <= k <= SDM_PUBKEY_MAX_HASHES_PER_CALL
++ *
++ * The whole batch of up to SDM_PUBKEY_MAX_HASHES_PER_CALL SECP384R1 hashes
++ * travels in a single mailbox EFUSE_PUBKEY_PROGRAM command / single SMC
++ * call.  ATF permits k contiguous key sets per call (see
++ * MBOX_EFUSE_PUBKEY_MAX_KEY_SETS).  The SDM derives the expected payload
++ * length from the key-set count in the flags word, so that count must match
++ * the number of hashes actually supplied or the SDM rejects the command.
++ *
++ * The flags word (x2) is constructed with:
++ *   T (bit 31)  = 1 by default (test/cache-only / virtual fuse).
++ *		    Cleared to 0 when the host sets
++ *		    SDM_PUBKEY_HOST_FLAG_NON_VOLATILE in params[1].value.a.
++ *   S (bit 30)  = 0  → do not skip cancel.
++ *   keycnt	  = bits[15:8], the key-set count encoded as (k - 1), so a
++ *		    3-hash batch sends 0x02 and a single hash sends 0x00
++ *		    (see SDM_PUBKEY_FLAG_KEY_COUNT).
++ *   hash_type	  = bits[1:0], derived from input size:
++ *		      1 = secp256r1 when memref.size == 32
++ *		      2 = secp384r1 when memref.size is a multiple of 48
++ *
++ * NON-VOLATILE MODE IS UNRECOVERABLE.	 Selecting it causes the SDM to
++ * permanently burn every hash in the batch into the physical eFuse.	The
++ * PTA logs every non-volatile attempt so audit trails record every burn.
++ *
++ * Uses an inline poll (not poll_until_done) so the SMC response words a1
++ * (SDM response status) and a2 (SMC response header) are preserved and
++ * forwarded to the caller verbatim, even when a1 is non-zero.
++ *
++ * params[0] MEMREF_INPUT   caller key hash(es): exactly
++ *			     SDM_PUBKEY_HASH_SIZE_SHA256 (32) bytes for a
++ *			     single SECP256R1 hash, or k *
++ *			     SDM_PUBKEY_HASH_SIZE_SHA384 (48) bytes for
++ *			     1..SDM_PUBKEY_MAX_HASHES_PER_CALL concatenated
++ *			     SECP384R1 hashes.
++ * params[1] VALUE_INPUT    .a = host control flags
++ *				   (SDM_PUBKEY_HOST_FLAG_NON_VOLATILE only)
++ *			     .b = unused (must be 0)
++ * params[2] VALUE_OUTPUT   .a = SDM response, .b = SMC response header
++ * params[3] VALUE_OUTPUT   .a = SDM_PHASE2_STATUS_*, .b = hashes submitted
++ */
++static TEE_Result cmd_sdm_prog_pubkey(uint32_t ptypes,
++				      TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
++				TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_VALUE_OUTPUT,
++				TEE_PARAM_TYPE_VALUE_OUTPUT);
++	struct thread_smc_args args = { };
++	const void *hash_buf = NULL;
++	size_t hash_size = 0;
++	uint8_t *bounce = NULL;
++	paddr_t bounce_phys = 0;
++	uint32_t host_flags = 0;
++	uint32_t flags = 0;
++	uint32_t hash_type = 0;
++	size_t payload_size = 0;
++	size_t payload_words = 0;
++	size_t num_hashes = 0;
++	size_t submitted = 0;
++	bool non_volatile = false;
++	uint32_t phase2_status = SDM_PHASE2_STATUS_SKIPPED;
++	TEE_Result res = TEE_SUCCESS;
++	int i = 0;
++
++	if (ptypes != exp_ptypes) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	hash_buf  = params[0].memref.buffer;
++	hash_size = params[0].memref.size;
++
++	if (!hash_buf) {
++		EMSG("hash buffer is NULL");
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	/*
++	 * Classify the input as a single SHA-256 hash, or a batch of
++	 * 1..SDM_PUBKEY_MAX_HASHES_PER_CALL contiguous SHA-384 hashes.  Any
++	 * other size is a caller bug — accepting it would let the SDM
++	 * mailbox interpret garbage bytes as part of the hash.  The whole
++	 * batch travels in one mailbox payload: 2 header words followed by
++	 * all hash words concatenated.
++	 */
++	if (hash_size == SDM_PUBKEY_HASH_SIZE_SHA256) {
++		hash_type    = SDM_PUBKEY_HASH_TYPE_SECP256R1;
++		num_hashes   = 1;
++		payload_size = SDM_PUBKEY_HASH_OFFSET + hash_size;
++	} else if (hash_size != 0 &&
++		   (hash_size % SDM_PUBKEY_HASH_SIZE_SHA384) == 0 &&
++		   (hash_size / SDM_PUBKEY_HASH_SIZE_SHA384) <=
++			SDM_PUBKEY_MAX_HASHES_PER_CALL) {
++		hash_type    = SDM_PUBKEY_HASH_TYPE_SECP384R1;
++		num_hashes   = hash_size / SDM_PUBKEY_HASH_SIZE_SHA384;
++		payload_size = SDM_PUBKEY_HASH_OFFSET + hash_size;
++	} else {
++		EMSG("invalid hash size %zu (expected %u=SHA-256, or a "
++		     "multiple of %u=SHA-384 up to %ux)",
++		     hash_size, SDM_PUBKEY_HASH_SIZE_SHA256,
++		     SDM_PUBKEY_HASH_SIZE_SHA384,
++		     SDM_PUBKEY_MAX_HASHES_PER_CALL);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	host_flags = params[1].value.a;
++
++	/* Reject any unknown bits so we never silently honour a request the
++	 * PTA doesn't understand.
++	 */
++	if (host_flags & ~SDM_PUBKEY_HOST_FLAGS_VALID_MASK) {
++		EMSG("unknown host flag bits 0x%08" PRIx32, host_flags);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	non_volatile = (host_flags & SDM_PUBKEY_HOST_FLAG_NON_VOLATILE) != 0;
++
++	bounce = memalign(4, payload_size);
++	if (!bounce)
++		return TEE_ERROR_OUT_OF_MEMORY;
++
++	/*
++	 * Build SDM mailbox payload in the TZDRAM bounce buffer:
++	 *   bytes [0..7]		    reserved/header words (zero-filled)
++	 *   bytes [SDM_PUBKEY_HASH_OFFSET ..
++	 *	    SDM_PUBKEY_HASH_OFFSET + hash_size - 1]
++	 *				    all hash bytes from caller
++	 *				    MEMREF_INPUT, concatenated
++	 */
++	memset(bounce, 0, payload_size);
++	memmove(bounce + SDM_PUBKEY_HASH_OFFSET, hash_buf, hash_size);
++
++	cache_op_inner(DCACHE_AREA_CLEAN, bounce, payload_size);
++	bounce_phys = virt_to_phys(bounce);
++
++	/*
++	 * Build SMC x2 flags word: bits[1:0]=hash_type; bits[15:8]=(k - 1)
++	 * key-set count; bit[31]=T.
++	 * Default T=1 → virtual / cache-only fuse only.  When the host sets
++	 * SDM_PUBKEY_HOST_FLAG_NON_VOLATILE we omit T (T=0) for physical burn.
++	 */
++	flags = hash_type | SDM_PUBKEY_FLAG_KEY_COUNT(num_hashes);
++	if (non_volatile)
++		EMSG("program_pubkey: NON_VOLATILE requested — permanent eFuse burn (T=0, hash_type=%u, count=%zu)",
++		     hash_type, num_hashes);
++	else
++		flags |= SDM_PUBKEY_FLAG_TEST;
++
++	/*
++	 * x4 is the total payload length in 32-bit words (header included),
++	 * per the updated ATF EFUSE_PUBKEY_PROGRAM ABI (0002 patch): nwords =
++	 * 2 + (8 or 12*k) hash words. Older ATF expected bytes here; sending
++	 * bytes now makes ATF reject the call with "invalid length N words".
++	 */
++	payload_words = payload_size / SDM_PUBKEY_WORD_BYTES;
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_PROGRAM_OWNER_PUBKEY;
++	args.a1 = 0;					/* request header / trans_id */
++	args.a2 = (uint64_t)flags;
++	args.a3 = (uint64_t)bounce_phys;
++	args.a4 = (uint64_t)payload_words;
++
++	/*
++	 * Dump the assembled mailbox payload so the caller can verify words
++	 * 0-1 are the expected header (zero) and the trailing words contain
++	 * the hash bytes copied from the host file(s), in order.
++	 */
++	{
++		const uint32_t *w = (const uint32_t *)(uintptr_t)bounce;
++		const unsigned int n_words = (unsigned int)payload_words;
++		unsigned int j = 0;
++
++		IMSG("program_pubkey: payload buffer @ phys 0x%016" PRIx64
++		     " (%u words, %zu hash%s)",
++		     (uint64_t)bounce_phys, n_words, num_hashes,
++		     num_hashes == 1 ? "" : "es");
++		for (j = 0; j < n_words; j++)
++			IMSG("	  word[%2u] = 0x%08" PRIx32 "  %s",
++			     j, w[j],
++			     j < 2U ? "(header)" : "(hash)");
++	}
++
++	IMSG("program_pubkey: SMC SUBMIT to ATF (mode=%s)",
++	     non_volatile ? "NON_VOLATILE / eFuse burn" : "test/cache-only");
++	IMSG("  a0 = 0x%016" PRIx64 "  (FCS_PROGRAM_OWNER_PUBKEY)", args.a0);
++	IMSG("  a1 = 0x%016" PRIx64 "  (request header / trans_id)", args.a1);
++	IMSG("  a2 = 0x%016" PRIx64 "  (flags: T=%u S=0 keycnt=0x%02" PRIx32
++	     " [%zu key%s] hash_type=%" PRIu32 ")",
++	     args.a2, (flags & SDM_PUBKEY_FLAG_TEST) ? 1U : 0U,
++	     (flags & SDM_PUBKEY_FLAG_KEY_COUNT_MASK) >>
++		     SDM_PUBKEY_FLAG_KEY_COUNT_SHIFT,
++	     num_hashes, num_hashes == 1 ? "" : "s", hash_type);
++	IMSG("  a3 = 0x%016" PRIx64 "  (payload phys addr)", args.a3);
++	IMSG("  a4 = 0x%016" PRIx64 "  (payload length = %zu words = %zu bytes)",
++	     args.a4, payload_words, payload_size);
++
++	thread_smccc(&args);
++
++	IMSG("program_pubkey: SMC SUBMIT response from ATF");
++	IMSG("  a0 = 0x%016" PRIx64 "  (%s)", args.a0,
++	     args.a0 == INTEL_SIP_SMC_STATUS_OK ? "STATUS_OK / queued"
++						: "submit rejected");
++	IMSG("  a1 = 0x%016" PRIx64, args.a1);
++	IMSG("  a2 = 0x%016" PRIx64, args.a2);
++	IMSG("  a3 = 0x%016" PRIx64, args.a3);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("program_pubkey submit failed: 0x%" PRIx64, args.a0);
++		res = TEE_ERROR_GENERIC;
++		goto free_bounce;
++	}
++
++	/*
++	 * Inline poll — preserves args.a1, the SDM error code, which is
++	 * forwarded to the caller.  Cannot use poll_until_done() because that
++	 * helper treats a non-zero a1 as a generic error and discards it.
++	 *
++	 * ATF's sip_smc_cmd_cb_ret2() returns only two values (poll status in
++	 * a0, SDM err_code in a1), so a2 and a3 still hold what we passed in
++	 * on the submit call above.  a2 is therefore the echoed flags word,
++	 * not a response header.
++	 */
++	for (i = 0; i < SDM_CRYPT_POLL_MAX; i++) {
++		args.a0 = ALTERA_SIP_SMC_ASYNC_RESP_POLL;
++		args.a1 = 0;
++		thread_smccc(&args);
++		if ((uint32_t)args.a0 == INTEL_SIP_SMC_STATUS_OK)
++			break;
++	}
++
++	IMSG("program_pubkey: SMC POLL response from ATF (after %d iters)", i);
++	IMSG("  a0 = 0x%016" PRIx64 "  (poll status, 0=OK)", args.a0);
++	IMSG("  a1 = 0x%016" PRIx64 "  (SDM err_code -> host param[2].value.a)",
++	     args.a1);
++	IMSG("  a2 = 0x%016" PRIx64 "  (echoed x2 flags, NOT a response header)",
++	     args.a2);
++	IMSG("  a3 = 0x%016" PRIx64 "  (echoed x3 payload addr)", args.a3);
++
++	if (i == SDM_CRYPT_POLL_MAX) {
++		EMSG("SDM program_pubkey poll timed out");
++		res = TEE_ERROR_BUSY;
++		goto free_bounce;
++	}
++
++	params[2].value.a = (uint32_t)args.a1;	/* SDM err_code */
++	params[2].value.b = (uint32_t)args.a2;	/* echoed flags word */
++
++	if (args.a1 == 0) {
++		DMSG("program_pubkey: SDM accepted %zu hash%s (%s)",
++		     num_hashes, num_hashes == 1 ? "" : "es",
++		     non_volatile ? "NON_VOLATILE / eFuse burned"
++				  : "test / cache-only");
++
++		/*
++		 * SDM accepted the owner-root key program — finalize via
++		 * phase-2 (1 second hold, then SMC 0x42000178).  For NON-VOLATILE
++		 * the SDM will Soft POR; for virtual fusing it returns NOP.
++		 * The entire batch is programmed in one SMC call, so there
++		 * is only one phase-2 to perform for all num_hashes hashes.
++		 */
++		(void)trigger_pubkey_program_phase2_finalize(non_volatile,
++							    &phase2_status);
++		submitted = num_hashes;
++	} else {
++		EMSG("program_pubkey: SDM rejected %zu hash%s (%zu words): err_code=0x%" PRIx64,
++		     num_hashes, num_hashes == 1 ? "" : "es",
++		     payload_words, args.a1);
++		/* phase-2 left unattempted; param[3] keeps SKIPPED default */
++	}
++
++free_bounce:
++	memzero_explicit(bounce, payload_size);
++	free(bounce);
++	params[3].value.a = phase2_status;
++	params[3].value.b = (uint32_t)submitted;
++	return res;
++}
++
++/*
++ * cmd_sdm_efuse_reload_cache - Reload the SDM eFuse cache
++ *				 (PTA_CMD_SDM_EFUSE_RELOAD_CACHE)
++ *
++ * Issues ALTERA_SIP_SMC_ASYNC_SDM_EFUSE_RELOAD_CACHE (0x4200016C) to ATF and
++ * polls for the SDM mailbox completion.  The SDM re-fetches the physical
++ * eFuse contents into its working cache; no payload is sent and no data
++ * is returned.  All four PTA params must be TEE_PARAM_TYPE_NONE.
++ */
++static TEE_Result cmd_sdm_efuse_reload_cache(uint32_t ptypes,
++					     TEE_Param params[TEE_NUM_PARAMS] __unused)
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_SDM_EFUSE_RELOAD_CACHE;
++	args.a1 = 0;	/* trans_id */
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("efuse_reload_cache submit failed: a0=0x%" PRIx64,
++		     args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	res = poll_until_done(0, NULL);
++	if (res != TEE_SUCCESS)
++		return res;
++
++	DMSG("efuse_reload_cache: SDM accepted reload");
++	return TEE_SUCCESS;
++}
++
++/*
++ * cmd_sdm_security_op - Apply EFUSE user security options
++ *			  (PTA_CMD_SDM_SECURITY_OP)
++ *
++ * Issues ALTERA_SIP_SMC_ASYNC_FCS_EFUSE_USER_SECURITY_OPTION (0x42000170)
++ * to ATF and polls for the SDM mailbox completion.  The 32-bit option word
++ * supplied by the caller in params[0].value.a is passed inline in x2 — no
++ * payload buffer is required since the SDM mailbox payload is exactly one
++ * word.
++ *
++ * The PTA owns SDM_SECOPT_TEST_MODE (bit 31):
++ *   - bit 31 is unconditionally cleared from the caller's option word so a
++ *	buggy/malicious CA cannot bypass the policy by setting it explicitly,
++ *   - it is then re-set to 1 (test/cache-only, reversible) by default, or
++ *	left 0 (permanent fuse burn, irreversible) when the caller passes
++ *	SDM_SECOPT_HOST_FLAG_NON_VOLATILE in params[1].value.a.
++ *
++ * Mirrors the host_flags / T-bit handling used by cmd_sdm_prog_pubkey so
++ * "--non-volatile" semantics are uniform across the SDM Services PTA.
++ *
++ * Reserved option-word bits (SDM doc: 13..15, 18..30) are left untouched —
++ * the SDM mailbox is the final arbiter and will reject them if invalid.
++ *
++ * params[0] VALUE_INPUT
++ *   .a = security_option_word (bits 0..30; bit 31 ignored, owned by PTA)
++ *   .b = reserved (must be 0)
++ * params[1] VALUE_INPUT
++ *   .a = host_flags (SDM_SECOPT_HOST_FLAG_NON_VOLATILE)
++ *   .b = reserved (must be 0)
++ * params[2..3] NONE
++ */
++static TEE_Result cmd_sdm_security_op(uint32_t ptypes,
++				      TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	uint32_t caller_opt = 0;
++	uint32_t opt = 0;
++	uint32_t host_flags = 0;
++	bool non_volatile = false;
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (params[0].value.b != 0 || params[1].value.b != 0) {
++		EMSG("security_op: reserved param .b must be 0 (got 0x%" PRIx32 ", 0x%" PRIx32 ")",
++		     params[0].value.b, params[1].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	host_flags = params[1].value.a;
++	if (host_flags & ~SDM_SECOPT_HOST_FLAGS_VALID_MASK) {
++		EMSG("security_op: unknown host flag bits 0x%08" PRIx32,
++		     host_flags);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++	non_volatile = (host_flags & SDM_SECOPT_HOST_FLAG_NON_VOLATILE) != 0;
++
++	caller_opt = params[0].value.a;
++	/*
++	 * Strip the caller's TEST_MODE bit — it is controlled solely by
++	 * host_flags so the policy lives entirely inside the trusted PTA.
++	 */
++	opt = caller_opt & ~SDM_SECOPT_TEST_MODE;
++	if (!non_volatile) {
++		opt |= SDM_SECOPT_TEST_MODE;
++	} else {
++		EMSG("security_op: NON_VOLATILE requested — permanent eFuse burn (T=0), caller_opt=0x%08" PRIx32,
++		     caller_opt);
++	}
++
++	DMSG("security_op: caller_opt=0x%08" PRIx32 " effective=0x%08" PRIx32 " mode=%s",
++	     caller_opt, opt,
++	     non_volatile ? "NON-VOLATILE (eFuse burn)" : "test/cache-only");
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_FCS_EFUSE_USER_SECURITY_OPTION;
++	args.a1 = 0;			/* trans_id */
++	args.a2 = (uint64_t)opt;	/* SDM mailbox payload: single 32-bit word */
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("security_op submit failed: a0=0x%" PRIx64, args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	res = poll_until_done(0, NULL);
++	if (res != TEE_SUCCESS) {
++		EMSG("security_op: SDM rejected option_word=0x%08" PRIx32, opt);
++		return res;
++	}
++
++	DMSG("security_op: SDM accepted option_word=0x%08" PRIx32, opt);
++	return TEE_SUCCESS;
++}
++
++/*
++ * cmd_sdm_disable_owned_entry - Permanently disable transition to OWNED
++ *				  (PTA_CMD_SDM_DISABLE_OWNED_ENTRY)
++ *
++ * Issues ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED (0x42000179) to
++ * ATF and polls for the SDM mailbox completion.  No SDM payload buffer is
++ * required — the operation is fully described by the single fusing-mode
++ * selector passed inline in x2.
++ *
++ * The trusted PTA owns the x2 selector; the caller never sets it directly.
++ * It is computed solely from params[0].value.a / SDM_DEO_HOST_FLAG_NON_VOLATILE
++ * so a buggy or malicious CA cannot bypass the policy:
++ *
++ *   default (no SDM_DEO_HOST_FLAG_NON_VOLATILE):  x2 = 1 → virtual fusing
++ *						     (cache-only, reversible)
++ *   with    SDM_DEO_HOST_FLAG_NON_VOLATILE:	    x2 = 0 → physical fusing
++ *						     (permanent eFuse burn,
++ *						      IRREVERSIBLE)
++ *
++ * params[0] VALUE_INPUT
++ *   .a = host_flags (SDM_DEO_HOST_FLAG_NON_VOLATILE)
++ *   .b = reserved (must be 0)
++ * params[1..3] NONE
++ */
++static TEE_Result cmd_sdm_disable_owned_entry(uint32_t ptypes,
++					      TEE_Param params[TEE_NUM_PARAMS])
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++				TEE_PARAM_TYPE_VALUE_OUTPUT,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	uint32_t host_flags = 0;
++	bool non_volatile = false;
++	uint32_t mode_word = 0;
++	uint32_t phase2_status = SDM_PHASE2_STATUS_SKIPPED;
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	if (params[0].value.b != 0) {
++		EMSG("disable_owned_entry: reserved param[0].b must be 0 (got 0x%" PRIx32 ")",
++		     params[0].value.b);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	host_flags = params[0].value.a;
++	if (host_flags & ~SDM_DEO_HOST_FLAGS_VALID_MASK) {
++		EMSG("disable_owned_entry: unknown host flag bits 0x%08" PRIx32,
++		     host_flags);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++	non_volatile = (host_flags & SDM_DEO_HOST_FLAG_NON_VOLATILE) != 0;
++
++	/*
++	 * SMC x2 fusing-mode selector bit 31:
++	 *   0	     = physical fusing	→ permanent, IRREVERSIBLE
++	 *   non-0   = virtual fusing	→ cache-only, reversible across reset
++	 *
++	 * The PTA picks this so the caller cannot lie about it.
++	 */
++	mode_word = ((non_volatile ? 0ULL : 1ULL) << 31);
++
++	if (non_volatile)
++		EMSG("disable_owned_entry: NON_VOLATILE requested — permanently locking owner-pubkey programming (PRODUCTION-only forever)");
++
++	DMSG("disable_owned_entry: mode=%s (x2=0x%08" PRIx32 ")",
++	     non_volatile ? "physical/NON-VOLATILE" : "virtual/cache-only",
++	     mode_word);
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED;
++	args.a1 = 0;		/* request header / trans_id */
++	args.a2 = (uint64_t)mode_word;
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("disable_owned_entry submit failed: a0=0x%" PRIx64,
++		     args.a0);
++		params[1].value.a = phase2_status;	/* SKIPPED */
++		params[1].value.b = 0;
++		return TEE_ERROR_GENERIC;
++	}
++
++	res = poll_until_done(0, NULL);
++	if (res != TEE_SUCCESS) {
++		EMSG("disable_owned_entry: SDM rejected (mode=%s)",
++		     non_volatile ? "physical" : "virtual");
++		params[1].value.a = phase2_status;	/* SKIPPED */
++		params[1].value.b = 0;
++		return res;
++	}
++
++	DMSG("disable_owned_entry: SDM accepted (mode=%s)",
++	     non_volatile ? "physical/NON-VOLATILE" : "virtual/cache-only");
++
++	/*
++	 * SDM accepted — finalize via phase-2 (1 second hold, then SMC 0x42000178).
++	 * For NON-VOLATILE the SDM Soft-PORs; for virtual fusing it NOPs.
++	 */
++	(void)trigger_pubkey_program_phase2_finalize(non_volatile,
++						    &phase2_status);
++
++	params[1].value.a = phase2_status;
++	params[1].value.b = 0;
++	return TEE_SUCCESS;
++}
++
++/*
++ * cmd_sdm_efuse_write_disable - Disable further eFuse write operations
++ *				  (PTA_CMD_SDM_EFUSE_WRITE_DISABLE)
++ *
++ * Issues ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE (0x42000177) to ATF
++ * and polls for the SDM mailbox completion.  No payload is sent and no data
++ * is returned beyond the SDM accept status; all four PTA params must be
++ * TEE_PARAM_TYPE_NONE.
++ */
++static TEE_Result cmd_sdm_efuse_write_disable(uint32_t ptypes,
++					      TEE_Param params[TEE_NUM_PARAMS] __unused)
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++	struct thread_smc_args args = { };
++	TEE_Result res = TEE_SUCCESS;
++
++	if (ptypes != exp_ptypes) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	args.a0 = ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE;
++	args.a1 = 0;	/* request header / trans_id */
++	thread_smccc(&args);
++
++	if (args.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("efuse_write_disable submit failed: a0=0x%" PRIx64,
++		     args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	res = poll_until_done(0, NULL);
++	if (res != TEE_SUCCESS) {
++		EMSG("efuse_write_disable: SDM rejected request");
++		return res;
++	}
++
++	DMSG("efuse_write_disable: SDM accepted (eFuse writes now disabled)");
++	return TEE_SUCCESS;
++}
++
++/*
++ * send_ns_allowed_list_clear - issue ALTERA_SIP_SMC_NS_ALLOWED_LIST_CLEAR
++ *				 (0x42000180) and translate the synchronous
++ *				 response code to TEE_Result.
++ *
++ * The SiP service is synchronous: ATF returns the status directly in x0.
++ *   0 = Operation accepted and processed
++ *   2 = Operation busy / command only allowed from the Secure World
++ *
++ * Only x0 (the SMC function ID itself) is required by the spec — no
++ * additional inputs are sent.
++ *
++ * Returns:
++ *   TEE_SUCCESS	- SDM accepted the clear
++ *   TEE_ERROR_BUSY	- ATF reported status 2 (busy / secure-only)
++ *   TEE_ERROR_GENERIC - unexpected status value
++ */
++static TEE_Result send_ns_allowed_list_clear(void)
++{
++	struct thread_smc_args args = { };
++
++	args.a0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_CLEAR;
++	thread_smccc(&args);
++
++	switch ((uint32_t)args.a0) {
++	case INTEL_SIP_SMC_NS_LIST_STATUS_OK:
++		DMSG("ns_allowed_list_clear: SDM accepted");
++		return TEE_SUCCESS;
++	case INTEL_SIP_SMC_NS_LIST_STATUS_BUSY:
++		EMSG("ns_allowed_list_clear: busy / not allowed from this world (status=2)");
++		return TEE_ERROR_BUSY;
++	default:
++		EMSG("ns_allowed_list_clear: unexpected status 0x%" PRIx64,
++		     args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++}
++
++/*
++ * send_ns_allowed_list_add - issue ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD
++ *			       (0x4200017E) and translate the synchronous
++ *			       response code to TEE_Result.
++ *
++ * The SiP service is synchronous and takes:
++ *   x0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD (request header / function ID)
++ *   x1 = SiP SMC function ID to whitelist for the Non-Secure world
++ *	   (e.g. ALTERA_SIP_SMC_ASYNC_GET_IDCODE 0x420000D3) — this is the
++ *	   FID Linux would issue via smc/hvc, NOT a raw SDM mailbox opcode.
++ *
++ * Status semantics are identical to send_ns_allowed_list_clear().
++ *
++ * Returns:
++ *   TEE_SUCCESS	- ATF accepted the add
++ *   TEE_ERROR_BUSY	- ATF reported status 2 (busy / secure-only)
++ *   TEE_ERROR_GENERIC - unexpected status value
++ */
++static TEE_Result send_ns_allowed_list_add(uint32_t sip_smc_id)
++{
++	struct thread_smc_args args = { };
++
++	args.a0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD;
++	args.a1 = sip_smc_id;
++	thread_smccc(&args);
++
++	switch ((uint32_t)args.a0) {
++	case INTEL_SIP_SMC_NS_LIST_STATUS_OK:
++		DMSG("ns_allowed_list_add(SiP FID 0x%08" PRIx32 "): ATF accepted",
++		     sip_smc_id);
++		return TEE_SUCCESS;
++	case INTEL_SIP_SMC_NS_LIST_STATUS_BUSY:
++		EMSG("ns_allowed_list_add(SiP FID 0x%08" PRIx32 "): busy / not allowed from this world (status=2)",
++		     sip_smc_id);
++		return TEE_ERROR_BUSY;
++	default:
++		EMSG("ns_allowed_list_add(SiP FID 0x%08" PRIx32 "): unexpected status 0x%" PRIx64,
++		     sip_smc_id, args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++}
++
++/*
++ * send_ns_allowed_list_remove - issue ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE
++ *				  (0x4200017F) and translate the synchronous
++ *				  response code to TEE_Result.
++ *
++ * The SiP service is synchronous and takes:
++ *   x0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE (request header / function ID)
++ *   x1 = SiP SMC function ID to revoke from the Non-Secure-world whitelist
++ *	   (e.g. ALTERA_SIP_SMC_ASYNC_GET_IDCODE 0x420000D3) — this is the
++ *	   FID Linux would issue via smc/hvc, NOT a raw SDM mailbox opcode.
++ *
++ * Status semantics match send_ns_allowed_list_{clear,add,deactivate}().
++ *
++ * Returns:
++ *   TEE_SUCCESS	- ATF accepted the remove
++ *   TEE_ERROR_BUSY	- ATF reported status 2 (busy / secure-only)
++ *   TEE_ERROR_GENERIC - unexpected status value
++ */
++static TEE_Result send_ns_allowed_list_remove(uint32_t sip_smc_id)
++{
++	struct thread_smc_args args = { };
++
++	args.a0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE;
++	args.a1 = sip_smc_id;
++	thread_smccc(&args);
++
++	switch ((uint32_t)args.a0) {
++	case INTEL_SIP_SMC_NS_LIST_STATUS_OK:
++		DMSG("ns_allowed_list_remove(SiP FID 0x%08" PRIx32 "): ATF accepted",
++		     sip_smc_id);
++		return TEE_SUCCESS;
++	case INTEL_SIP_SMC_NS_LIST_STATUS_BUSY:
++		EMSG("ns_allowed_list_remove(SiP FID 0x%08" PRIx32 "): busy / not allowed from this world (status=2)",
++		     sip_smc_id);
++		return TEE_ERROR_BUSY;
++	default:
++		EMSG("ns_allowed_list_remove(SiP FID 0x%08" PRIx32 "): unexpected status 0x%" PRIx64,
++		     sip_smc_id, args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++}
++
++/*
++ * cmd_sdm_ns_allowed_list_remove - PTA command handler that removes a single
++ *				     SiP SMC FID from the SDM Non-Secure-world
++ *				     allowed list
++ *				     (PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE)
++ *
++ * params[0] VALUE_INPUT
++ *   .a = 32-bit SiP SMC FID to revoke (e.g. 0x420000D3 GET_IDCODE)
++ *   .b = reserved, must be 0
++ * params[1..3] NONE
++ */
++ static TEE_Result cmd_sdm_ns_allowed_list_remove(uint32_t ptypes,
++	TEE_Param params[TEE_NUM_PARAMS])
++{
++const uint32_t exp_ptypes =
++TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
++TEE_PARAM_TYPE_NONE,
++TEE_PARAM_TYPE_NONE,
++TEE_PARAM_TYPE_NONE);
++
++if (ptypes != exp_ptypes) {
++EMSG("bad param types 0x%" PRIx32, ptypes);
++return TEE_ERROR_BAD_PARAMETERS;
++}
++
++if (params[0].value.b != 0) {
++EMSG("ns_allowed_list_remove: reserved param[0].b must be 0 (got 0x%" PRIx32 ")",
++params[0].value.b);
++return TEE_ERROR_BAD_PARAMETERS;
++}
++
++return send_ns_allowed_list_remove(params[0].value.a);
++}
++
++/*
++ * send_ns_allowed_list_deactivate - issue ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE
++ *				      (0x42000181) and translate the synchronous
++ *				      response code to TEE_Result.
++ *
++ * The SiP service is synchronous: ATF returns the status directly in x0.
++ * Status semantics match send_ns_allowed_list_{clear,add}():
++ *   0 = Operation accepted and processed
++ *   2 = Operation busy / command only allowed from the Secure World
++ *
++ * Only x0 (the SMC function ID itself) is required by the spec — no
++ * additional inputs are sent.
++ *
++ * Returns:
++ *   TEE_SUCCESS	- SDM/ATF accepted the deactivate
++ *   TEE_ERROR_BUSY	- ATF reported status 2 (busy / secure-only)
++ *   TEE_ERROR_GENERIC - unexpected status value
++ */
++static TEE_Result send_ns_allowed_list_deactivate(void)
++{
++	struct thread_smc_args args = { };
++
++	args.a0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE;
++	thread_smccc(&args);
++
++	switch ((uint32_t)args.a0) {
++	case INTEL_SIP_SMC_NS_LIST_STATUS_OK:
++		DMSG("ns_allowed_list_deactivate: SDM accepted");
++		return TEE_SUCCESS;
++	case INTEL_SIP_SMC_NS_LIST_STATUS_BUSY:
++		EMSG("ns_allowed_list_deactivate: busy / not allowed from this world (status=2)");
++		return TEE_ERROR_BUSY;
++	default:
++		EMSG("ns_allowed_list_deactivate: unexpected status 0x%" PRIx64,
++		     args.a0);
++		return TEE_ERROR_GENERIC;
++	}
++}
++
++/*
++ * cmd_sdm_ns_allowed_list_deactivate - PTA command handler that deactivates
++ *					 the SDM Non-Secure-world allowed list
++ *					 (PTA_CMD_SDM_NS_ALLOWED_LIST_DEACTIVATE)
++ *
++ * Thin wrapper around send_ns_allowed_list_deactivate().  No PTA params are
++ * required; all four must be TEE_PARAM_TYPE_NONE.
++ */
++static TEE_Result cmd_sdm_ns_allowed_list_deactivate(uint32_t ptypes,
++						     TEE_Param params[TEE_NUM_PARAMS] __unused)
++{
++	const uint32_t exp_ptypes =
++		TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE,
++				TEE_PARAM_TYPE_NONE);
++
++	if (ptypes != exp_ptypes) {
++		EMSG("bad param types 0x%" PRIx32, ptypes);
++		return TEE_ERROR_BAD_PARAMETERS;
++	}
++
++	return send_ns_allowed_list_deactivate();
++}
++
++/*
++ * Default Non-Secure-world allowed list installed at boot by
++ * sdm_ns_allowed_list_boot_init() (see below).  Each entry is a full 32-bit
++ * SiP SMC function ID (the FID Linux would issue via smc/hvc), not an SDM
++ * mailbox opcode.  The contents come verbatim from SDM_NS_ALLOWED_LIST_DEFAULT
++ * above, so extending the list is a one-line change there.
++ */
++ static const uint32_t sdm_ns_allowed_list_default[] =
++ SDM_NS_ALLOWED_LIST_DEFAULT;
++
++/*
++* sdm_ns_allowed_list_boot_init - boot_final() hook that populates the SDM
++* Non-Secure-world allowed list before OP-TEE finishes boot, so the
++* whitelist is in place before Linux is allowed to issue any SiP SMC.
++*
++* Issues, in order:
++*   1. ALTERA_SIP_SMC_NS_ALLOWED_LIST_CLEAR  — wipes the existing whitelist
++*   2. ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD    — once per entry in
++*	 sdm_ns_allowed_list_default[] / SDM_NS_ALLOWED_LIST_DEFAULT.
++*	 Each entry is a full 32-bit SiP SMC FID, not a raw SDM mailbox opcode.
++*
++* Reuses the file-local send_ns_allowed_list_{clear,add}() helpers, so
++* extending the SDM_NS_ALLOWED_LIST_DEFAULT initializer is the only change
++* needed to whitelist additional SiP SMC FIDs at boot.
++*
++* A non-zero return here only logs an error; OP-TEE boot continues so the
++* platform remains usable even if ATF rejects an entry (e.g. it is still
++* busy).
++*/
++static TEE_Result sdm_ns_allowed_list_boot_init(void)
++{
++ TEE_Result res = TEE_SUCCESS;
++ size_t i = 0;
++
++ res = send_ns_allowed_list_clear();
++ if (res != TEE_SUCCESS) {
++	 EMSG("boot: SDM NS allowed-list clear failed (0x%" PRIx32 ")",
++	      res);
++	 return res;
++ }
++
++ for (i = 0; i < ARRAY_SIZE(sdm_ns_allowed_list_default); i++) {
++	 res = send_ns_allowed_list_add(sdm_ns_allowed_list_default[i]);
++	 if (res != TEE_SUCCESS) {
++		 EMSG("boot: SDM NS allowed-list add[%zu] (cmd=0x%" PRIx32 ") failed (0x%" PRIx32 ")",
++		      i, sdm_ns_allowed_list_default[i], res);
++		 return res;
++	 }
++ }
++
++ IMSG("SDM NS allowed-list initialised at boot (%zu entries)",
++      ARRAY_SIZE(sdm_ns_allowed_list_default));
++ return TEE_SUCCESS;
++}
++boot_final(sdm_ns_allowed_list_boot_init);
++
++/*
++ * sdm_remap_boot_init - boot_final() hook that claims ownership of the
++ * SDM back-end address remapper and the SDM TBU stream-control register.
++ *
++ * Writes, in order:
++ *   1. SDM_BE_AWADDR_REMAP_REG (0x10D12280) = SDM_REMAP_DRAM_BASE (0x80000000)
++ *   2. SDM_BE_ARADDR_REMAP_REG (0x10D12284) = SDM_REMAP_DRAM_BASE
++ *   3. SDM_STREAM_CTRL_REG     (0x10D12184) = SDM_STREAM_SECURE   (0x33)
++ *
++ * Combined with the ATF-side change (Part A) that drops these three
++ * addresses from the INTEL_SIP_SMC_REG_WRITE whitelist for non-secure
++ * callers, this makes the SDM DMA path deterministic for the lifetime
++ * of the boot:
++ *
++ *   - cmd_sdm_sdos_crypt no longer needs to save/modify/restore these
++ *     registers around each operation.
++ *   - U-Boot proper and Linux become read-only on the remapper.
++ *
++ * Policy on failure: emit EMSG and return the error.  Boot continues —
++ * the platform stays usable for non-SDOS PTA commands; SDOS itself
++ * will fail cleanly later with a clear error from ATF.  If a stricter
++ * policy is required (refuse to boot when SDM ownership cannot be
++ * asserted), change the final return to panic().
++ */
++static TEE_Result sdm_remap_boot_init(void)
++{
++	struct thread_smc_args smc = { };
++
++	smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++	smc.a1 = SDM_BE_AWADDR_REMAP_REG;
++	smc.a2 = SDM_REMAP_DRAM_BASE;
++	thread_smccc(&smc);
++	
++	if (smc.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("boot: SDM AWADDR_REMAP write failed (status=0x%" PRIx64 ")", smc.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	memset(&smc, 0, sizeof(smc));
++	smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++	smc.a1 = SDM_BE_ARADDR_REMAP_REG;
++	smc.a2 = SDM_REMAP_DRAM_BASE;
++	thread_smccc(&smc);
++
++	if (smc.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("boot: SDM ARADDR_REMAP write failed (status=0x%" PRIx64 ")", smc.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	memset(&smc, 0, sizeof(smc));
++	smc.a0 = INTEL_SIP_SMC_REG_WRITE;
++	smc.a1 = SDM_STREAM_CTRL_REG;
++	smc.a2 = SDM_STREAM_SECURE;
++	thread_smccc(&smc);
++	
++	if (smc.a0 != INTEL_SIP_SMC_STATUS_OK) {
++		EMSG("boot: SDM STREAM_CTRL write failed (status=0x%" PRIx64 ")", smc.a0);
++		return TEE_ERROR_GENERIC;
++	}
++
++	IMSG("SDM remapper claimed: ARADDR/AWADDR=0x%08x, STREAM_CTRL=0x%02x",
++		SDM_REMAP_DRAM_BASE, SDM_STREAM_SECURE);
++	return TEE_SUCCESS;
++}
++boot_final(sdm_remap_boot_init);
++
++static TEE_Result invoke_command(void *session __unused,
++				 uint32_t cmd, uint32_t ptypes,
++				 TEE_Param params[TEE_NUM_PARAMS])
++{
++	switch (cmd) {
++	case PTA_CMD_GET_VERSION:
++		return get_version(ptypes, params);
++	case PTA_CMD_SDM_GET_ID_CODE:
++		return get_id_code(ptypes, params);
++	case PTA_CMD_SDM_GET_CHIP_ID:
++		return get_chip_id(ptypes, params);
++	case PTA_CMD_SDM_SDOS_CRYPT:
++		return cmd_sdm_sdos_crypt(ptypes, params);
++	case PTA_CMD_SDM_GET_RANDOM:
++		return cmd_sdm_get_random(ptypes, params);
++	case PTA_CMD_SDM_SEND_CERT:
++		return cmd_sdm_send_cert(ptypes, params);
++	case PTA_CMD_SDM_GET_PROV_DATA:
++		return cmd_sdm_get_prov_data(ptypes, params);
++	case PTA_CMD_SDM_READ_USER_FUSES:
++		return cmd_sdm_read_user_fuses(ptypes, params);
++	case PTA_CMD_SDM_PROG_USER_FUSES:
++		return cmd_sdm_prog_user_fuses(ptypes, params);
++	case PTA_CMD_SDM_PROG_PUBKEY:
++		return cmd_sdm_prog_pubkey(ptypes, params);
++	case PTA_CMD_SDM_EFUSE_RELOAD_CACHE:
++		return cmd_sdm_efuse_reload_cache(ptypes, params);
++	case PTA_CMD_SDM_SECURITY_OP:
++		return cmd_sdm_security_op(ptypes, params);
++	case PTA_CMD_SDM_DISABLE_OWNED_ENTRY:
++		return cmd_sdm_disable_owned_entry(ptypes, params);
++	case PTA_CMD_SDM_EFUSE_WRITE_DISABLE:
++		return cmd_sdm_efuse_write_disable(ptypes, params);
++	case PTA_CMD_SDM_NS_ALLOWED_LIST_DEACTIVATE:
++		return cmd_sdm_ns_allowed_list_deactivate(ptypes, params);
++	case PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE:
++		return cmd_sdm_ns_allowed_list_remove(ptypes, params);
++	default:
++		return TEE_ERROR_NOT_IMPLEMENTED;
++	}
++}
++
++pseudo_ta_register(.uuid = PTA_SDM_SVC_UUID, .name = PTA_NAME,
++		   .flags = PTA_DEFAULT_FLAGS,
++		   .invoke_command_entry_point = invoke_command);
+diff --git a/optee_os/core/pta/sub.mk b/optee_os/core/pta/sub.mk
+index 42fa03302c1a..2cb27cbec35b 100644
+--- a/optee_os/core/pta/sub.mk
++++ b/optee_os/core/pta/sub.mk
+@@ -14,6 +14,7 @@ srcs-$(CFG_SCMI_PTA) += scmi.c
+ srcs-$(CFG_HWRNG_PTA) += hwrng.c
+ srcs-$(CFG_RTC_PTA) += rtc.c
+ srcs-$(CFG_WIDEVINE_PTA) += widevine.c
++srcs-$(CFG_SDM_SVC_PTA) += sdm_svc.c
+ 
+ subdirs-y += bcm
+ subdirs-y += stm32mp
+diff --git a/optee_os/lib/libutee/include/pta_sdm_svc.h b/optee_os/lib/libutee/include/pta_sdm_svc.h
+new file mode 100644
+index 000000000000..b4f781a65331
+--- /dev/null
++++ b/optee_os/lib/libutee/include/pta_sdm_svc.h
+@@ -0,0 +1,977 @@
++/* SPDX-License-Identifier: BSD-2-Clause */
++/*
++ * Copyright (C) 2024, Intel Corporation
++ *
++ * OP-TEE Pseudo-TA interface for SDM (Secure Device Manager) services.
++ *
++ * Provides a secure enclave for accessing Intel SDM functions via ATF SiP
++ * SMC services.  All SDM operations pass through this PTA to enforce access
++ * control at the OP-TEE boundary.
++ */
++
++#ifndef __PTA_SDM_SVC_H
++#define __PTA_SDM_SVC_H
++
++/*
++ * UUID: b68b0d3b-5ef5-4f4e-ac23-00005ed30065
++ * (last two bytes of node encode the initial SiP function ID 0x0065)
++ */
++#define PTA_SDM_SVC_UUID \
++	{ 0xb68b0d3b, 0x5ef5, 0x4f4e, \
++	  { 0xac, 0x23, 0x00, 0x00, 0x5e, 0xd3, 0x00, 0x65 } }
++
++/* Current PTA API version — increment when commands are added or changed */
++#define PTA_SDM_SVC_API_VERSION		20
++
++/*
++ * SDM eFuse phase-2 finalization status codes (PUBKEY_PROGRAM_PHASE2).
++ *
++ * After PTA_CMD_SDM_PROG_PUBKEY and PTA_CMD_SDM_DISABLE_OWNED_ENTRY receive
++ * a successful response from the SDM, the PTA holds 1 second and then issues
++ * the ATF SiP service
++ *   ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2 (0x42000178)
++ * to finalize the eFuse programming.	Whether the SDM triggers a Soft POR
++ * (physical / NON-VOLATILE fusing) or treats the call as a no-op (virtual /
++ * cache-only fusing) is reported back via a new VALUE_OUTPUT param:
++ *
++ *   SUCCESS  - Phase-2 accepted; Soft POR will be triggered by the SDM.
++ *		 This is what the host normally sees for NON-VOLATILE
++ *		 programming; the device may reset shortly after.
++ *   NOP      - Phase-2 accepted but Soft POR was suppressed because the
++ *		 previous command targeted virtual / cached fuses only.
++ *   SKIPPED  - Phase-2 was not invoked (the SDM rejected the preceding
++ *		 command, so finalization was not attempted).
++ *   FAILED   - Phase-2 was attempted but the SMC submit or poll failed;
++ *		 eFuse state is indeterminate, inspect IMSG/EMSG logs.
++ */
++#define SDM_PHASE2_STATUS_SUCCESS	0U
++#define SDM_PHASE2_STATUS_NOP		1U
++#define SDM_PHASE2_STATUS_SKIPPED	2U
++#define SDM_PHASE2_STATUS_FAILED	3U
++
++/*
++ * PTA_CMD_GET_VERSION - Query the PTA API version
++ *
++ * param[0] (out value) .a = PTA_SDM_SVC_API_VERSION
++ * param[1..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS always
++ */
++#define PTA_CMD_GET_VERSION		0x0
++
++/*
++ * PTA_CMD_SDM_GET_ID_CODE - Read the JTAG ID code
++ *
++ * Calls ATF SiP service ALTERA_SIP_SMC_ASYNC_GET_IDCODE (0x420000D3).
++ *
++ * param[0] (out value) .a = jtag_idcode
++ * param[1..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	    - chip ID read successfully
++ *   TEE_ERROR_GENERIC	    - ATF returned a non-zero status
++ */
++ #define PTA_CMD_SDM_GET_ID_CODE		0x1
++
++/*
++ * PTA_CMD_SDM_GET_CHIP_ID - Read the SDM/HPS chip ID
++ *
++ * Calls ATF SiP service INTEL_SIP_SMC_FCS_CHIP_ID (0xC2000065).
++ *
++ * param[0] (out value) .a = chip_id[31:0], .b = chip_id[63:32]
++ * param[1..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	    - chip ID read successfully
++ *   TEE_ERROR_GENERIC	    - ATF returned a non-zero status
++ */
++#define PTA_CMD_SDM_GET_CHIP_ID		0x2
++
++/*
++ * PTA_CMD_SDM_SDOS_CRYPT - SDOS encrypt or decrypt a data buffer
++ *
++ * Calls ATF SiP async services:
++ *   ALTERA_SIP_SMC_ASYNC_FCS_OPEN_CS_SESSION	(0x4200013A)
++ *   ALTERA_SIP_SMC_ASYNC_FCS_CRYPTION_EXT	(0x4200012F)
++ *   ALTERA_SIP_SMC_ASYNC_FCS_CLOSE_CS_SESSION (0x4200013B)
++ *
++ * The caller is responsible for constructing the SDOS-formatted input buffer
++ * using the sdos_hdr structure and helper macros defined below.
++ *
++ * param[0] (in value)
++ *   .a = direction: PTA_SDM_SVC_CRYPT_ENCRYPT (1) or PTA_SDM_SVC_CRYPT_DECRYPT (0)
++ *   .b = SDM_BE_ARADDR_REMAP value; smmu_addr = phys - .b:
++ *	   0x80000000 — U-Boot: SMMU disabled, remap adder active (after fpga load)
++ *	   0x00000000 — Linux:	HPS SMMU enabled, SMMU translates IOVA=phys → PA
++ * param[1] (in memref)
++ *   Encrypt: fully-constructed SDOS input buffer:
++ *	[struct sdos_hdr (40 bytes)] [plaintext] [padding (SDOS_PAD_LEN bytes)]
++ *	Total size = SDOS_HDR_SIZE + plaintext_len + SDOS_PAD_LEN(plaintext_len)
++ *   Decrypt: complete SDOS blob from a previous encryption:
++ *	[struct sdos_hdr (40 bytes)] [ciphertext + padding] [HMAC (48 bytes)]
++ * param[2] (out memref)
++ *   Output buffer, pre-allocated by caller.
++ *   Minimum size:
++ *	Encrypt: SDOS_HDR_SIZE + plaintext_len + SDOS_PAD_LEN(plaintext_len) + SDOS_HMAC_SIZE
++ *	Decrypt: same size as the encrypt input (sdos_hdr + plaintext + padding)
++ *   On return, memref.size is updated to the actual number of bytes written.
++ * param[3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	    - operation completed; param[2].memref.size = output bytes
++ *   TEE_ERROR_GENERIC	    - SDM or ATF returned an error
++ *   TEE_ERROR_BUSY	    - SDM poll timed out
++ *   TEE_ERROR_BAD_PARAMETERS - bad param types or null buffers
++ */
++#define PTA_CMD_SDM_SDOS_CRYPT		0x3
++
++/*
++ * PTA_CMD_SDM_GET_RANDOM - Retrieve random bytes from the SDM hardware RNG
++ *
++ * Calls ATF SiP async services:
++ *   ALTERA_SIP_SMC_ASYNC_FCS_OPEN_CS_SESSION	  (0x4200013A)
++ *   ALTERA_SIP_SMC_ASYNC_FCS_RANDOM_NUMBER_EXT  (0x4200012D)
++ *   ALTERA_SIP_SMC_ASYNC_FCS_CLOSE_CS_SESSION	  (0x4200013B)
++ *
++ * The SDM RNG output is captured in a TZDRAM bounce buffer inside the PTA
++ * (secure world), then copied to the caller's normal-world output buffer.
++ * The random data never touches NS DRAM until the PTA has validated the
++ * completed SDM response.
++ *
++ * param[0] (in value)
++ *   .a = requested byte count; must be 4-byte aligned, SDM_RNG_MIN_BYTES..SDM_RNG_MAX_BYTES
++ * param[1] (out memref)
++ *   Output buffer, pre-allocated by caller; must be >= param[0].value.a bytes.
++ *   On return, memref.size = actual bytes written (equals the requested count).
++ * param[2..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	       - random bytes written to param[1] buffer
++ *   TEE_ERROR_GENERIC	       - ATF or SDM returned an error
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ *   TEE_ERROR_OUT_OF_MEMORY  - TZDRAM bounce buffer allocation failed
++ *   TEE_ERROR_BAD_PARAMETERS - bad param types, zero/unaligned/out-of-range
++ *				 size, or output buffer smaller than requested
++ */
++#define PTA_CMD_SDM_GET_RANDOM		0x4
++
++/* Byte count constraints for PTA_CMD_SDM_GET_RANDOM */
++#define SDM_RNG_MIN_BYTES		4U     /* minimum: 1 word, 4-byte aligned */
++#define SDM_RNG_MAX_BYTES		4080U  /* 1020 words (FCS_RANDOM_EXT_MAX_WORD_SIZE * 4) */
++
++/*
++ * PTA_CMD_SDM_SEND_CERT - Authenticate a certificate with the SDM
++ *
++ * Calls ATF SiP async service:
++ *   ALTERA_SIP_SMC_ASYNC_FCS_SEND_CERTIFICATE (0x42000131)
++ *
++ * The certificate is copied into a TZDRAM bounce buffer by the PTA before
++ * being passed to the SDM via ATF.  A 4-byte zero-valued header word is
++ * prepended to the certificate data as required by the SDM mailbox protocol
++ * (MBOX_CMD_VAB_SRC_CERT).
++ *
++ * param[0] (in memref)
++ *   Raw certificate binary; must be 4-byte aligned in size; max SDM_CERT_MAX_SIZE.
++ * param[1] (out value)
++ *   .a = SDM mailbox error code: 0 = certificate accepted, non-zero = rejected
++ *   .b = SDM response detail word (valid when .a is non-zero; aids diagnosis)
++ * param[2..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SDM processed the certificate; check param[1].a
++ *				 for the authentication result (0=pass, else fail)
++ *   TEE_ERROR_GENERIC	       - ATF rejected the SMC call
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ *   TEE_ERROR_OUT_OF_MEMORY  - TZDRAM bounce buffer allocation failed
++ *   TEE_ERROR_BAD_PARAMETERS - null/oversized/unaligned certificate
++ */
++#define PTA_CMD_SDM_SEND_CERT		0x5
++
++/* Maximum certificate size accepted by PTA_CMD_SDM_SEND_CERT */
++#define SDM_CERT_MAX_SIZE		4096U  /* 4 KB */
++
++/*
++ * Certificate header layout (struct fcs_hps_vab_certificate_header in ATF's
++ * socfpga_vab.h), byte offsets from the start of the certificate blob:
++ *
++ *   0x00  magic (SDM_CERT_MAGIC_NUM)
++ *   0x04  cert_data_sz
++ *   0x08  cert_ver
++ *   0x0C  cert_type
++ *   0x18  counter type in bits[7:0]; for an explicit KEY-ID cancel,
++ *	   bits[15:8] select the key owner (0 = user, 1 = Intel)
++ *   0x1C  key ID, or owner root-hash slot number
++ *
++ * Only a key-cancellation certificate changes fuse state in a way that needs
++ * the phase-2 finalize, so cmd_sdm_send_cert classifies the blob before
++ * deciding whether to issue it:
++ *
++ *   cert_type 0x0B  -> cancellation (SDOS / service root key)
++ *   cert_type 0x0D  -> cancellation (user AES root key)
++ *   cert_type 0x05  -> depends on the counter type at 0x18 bits[7:0]:
++ *			  0	 = explicit KEY-ID cancel	 -> cancellation
++ *			  255	 = cancel owner root-hash slot	 -> cancellation
++ *			  1..6	 = counter update		 -> NOT a cancellation
++ *   anything else   -> NOT a cancellation
++ */
++#define SDM_CERT_MAGIC_NUM		0x25D04E7FU
++#define SDM_CERT_MIN_HDR_BYTES		0x20U
++
++#define SDM_CERT_OFF_MAGIC		0x00U
++#define SDM_CERT_OFF_TYPE		0x0CU
++#define SDM_CERT_OFF_COUNTER		0x18U
++#define SDM_CERT_OFF_ID			0x1CU
++
++#define SDM_CERT_TYPE_CANCEL_SDOS_ROOT	0x0BU	/* SDOS / service root key */
++#define SDM_CERT_TYPE_CANCEL_AES_ROOT	0x0DU	/* user AES root key */
++#define SDM_CERT_TYPE_COUNTER		0x05U	/* counter update or KEY-ID cancel */
++
++#define SDM_CERT_COUNTER_TYPE_MASK	0xFFU
++#define SDM_CERT_COUNTER_KEYID_CANCEL	0U	/* explicit KEY-ID cancel */
++#define SDM_CERT_COUNTER_ROOT_HASH_CANCEL 255U	/* cancel owner root-hash slot */
++#define SDM_CERT_KEY_OWNER_SHIFT	8U
++#define SDM_CERT_KEY_OWNER_MASK		0xFFU
++
++/*
++ * PTA_CMD_SDM_GET_PROV_DATA - Retrieve provisioning data from the SDM
++ *
++ * Calls ATF async service ALTERA_SIP_SMC_ASYNC_FCS_GET_PROVISION_DATA
++ * (0x42000132).  The SDM writes a variable-length provisioning data blob to a
++ * TZDRAM bounce buffer; the PTA copies the actual bytes to the caller's output
++ * buffer and updates param[0].memref.size with the actual byte count.
++ *
++ * The response size depends on the number of provisioned owner root hashes N,
++ * encoded in bits [15:8] of the third response word (cosign_info):
++ *   N		 = ((cosign_info >> 8) & 0xFF) + 1
++ *   actual_bytes = (3 + N * 13 + 6) * 4
++ * For secp384r1 (type 2) hashes: 88 bytes (N=1) to 452 bytes (N=8).
++ *
++ * param[0] (out memref) output buffer; must be >= SDM_PROV_DATA_MAX_SIZE.
++ *			  On success: memref.size updated to actual byte count.
++ * param[1..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	      - provisioning data retrieved; check memref.size
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types
++ *   TEE_ERROR_SHORT_BUFFER  - param[0] buffer < SDM_PROV_DATA_MAX_SIZE
++ *   TEE_ERROR_GENERIC	      - ATF or SDM returned an error, or parsed size
++ *				exceeds SDM_PROV_DATA_MAX_SIZE
++ *   TEE_ERROR_BUSY	      - SDM poll timed out
++ */
++#define PTA_CMD_SDM_GET_PROV_DATA	0x6
++
++/*
++ * SDM provisioning data buffer sizing.
++ *
++ * The response is variable-length: 3 fixed header words + N*(12 hash words +
++ * 1 cancel word) + 6 fixed tail words, where N is the number of provisioned
++ * owner root hashes (1..SDM_PROV_MAX_HASHES).
++ *
++ * Callers must allocate SDM_PROV_DATA_MAX_SIZE bytes; the PTA returns the
++ * actual byte count in param[0].memref.size after a successful call.
++ */
++#define SDM_PROV_MAX_HASHES		8U	/* max owner root hash slots */
++#define SDM_PROV_HASH_WORDS		12U	/* secp384r1: 384 bits = 12 uint32_t */
++/* (3 header + SDM_PROV_MAX_HASHES*13 + 6 tail) words * 4, rounded to 512 */
++#define SDM_PROV_DATA_MAX_SIZE		512U
++
++/* Extract number of provisioned hashes from cosign_info word (word index 2).
++ * The field encodes (count - 1); add 1 for the actual hash count.
++ */
++#define SDM_PROV_HASH_COUNT(cosign)	((((cosign) >> 8) & 0xFFU) + 1U)
++/* Extract hash algorithm type from cosign_info; 2 = secp384r1 */
++#define SDM_PROV_HASH_TYPE(cosign)	((cosign) & 0xFFU)
++
++/*
++ * PTA_CMD_SDM_READ_USER_FUSES - Read all 16 user-defined eFuse words
++ *
++ * Calls ATF SiP async service ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD (0x420000EE)
++ * with SDM mailbox command efuse_read_user_defined_fuses (0x2D).
++ * Always reads all 16 words starting at word 0.
++ *
++ * param[0] (out memref) output buffer; must be >= SDM_USER_FUSE_SIZE (64 bytes).
++ *			  On success, filled with 16 × uint32_t user fuse values.
++ * param[1..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	      - 16 fuse words written to param[0]
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types
++ *   TEE_ERROR_SHORT_BUFFER  - param[0] buffer too small
++ *   TEE_ERROR_GENERIC	      - ATF or SDM returned an error
++ *   TEE_ERROR_BUSY	      - SDM poll timed out
++ *   TEE_ERROR_OUT_OF_MEMORY - TZDRAM bounce buffer allocation failed
++ */
++#define PTA_CMD_SDM_READ_USER_FUSES	0x7
++
++/*
++ * PTA_CMD_SDM_PROG_USER_FUSES - Program all 16 user-defined eFuse words
++ *
++ * Calls ATF SiP async service ALTERA_SIP_SMC_ASYNC_GEN_MBOX_CMD (0x420000EE)
++ * with SDM mailbox command efuse_user_defined_fuses_program (0x2C).  Always
++ * programs all 16 words starting at word 0.
++ *
++ * The host controls whether the SDM "test" flag (bit 31 of the program
++ * control word) is set, via SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE in
++ * param[1].value.a:
++ *
++ *   flag CLEAR (default)		      test=1 → virtual / cached state
++ *					       only; no physical eFuse is
++ *					       burned.	Reversible.
++ *   SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE   test=0 → SDM permanently burns
++ *					       the 16 user-fuse words into the
++ *					       physical eFuse.	*** UNRECOVERABLE.
++ *					       Once written, those fuse bits
++ *					       CANNOT be erased or changed. ***
++ *
++ * The PTA emits an EMSG audit line on every NON_VOLATILE invocation so the
++ * secure-world log records every irreversible programming attempt.
++ *
++ * SDM mailbox program payload (72 bytes), built in a TZDRAM bounce buffer:
++ *   word 0	 : SDM_EFUSE_PROG_MAGIC ("User" — 0x55736572)
++ *   word 1	 : SDM_EFUSE_PROG_CTRL_WORD	  (test=1, 16 words, start=0) or
++ *		   SDM_EFUSE_PROG_CTRL_WORD_BURN  (test=0, 16 words, start=0)
++ *   words 2..17: 16 × uint32_t caller fuse values
++ *
++ * param[0] (in memref)   caller fuse data; must be exactly SDM_USER_FUSE_SIZE
++ *			   (64 bytes) — 16 × uint32_t.
++ * param[1] (in value)	   .a = host_flags
++ *				 (SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE only)
++ *			   .b = reserved (must be 0)
++ * param[2..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	      - SDM accepted the program command
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types / size / unknown host_flags
++ *				 / reserved field non-zero
++ *   TEE_ERROR_GENERIC	      - ATF or SDM returned an error
++ *   TEE_ERROR_BUSY	      - SDM poll timed out
++ *   TEE_ERROR_OUT_OF_MEMORY - TZDRAM bounce buffer allocation failed
++ */
++#define PTA_CMD_SDM_PROG_USER_FUSES	0x8
++
++/* Number of 32-bit user eFuse words (fixed; always operate on all 16) */
++#define SDM_USER_FUSE_COUNT		16U
++/* Total byte size of all user fuse data */
++#define SDM_USER_FUSE_SIZE		(SDM_USER_FUSE_COUNT * 4U)	/* 64 bytes */
++
++/* SDM mailbox command codes for user-defined eFuse operations */
++#define SDM_EFUSE_READ_CMD		0x2DU	/* efuse_read_user_defined_fuses */
++#define SDM_EFUSE_PROG_CMD		0x2CU	/* efuse_user_defined_fuses_program */
++
++/* Command payload size for the read operation (1 word: num_words and start_word) */
++#define SDM_EFUSE_READ_PAYLOAD_SIZE	4U
++/*
++ * Command payload size for the program operation:
++ *   word 0: magic (SDM_EFUSE_PROG_MAGIC)
++ *   word 1: control word (SDM_EFUSE_PROG_CTRL_WORD)
++ *   words 2-17: 16 data words
++ *   Total: 18 × 4 = 72 = 0x48 bytes
++ */
++#define SDM_EFUSE_PROG_PAYLOAD_SIZE	72U	/* 0x48 */
++/* Response buffer size (large enough for SDM reply) */
++#define SDM_EFUSE_RESP_BUF_SIZE		0x400U	/* 1 KiB */
++
++/*
++ * Read command payload word: [15:8]=0x10 (16 words), [7:0]=0x00 (start word 0)
++ */
++#define SDM_EFUSE_READ_CMD_WORD		0x00001000U
++
++/* Magic number required in program payload word 0 ("User" in ASCII) */
++#define SDM_EFUSE_PROG_MAGIC		0x55736572U
++
++/*
++ * PTA_CMD_SDM_PROG_PUBKEY - Program an owner-root public-key hash into the SDM
++ *
++ * Calls ATF SiP async service ALTERA_SIP_SMC_ASYNC_FCS_PROGRAM_OWNER_PUBKEY
++ * (0x4200016D).  The PTA constructs a TZDRAM bounce buffer in the SDM mailbox
++ * payload format (2 reserved/header words followed by the hash data) and
++ * submits it to the SDM via ATF.
++ *
++ * The hash type is selected from the input size:
++ *
++ *   memref.size = SDM_PUBKEY_HASH_SIZE_SHA256 (32)  → SECP256R1 / SHA-256,
++ *				 single hash only.
++ *   memref.size = k * SDM_PUBKEY_HASH_SIZE_SHA384, for
++ *		   1 <= k <= SDM_PUBKEY_MAX_HASHES_PER_CALL (5)
++ *				→ SECP384R1 / SHA-384, k hashes packed
++ *				  contiguously (batch programming, one SMC
++ *				  call, one mailbox EFUSE_PUBKEY_PROGRAM
++ *				  command for all k hashes).
++ *
++ * Any other input size is rejected with TEE_ERROR_BAD_PARAMETERS.
++ *
++ * The host controls whether the SDM "test/cache-only" flag (T = bit[31] of
++ * the SMC flags word) is set, via SDM_PUBKEY_HOST_FLAG_NON_VOLATILE in
++ * param[1].value.a:
++ *
++ *   flag CLEAR (default)     T=1 → SDM updates virtual/cached state only;
++ *				     no physical eFuse is burned.  Reversible.
++ *   SDM_PUBKEY_HOST_FLAG_NON_VOLATILE	  T=0 → SDM permanently programs the
++ *				     owner-root key hash into the physical
++ *				     eFuse.  *** UNRECOVERABLE — once written
++ *				     this hash CANNOT be erased or changed. ***
++ *
++ * The PTA emits an EMSG / WMSG when the non-volatile flag is supplied so
++ * that audit logs record every irreversible programming attempt.
++ *
++ * SMC ABI (per Intel ATF SiP spec):
++ *   x0 = ALTERA_SIP_SMC_ASYNC_FCS_PROGRAM_OWNER_PUBKEY (0x4200016D)
++ *   x1 = request header / trans_id (0)
++ *   x2 = flags word:
++ *	     bit[31]   = T (test/cache-only)	    — PTA sets per host request
++ *	     bit[30]   = S (skip cancel, dev only)  — PTA forces 0
++ *	     bits[1:0] = hash_type		    — PTA picks per input size:
++ *			  1 = secp256r1 (32-byte hash, single only)
++ *			  2 = secp384r1 (48-byte hash, 1..5 batched)
++ *   x3 = phys addr of payload buffer
++ *   x4 = total payload length in 32-bit WORDS, header included
++ *	     (SDM_PUBKEY_WORD_BYTES-based; NOT bytes):
++ *	     10 for secp256r1 (2 hdr + 8 hash words)
++ *	     2 + 12*k for k secp384r1 hashes (k = 1..5)
++ *
++ * Payload buffer layout:
++ *   word[0..1]    reserved/header words (zero-filled by the PTA)
++ *   word[2..N-1]  N hash words from the caller MEMREF_INPUT, concatenated
++ *		      N = 8	  for SECP256R1 (32 bytes, single hash)
++ *		      N = 12*k  for k SECP384R1 hashes (48*k bytes)
++ *
++ * SMC poll response (after async completion):
++ *   a1 = SDM response status word
++ *   a2 = SMC response header word
++ *   These are forwarded verbatim to the caller in param[2].
++ *
++ * Phase-2 finalization
++ * --------------------
++ * When the SDM accepts the owner-root key hash (param[2].value.a == 0), the
++ * PTA waits 1 second and then issues the ATF SiP service
++ *   ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2 (0x42000178)
++ * to finalize the programming.  For SDM_PUBKEY_HOST_FLAG_NON_VOLATILE the
++ * SDM triggers a Soft POR after phase-2; for the default (virtual / cache-
++ * only) it returns without resetting.	 The outcome is surfaced to the
++ * caller through the new VALUE_OUTPUT param[3] (see SDM_PHASE2_STATUS_*).
++ * If the SDM rejects the prior owner-root program (param[2].value.a != 0)
++ * the PTA leaves phase-2 unattempted and reports SDM_PHASE2_STATUS_SKIPPED.
++ *
++ * param[0] (in memref)  Either SDM_PUBKEY_HASH_SIZE_SHA256 (32) bytes
++ *			  (single SECP256R1 hash), or k *
++ *			  SDM_PUBKEY_HASH_SIZE_SHA384 bytes for
++ *			  1 <= k <= SDM_PUBKEY_MAX_HASHES_PER_CALL contiguous
++ *			  SECP384R1 hashes.  Any other size is rejected.
++ * param[1] (in value)
++ *   .a = host control flags (currently only SDM_PUBKEY_HOST_FLAG_NON_VOLATILE).
++ *	   Any unknown bit causes TEE_ERROR_BAD_PARAMETERS so we never silently
++ *	   forward a flag the PTA doesn't understand.
++ *   .b = unused (must be 0)
++ * param[2] (out value)
++ *   .a = SDM response status (0 = accepted, non-zero = SDM error)
++ *   .b = SMC response header word
++ * param[3] (out value)
++ *   .a = SDM_PHASE2_STATUS_{SUCCESS,NOP,SKIPPED,FAILED}
++ *   .b = number of hashes actually submitted to the SDM in this call
++ *	  (0 on early/param error, equal to k on success or SDM rejection)
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SMC completed; check param[2].a for SDM result
++ *				 and param[3].a for phase-2 finalization status
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types, bad input size, or unknown
++ *				 bits set in param[1].value.a
++ *   TEE_ERROR_GENERIC	       - ATF rejected the SMC submit
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ *   TEE_ERROR_OUT_OF_MEMORY  - TZDRAM bounce buffer allocation failed
++ */
++#define PTA_CMD_SDM_PROG_PUBKEY		0x9
++
++/* Input hash sizes for PTA_CMD_SDM_PROG_PUBKEY */
++#define SDM_PUBKEY_HASH_SIZE_SHA256	32U	/*  8 × uint32_t (secp256r1) */
++#define SDM_PUBKEY_HASH_SIZE_SHA384	48U	/* 12 × uint32_t (secp384r1) */
++
++/*
++ * PTA_CMD_SDM_EFUSE_RELOAD_CACHE - Reload the SDM eFuse cache
++ *
++ * Calls ATF SiP async service:
++ *   ALTERA_SIP_SMC_ASYNC_SDM_EFUSE_RELOAD_CACHE (0x4200016C)
++ *
++ * The SDM re-reads the physical eFuse contents into its internal cache so
++ * that subsequent fuse / provisioning reads reflect any values that were
++ * burned (or modified) since the previous reload.  This is a side-effect-
++ * only operation: no payload is sent and no data is returned beyond the
++ * SDM accept/reject status.
++ *
++ * Submit-poll flow:
++ *   x0 = ALTERA_SIP_SMC_ASYNC_SDM_EFUSE_RELOAD_CACHE
++ *   x1 = 0 (trans_id)
++ *   (no payload — x2..x7 unused)
++ *
++ *   poll a1 = SDM mailbox status (0 = success, non-zero = SDM error)
++ *
++ * No PTA parameters are required.  param[0..3] must all be TEE_PARAM_TYPE_NONE.
++ *
++ * Result:
++ *   TEE_SUCCESS	       - cache reload accepted by the SDM
++ *   TEE_ERROR_BAD_PARAMETERS - any param type is not NONE
++ *   TEE_ERROR_GENERIC	       - ATF rejected the SMC, or SDM mailbox error
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ */
++#define PTA_CMD_SDM_EFUSE_RELOAD_CACHE	0xA
++
++/*
++ * PTA_CMD_SDM_SECURITY_OP - Apply EFUSE user security options to the SDM
++ *
++ * Calls ATF SiP async service:
++ *   ALTERA_SIP_SMC_ASYNC_FCS_EFUSE_USER_SECURITY_OPTION (0x42000170)
++ *
++ * The caller supplies a 32-bit "user security option" word in
++ * param[0].value.a together with a host control-flags word in
++ * param[1].value.a.  The PTA owns bit[31] (SDM_SECOPT_TEST_MODE) — it
++ * strips the caller's bit[31] and re-sets it based on the host_flags
++ * field, mirroring how cmd_sdm_prog_pubkey handles its T bit:
++ *
++ *   host_flags = 0 (default)		      T=1 → SDM updates virtual/
++ *					       cached state only.
++ *					       Reversible.
++ *   host_flags = SDM_SECOPT_HOST_FLAG_NON_VOLATILE
++ *					      T=0 → SDM permanently burns
++ *					       the physical eFuse fields
++ *					       requested by the option
++ *					       word.  IRREVERSIBLE.
++ *
++ * The PTA emits an EMSG when the non-volatile flag is supplied so the
++ * audit log records every irreversible programming attempt.
++ *
++ * SMC ABI:
++ *   x0 = ALTERA_SIP_SMC_ASYNC_FCS_EFUSE_USER_SECURITY_OPTION
++ *   x1 = 0 (trans_id)
++ *   x2 = security_option_word
++ *	   (PTA-massaged: caller's bit[31] cleared, then re-set per host_flags)
++ *
++ *   poll a1 = SDM mailbox status (0 = success, non-zero = SDM error)
++ *
++ * param[0] (in value)
++ *   .a = 32-bit user security option word (bitmask of SDM_SECOPT_* bits).
++ *	    The TEST_MODE bit is IGNORED here — test mode is controlled
++ *	    exclusively by param[1].value.a / SDM_SECOPT_HOST_FLAG_NON_VOLATILE.
++ *   .b = reserved, must be 0
++ * param[1] (in value)
++ *   .a = host control flags (currently only SDM_SECOPT_HOST_FLAG_NON_VOLATILE).
++ *	   Any unknown bit causes TEE_ERROR_BAD_PARAMETERS.
++ *   .b = reserved, must be 0
++ * param[2..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SDM accepted the security option word
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types, non-zero .b, or unknown
++ *				 bits set in param[1].value.a
++ *   TEE_ERROR_GENERIC	       - ATF rejected the SMC, or SDM mailbox error
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ */
++#define PTA_CMD_SDM_SECURITY_OP		0xB
++
++/*
++ * SDM user-security-option bit definitions (param[0].value.a for
++ * PTA_CMD_SDM_SECURITY_OP).
++ *
++ * Bit layout per the Agilex5 SDM EFUSE_USER_SECURITY_OPTION mailbox payload.
++ * Bits 13..15 and 18..30 are RESERVED and must be written as zero; the SDM
++ * is the final arbiter and may reject any reserved-bit write.
++ *
++ * NOTE: SDM_SECOPT_TEST_MODE (bit 31) is OWNED BY THE PTA.  The PTA strips
++ * it from caller input and re-sets it according to the host_flags word
++ * (param[1].value.a / SDM_SECOPT_HOST_FLAG_NON_VOLATILE).  Setting or
++ * clearing TEST_MODE in the option word has no effect.
++ */
++#define SDM_SECOPT_FIRMWARE_JOINT_SIGNING	(1U << 0)
++#define SDM_SECOPT_AES_KEY_UPDATE_MODE		(1U << 1)
++#define SDM_SECOPT_JTAG_DISABLE		(1U << 2)
++#define SDM_SECOPT_HPS_DEBUG_DISABLE		(1U << 3)
++#define SDM_SECOPT_VIRTUAL_EFUSE_DISABLE	(1U << 4)
++#define SDM_SECOPT_HPS_ZEROIZATION		(1U << 5)
++#define SDM_SECOPT_FPGA_ZEROIZATION		(1U << 6)
++#define SDM_SECOPT_PUF_AES_KEY_DISABLE		(1U << 7)
++#define SDM_SECOPT_BBRAM_AES_KEY_DISABLE	(1U << 8)
++#define SDM_SECOPT_EFUSE_AES_KEY_DISABLE	(1U << 9)
++#define SDM_SECOPT_PUF_ENROLLMENT_DISABLE	(1U << 10)
++#define SDM_SECOPT_SECURE_CLOCK_ONLY		(1U << 11)
++#define SDM_SECOPT_CRC_ENABLE			(1U << 12)
++#define SDM_SECOPT_ALIASL1_DISABLE		(1U << 16)
++#define SDM_SECOPT_DISABLE_BETA_MODE		(1U << 17)
++#define SDM_SECOPT_TEST_MODE			(1U << 31)
++
++/*
++ * SDM_SECOPT_VALID_MASK - union of all defined option bits.
++ * Any bit OUTSIDE this mask falls in a reserved field; the PTA does not
++ * filter on it (the SDM is authoritative) but CAs may use it to sanity-
++ * check user input before invoking PTA_CMD_SDM_SECURITY_OP.
++ */
++#define SDM_SECOPT_VALID_MASK ( \
++	SDM_SECOPT_FIRMWARE_JOINT_SIGNING	| \
++	SDM_SECOPT_AES_KEY_UPDATE_MODE		| \
++	SDM_SECOPT_JTAG_DISABLE			| \
++	SDM_SECOPT_HPS_DEBUG_DISABLE		| \
++	SDM_SECOPT_VIRTUAL_EFUSE_DISABLE	| \
++	SDM_SECOPT_HPS_ZEROIZATION		| \
++	SDM_SECOPT_FPGA_ZEROIZATION		| \
++	SDM_SECOPT_PUF_AES_KEY_DISABLE		| \
++	SDM_SECOPT_BBRAM_AES_KEY_DISABLE	| \
++	SDM_SECOPT_EFUSE_AES_KEY_DISABLE	| \
++	SDM_SECOPT_PUF_ENROLLMENT_DISABLE	| \
++	SDM_SECOPT_SECURE_CLOCK_ONLY		| \
++	SDM_SECOPT_CRC_ENABLE			| \
++	SDM_SECOPT_ALIASL1_DISABLE		| \
++	SDM_SECOPT_DISABLE_BETA_MODE		| \
++	SDM_SECOPT_TEST_MODE)
++
++/*
++ * Host-controllable flag bits passed in PTA_CMD_SDM_SECURITY_OP
++ * param[1].value.a.
++ *
++ * SDM_SECOPT_HOST_FLAG_NON_VOLATILE — instruct the PTA to clear bit[31]
++ * (TEST_MODE) of the SMC payload so the SDM permanently burns the
++ * requested option bits into the physical eFuse.  IRREVERSIBLE.  When
++ * clear (default) the PTA forces bit[31]=1 and only virtual/cached
++ * state is updated.
++ */
++#define SDM_SECOPT_HOST_FLAG_NON_VOLATILE	(1U << 0)
++#define SDM_SECOPT_HOST_FLAGS_VALID_MASK	SDM_SECOPT_HOST_FLAG_NON_VOLATILE
++
++/*
++ * PTA_CMD_SDM_DISABLE_OWNED_ENTRY - Permanently disable transition to the
++ *				       OWNED life-cycle state
++ *
++ * Calls ATF SiP async service:
++ *   ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED (0x42000179)
++ *
++ * Once permanently programmed, the SDM refuses any future owner-public-key
++ * root-hash fuse-programming attempt and the device stays in PRODUCTION (or
++ * the equivalent pre-OWNED) state for the rest of its life.  IRREVERSIBLE.
++ *
++ * The SMC takes a single fusing-mode selector in x2:
++ *   x2 = 0	 → physical fusing  (permanent eFuse burn, IRREVERSIBLE)
++ *   x2 != 0	 → virtual fusing   (cache-only, reversible across reset)
++ *
++ * The trusted PTA owns the x2 selector — it is computed solely from the
++ * host_flags word (SDM_DEO_HOST_FLAG_NON_VOLATILE) so that a buggy or
++ * malicious CA cannot bypass the policy.  This mirrors how
++ * cmd_sdm_prog_pubkey and cmd_sdm_security_op handle their "T" / TEST_MODE
++ * bits.
++ *
++ *   host_flags = 0 (default)		  x2 = 1 → virtual / cache-only
++ *   host_flags = SDM_DEO_HOST_FLAG_NON_VOLATILE
++ *					  x2 = 0 → physical eFuse burn
++ *						   (IRREVERSIBLE)
++ *
++ * The PTA emits an EMSG on every non-volatile request so the audit log
++ * records each irreversible programming attempt.
++ *
++ * SMC ABI:
++ *   x0 = ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED
++ *   x1 = 0 (request header / trans_id)
++ *   x2 = fusing-mode selector (see above)
++ *
++ *   poll a1 = SDM mailbox status (0 = success, non-zero = SDM error)
++ *
++ * Phase-2 finalization
++ * --------------------
++ * Once the SDM accepts the disable-owned-entry request, the PTA waits 1
++ * second and then issues the ATF SiP service
++ *   ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2 (0x42000178)
++ * to finalize the operation.	For SDM_DEO_HOST_FLAG_NON_VOLATILE (physical
++ * fusing) the SDM triggers a Soft POR after phase-2; for the default
++ * (virtual / cache-only) it returns without resetting.  The outcome is
++ * surfaced through the new VALUE_OUTPUT param[1] (see SDM_PHASE2_STATUS_*).
++ * If the SDM rejects the prior request, the PTA leaves phase-2 unattempted
++ * and reports SDM_PHASE2_STATUS_SKIPPED.
++ *
++ * param[0] (in value)
++ *   .a = host control flags (currently only SDM_DEO_HOST_FLAG_NON_VOLATILE)
++ *   .b = reserved, must be 0
++ * param[1] (out value)
++ *   .a = SDM_PHASE2_STATUS_{SUCCESS,NOP,SKIPPED,FAILED}
++ *   .b = reserved, always 0
++ * param[2..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SDM accepted the disable request; check
++ *				 param[1].a for phase-2 finalization status
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types, non-zero .b, or unknown
++ *				 bits set in param[0].value.a
++ *   TEE_ERROR_GENERIC	       - ATF rejected the SMC, or SDM mailbox error
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ */
++#define PTA_CMD_SDM_DISABLE_OWNED_ENTRY	0xC
++
++/*
++ * Host-controllable flag bits passed in PTA_CMD_SDM_DISABLE_OWNED_ENTRY
++ * param[0].value.a.
++ *
++ * SDM_DEO_HOST_FLAG_NON_VOLATILE — instruct the PTA to use physical
++ * fusing (SMC x2 = 0) so the SDM permanently disables owner-pubkey
++ * programming and locks the device out of the OWNED life-cycle state.
++ * IRREVERSIBLE.  When clear (default) the PTA uses virtual fusing
++ * (SMC x2 != 0) and only cached/volatile state is updated.
++ *
++ * DEO = "Disable Entry to Owned".
++ */
++#define SDM_DEO_HOST_FLAG_NON_VOLATILE	(1U << 0)
++#define SDM_DEO_HOST_FLAGS_VALID_MASK	SDM_DEO_HOST_FLAG_NON_VOLATILE
++
++/*
++ * PTA_CMD_SDM_EFUSE_WRITE_DISABLE - Disable further eFuse write operations
++ *
++ * Calls ATF SiP async service:
++ *   ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE (0x42000177)
++ *
++ * Instructs the SDM to disable subsequent eFuse-write commands.  No SDM
++ * mailbox payload is required and no data is returned beyond the SDM
++ * accept status; all four PTA params must be TEE_PARAM_TYPE_NONE.
++ *
++ * SMC ABI:
++ *   x0 = ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE
++ *   x1 = 0 (request header / trans_id)
++ *   x2 = 0
++ *
++ *   poll a1 = SDM mailbox status (0 = success, non-zero = SDM error)
++ *
++ * param[0..3] NONE
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SDM accepted the write-disable request
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types
++ *   TEE_ERROR_GENERIC	       - ATF rejected the SMC, or SDM mailbox error
++ *   TEE_ERROR_BUSY	       - SDM poll timed out
++ */
++#define PTA_CMD_SDM_EFUSE_WRITE_DISABLE	0xD
++
++/*
++ * PTA_CMD_SDM_NS_ALLOWED_LIST_DEACTIVATE - Deactivate the SDM Non-Secure
++ *					     allowed-command list (whitelist
++ *					     enforcement) at runtime.
++ *
++ * Calls the synchronous ATF SiP service:
++ *   ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE (0x42000181)
++ *
++ * Status semantics are identical to ALTERA_SIP_SMC_NS_ALLOWED_LIST_{CLEAR,ADD}:
++ *   x0 = 0  → Operation accepted and processed
++ *   x0 = 2  → Operation busy / command only allowed from the Secure World
++ *
++ * The list itself is installed at OP-TEE boot by the file-local
++ * boot_final() hook sdm_ns_allowed_list_boot_init() (see sdm_svc.c).	This
++ * PTA command lets a CA disable that whitelist enforcement later if the
++ * platform policy permits it.
++ *
++ * SMC ABI:
++ *   x0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE  (request header / function ID)
++ *
++ * param[0..3] NONE
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SDM/ATF accepted the deactivate
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types
++ *   TEE_ERROR_BUSY	       - SiP reported status 2 (busy / secure-only)
++ *   TEE_ERROR_GENERIC	       - unexpected status from ATF
++ */
++#define PTA_CMD_SDM_NS_ALLOWED_LIST_DEACTIVATE	0xE
++
++/*
++ * PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE - Remove a single SiP SMC function ID
++ *					 from the SDM Non-Secure-world
++ *					 allowed list at runtime.
++ *
++ * Calls the synchronous ATF SiP service:
++ *   ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE (0x4200017F)
++ *
++ * Status semantics match ALTERA_SIP_SMC_NS_ALLOWED_LIST_{CLEAR,ADD,DEACTIVATE}:
++ *   x0 = 0  → Operation accepted and processed
++ *   x0 = 2  → Operation busy / command only allowed from the Secure World
++ *
++ * The list itself is installed at OP-TEE boot by the file-local
++ * boot_final() hook sdm_ns_allowed_list_boot_init() (see sdm_svc.c).	This
++ * PTA command lets a CA revoke individual FIDs from that whitelist at
++ * runtime — e.g. once a one-shot provisioning step is complete.
++ *
++ * Each entry passed in param[0].value.a is a complete 32-bit SiP SMC FID
++ * (the FID Linux would issue via smc/hvc), NOT a raw SDM mailbox opcode.
++ *
++ * SMC ABI:
++ *   x0 = ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE (request header / function ID)
++ *   x1 = SiP SMC FID to revoke
++ *
++ * param[0] (in value)
++ *   .a = 32-bit SiP SMC FID to remove (e.g. 0x420000D3 GET_IDCODE)
++ *   .b = reserved, must be 0
++ * param[1..3] unused
++ *
++ * Result:
++ *   TEE_SUCCESS	       - SDM/ATF accepted the remove
++ *   TEE_ERROR_BAD_PARAMETERS - wrong param types or non-zero .b
++ *   TEE_ERROR_BUSY	       - SiP reported status 2 (busy / secure-only)
++ *   TEE_ERROR_GENERIC	       - unexpected status from ATF
++ */
++#define PTA_CMD_SDM_NS_ALLOWED_LIST_REMOVE	0xF
++
++/*
++ * SDM mailbox payload sizes for PROGRAM_OWNER_PUBKEY.
++ * Layout: 2 header words + N hash words (40 bytes for secp256r1, 56 for
++ * secp384r1).	 hash_type in the SMC x2 flags word is derived from input size.
++ */
++#define SDM_PUBKEY_PAYLOAD_SIZE_SECP256R1	40U	/* 10 words: 2 hdr + 8 hash */
++#define SDM_PUBKEY_PAYLOAD_SIZE_SECP384R1	56U	/* 14 words: 2 hdr + 12 hash */
++
++/* SDM mailbox word size; ATF expects the x4 length in words, not bytes. */
++#define SDM_PUBKEY_WORD_BYTES			4U
++
++/* Byte offset where the hash data begins inside the payload buffer (word 2) */
++#define SDM_PUBKEY_HASH_OFFSET		8U
++
++/*
++ * Maximum number of SECP384R1 hashes that can be packed contiguously into
++ * one PTA_CMD_SDM_PROG_PUBKEY call (memref.size up to this many *
++ * SDM_PUBKEY_HASH_SIZE_SHA384 bytes).  Matches this board's 5 owner-root
++ * key slots (root0..root4.qky) and the ATF EFUSE_PUBKEY_PROGRAM batch
++ * limit (MBOX_EFUSE_PUBKEY_MAX_KEY_SETS).
++ */
++#define SDM_PUBKEY_MAX_HASHES_PER_CALL	5U
++
++/* hash_type field values (flags word bits [1:0]) */
++#define SDM_PUBKEY_HASH_TYPE_SECP256R1	1U
++#define SDM_PUBKEY_HASH_TYPE_SECP384R1	2U
++
++/* Flags word bit definitions (passed in x2 of the SMC) */
++#define SDM_PUBKEY_FLAG_TEST		(1U << 31)	/* T: cache-only, no fuse burn */
++#define SDM_PUBKEY_FLAG_SKIP_CANCEL	(1U << 30)	/* S: skip cancel (dev only) */
++
++/*
++ * Key-set count field, flags word bits [15:8], encoded as (k - 1):
++ *
++ *   k=1 -> 0x00	k=2 -> 0x01	k=3 -> 0x02
++ *   k=4 -> 0x03	k=5 -> 0x04
++ *
++ * So 3 secp384r1 hashes yield a flags word of 0x80000202 with T=1.
++ *
++ * The ATF EFUSE_PUBKEY_PROGRAM handler documents bits [29:2] as reserved and
++ * copies x2 verbatim into payload word[1], so these bits reach the SDM
++ * untouched.  The SDM does consume them: it derives the expected payload
++ * length from this count, and leaving it at 0 while sending a k-set payload
++ * makes the SDM reject the command with err_code 0x4.  The count must
++ * therefore always match the number of hashes in the payload.
++ *
++ * k=1 encodes to 0, leaving the single-key flags word bit-identical to before.
++ */
++#define SDM_PUBKEY_FLAG_KEY_COUNT_SHIFT	8U
++#define SDM_PUBKEY_FLAG_KEY_COUNT_MASK	(0xFFU << SDM_PUBKEY_FLAG_KEY_COUNT_SHIFT)
++#define SDM_PUBKEY_FLAG_KEY_COUNT(k)					\
++	((((uint32_t)(k) - 1U) << SDM_PUBKEY_FLAG_KEY_COUNT_SHIFT) &	\
++	 SDM_PUBKEY_FLAG_KEY_COUNT_MASK)
++
++/*
++ * Host-controllable flag bits passed in PTA_CMD_SDM_PROG_PUBKEY param[1].value.a.
++ *
++ * SDM_PUBKEY_HOST_FLAG_NON_VOLATILE — instruct the PTA to clear the SDM test
++ * bit so the SDM permanently burns the owner-root key hash into the physical
++ * eFuse.  This is IRREVERSIBLE.  When clear (default) the PTA forces test
++ * mode and only virtual/cached state is updated.
++ */
++#define SDM_PUBKEY_HOST_FLAG_NON_VOLATILE	(1U << 0)
++#define SDM_PUBKEY_HOST_FLAGS_VALID_MASK	SDM_PUBKEY_HOST_FLAG_NON_VOLATILE
++
++/*
++ * Program control word (payload word 1) for PTA_CMD_SDM_PROG_USER_FUSES.
++ *
++ * Bit layout:
++ *   [31]    = test flag  (1 = virtual / cache-only, 0 = burn physical eFuse)
++ *   [15:8]  = num_words  (0x10 = 16 words)
++ *   [7:0]   = start_word (0)
++ *
++ * The PTA picks SDM_EFUSE_PROG_CTRL_WORD by default and
++ * SDM_EFUSE_PROG_CTRL_WORD_BURN when the caller passes
++ * SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE in PTA_CMD_SDM_PROG_USER_FUSES
++ * param[1].value.a.
++ */
++#define SDM_EFUSE_PROG_CTRL_WORD	0x80001000U	/* test=1 (virtual)  */
++#define SDM_EFUSE_PROG_CTRL_WORD_BURN	0x00001000U	/* test=0 (eFuse burn) */
++
++/*
++ * Host-controllable flag bits passed in PTA_CMD_SDM_PROG_USER_FUSES
++ * param[1].value.a.
++ *
++ * SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE — instruct the PTA to clear the SDM
++ * test bit so the SDM permanently burns the 16 user-fuse words into the
++ * physical eFuse.  This is IRREVERSIBLE.  When clear (default) the PTA
++ * forces test mode and only virtual/cached state is updated.	The PTA reads
++ * only this bit; any other bits in param[1].value.a are ignored.
++ */
++#define SDM_USER_FUSES_HOST_FLAG_NON_VOLATILE	(1U << 0)
++
++/* Crypto direction for PTA_CMD_SDM_SDOS_CRYPT param[0].value.a */
++#define PTA_SDM_SVC_CRYPT_DECRYPT	0
++#define PTA_SDM_SVC_CRYPT_ENCRYPT	1
++
++/*
++ * SDOS buffer layout constants and header structure.
++ *
++ * Callers of PTA_CMD_SDM_SDOS_CRYPT must construct the SDOS input buffer
++ * using this structure.  The magic field selects encrypt vs. decrypt input.
++ *
++ * Encrypt input buffer layout (param[1]):
++ *   offset 0:		   struct sdos_hdr   (SDOS_HDR_SIZE = 40 bytes)
++ *   offset SDOS_HDR_SIZE: plaintext bytes
++ *   offset SDOS_HDR_SIZE+plaintext_len: zero-fill padding (SDOS_PAD_LEN bytes)
++ *
++ * sdos_hdr fields to set for encrypt:
++ *   magic	= SDOS_ENCRYPT_IN_MAGIC	 (0xACBDBDED)
++ *   data_len	= plaintext_len + SDOS_PAD_LEN(plaintext_len)
++ *   flags	= SDOS_FLAGS(1, srk_index, SDOS_PAD_LEN(plaintext_len))
++ *   owner_id	= caller's 8-byte owner identifier (little-endian uint32[2])
++ *   hdr_pad	= SDOS_HDR_PAD_MAGIC  (0x01020304, required per Table 49 Security Methodology UG)
++ *   iv	= {0} (SDM fills this in the output)
++ *
++ * Decrypt input buffer layout (param[1]):
++ *   The complete SDOS blob produced by a previous encrypt operation.
++ */
++#define SDOS_HDR_SIZE			40
++#define SDOS_HMAC_SIZE			48	/* empirical: SDM adds 48 bytes of auth/IV overhead */
++#define SDOS_ENCRYPT_IN_MAGIC		0xACBDBDEDU
++#define SDOS_ENCRYPT_OUT_MAGIC		0x53424212U
++/* Required constant in sdos_hdr.hdr_pad (Table 49, Security Methodology UG) */
++#define SDOS_HDR_PAD_MAGIC		0x01020304U
++
++/*
++ * SDOS_PAD_LEN - padding bytes to add to plaintext_len so that
++ * data_len (plaintext + padding) is a multiple of 32.
++ * Returns 0 when plaintext_len is already a multiple of 32, otherwise
++ * returns the number of zero bytes needed to reach the next multiple.
++ * Range: [0..31].  (Security Methodology UG, Table 49)
++ */
++#define SDOS_PAD_LEN(n)			(((n) % 32) ? (32 - ((n) % 32)) : 0)
++
++/* SDOS data_len (padded plaintext) must be in this range (Table 49) */
++#define SDOS_MIN_DATA_LEN		32U
++#define SDOS_MAX_DATA_LEN		(32U * 1024U - 96U)	/* 32,672 bytes */
++
++/*
++ * SDOS_FLAGS - encode the flags word from its three fields.
++ *   asoi:	 Application-Specific Owner Identifier bit (1 = ASOI present)
++ *   srk_index: Secure Root Key index (0 for default)
++ *   pad_len:	 SDOS_PAD_LEN(plaintext_len)
++ */
++#define SDOS_FLAGS(asoi, srk_index, pad_len) \
++	(((uint32_t)(asoi) << 16) | ((uint32_t)(srk_index) << 8) | (uint32_t)(pad_len))
++
++#ifndef __ASSEMBLER__
++#include <stdint.h>
++
++/*
++ * SDOS 40-byte header — placed at offset 0 of the encrypt/decrypt input buffer.
++ * Fields are little-endian 32-bit words; total size is exactly SDOS_HDR_SIZE bytes.
++ */
++struct sdos_hdr {
++	uint32_t magic;		  /* SDOS_ENCRYPT_IN_MAGIC or SDOS_ENCRYPT_OUT_MAGIC */
++	uint32_t data_len;	  /* plaintext_len + pad_len */
++	uint32_t flags;		  /* SDOS_FLAGS(asoi, srk_index, pad_len) */
++	uint32_t owner_id[2]; /* 8-byte owner ID, little-endian */
++	uint32_t hdr_pad;	  /* must be SDOS_HDR_PAD_MAGIC (0x01020304) per Table 49 */
++	uint32_t iv[4];		  /* 16-byte IV: {0} on input, filled by SDM on output */
++};
++#endif /* __ASSEMBLER__ */
++
++#endif /* __PTA_SDM_SVC_H */

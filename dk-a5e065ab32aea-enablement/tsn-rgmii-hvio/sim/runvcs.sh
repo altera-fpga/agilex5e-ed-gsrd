@@ -64,7 +64,6 @@ vlogan -sverilog $DESIGN_ROOT_DIR/sim/tsn_rgmii_hvio_tb.sv
 if [ ! -f "nios_mem.hex" ]; then
   echo "INFO: nios_mem.hex not found in $(pwd). Searching under DESIGN_ROOT_DIR=$DESIGN_ROOT_DIR"
 
-  # Find the first matching file under the design root (skip common huge dirs to speed up)
   NIOS_HEX_PATH="$(
     find "$DESIGN_ROOT_DIR" \
       -type d \( -name .git -o -name sim_setup_tsn_rgmii_hvio -o -name work -o -name output_files \) -prune -false \

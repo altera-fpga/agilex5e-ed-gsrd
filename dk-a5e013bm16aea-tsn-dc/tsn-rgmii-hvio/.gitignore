@@ -1,0 +1,58 @@
+# Standard Quartus generated directories
+/dni/
+/output_files/
+/qdb/
+/tmp-clearbox/
+
+# Log files created by Quartus
+quartus.log
+quartus.rec
+quartus.rec.log.flock
+quartus.log.save
+quartus.rec.save
+serv_req_info.txt
+*.qws
+*.qdf
+*.rpt
+
+# IP generated subdirectories (top-level custom IP)
+/src/ip/*
+!/src/ip/*.ip
+
+# VDS subsystem generated outputs (keep source .vds and checked-in .ip)
+# Two-level pattern required: first un-ignore the ip/ dir, then exclude its contents except *.ip
+/src/vds/fabric_subsys/*
+!/src/vds/fabric_subsys/ip/
+/src/vds/fabric_subsys/ip/*
+!/src/vds/fabric_subsys/ip/*.ip
+!/src/vds/fabric_subsys/*.vds
+
+/src/vds/hps_subsys/*
+!/src/vds/hps_subsys/ip/
+/src/vds/hps_subsys/ip/*
+!/src/vds/hps_subsys/ip/*.ip
+!/src/vds/hps_subsys/*.vds
+
+/src/vds/niosv_subsys/*
+!/src/vds/niosv_subsys/ip/
+/src/vds/niosv_subsys/ip/*
+!/src/vds/niosv_subsys/ip/*.ip
+!/src/vds/niosv_subsys/*.vds
+
+/src/vds/shell_subsys/*
+!/src/vds/shell_subsys/ip/
+/src/vds/shell_subsys/ip/*
+!/src/vds/shell_subsys/ip/*.ip
+!/src/vds/shell_subsys/*.vds
+
+/src/vds/tsn_rgmii_hvio_top/*
+!/src/vds/tsn_rgmii_hvio_top/ip/
+/src/vds/tsn_rgmii_hvio_top/ip/*
+!/src/vds/tsn_rgmii_hvio_top/ip/*.ip
+!/src/vds/tsn_rgmii_hvio_top/*.vds
+
+# Simscript directories
+/sim_setup_*/
+
+# VDS generated directories
+/gen/

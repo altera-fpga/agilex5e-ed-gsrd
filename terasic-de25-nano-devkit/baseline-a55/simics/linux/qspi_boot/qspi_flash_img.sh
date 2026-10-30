@@ -65,21 +65,21 @@ fi
 #--------------------------------------
 # Generate final RPD file if not exists
 #--------------------------------------
-RPD_FILE="flash_image_jic.rpd"
+RPD_FILE="qspi_boot.rpd"
 if [[ ! -f "$RPD_FILE" ]]; then
     if [[ -f "$BOOTDIR_ABS/qspi_flash_image_agilex5-final.pfg" ]]; then
         echo "[INFO] Creating RPD using Quartus..."
         cp u-boot.itb u-boot-itb.bin
         quartus_pfg -c "$BOOTDIR_ABS/qspi_flash_image_agilex5-final.pfg"
         if [[ ! -f "$RPD_FILE" ]]; then
-            echo "[ERROR] RPD file flash_image_jic.rpd not found!"
+            echo "[ERROR] RPD file qspi_boot.rpd not found!"
             exit 1
         fi
-        echo "[SUCCESS] QSPI flash image created: flash_image_jic.rpd"
+        echo "[SUCCESS] QSPI flash image created: qspi_boot.rpd"
     else
         echo "[ERROR] PFG file not found: $BOOTDIR_ABS/qspi_flash_image_agilex5-final.pfg"
         exit 1
     fi
 else
-    echo "[INFO] flash_image_jic.rpd already exists. Skipping RPD creation."
+    echo "[INFO] qspi_boot.rpd already exists. Skipping RPD creation."
 fi

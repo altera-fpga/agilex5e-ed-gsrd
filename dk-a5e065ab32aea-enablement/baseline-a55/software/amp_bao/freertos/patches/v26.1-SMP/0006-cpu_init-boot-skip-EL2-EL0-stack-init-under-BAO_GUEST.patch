@@ -1,0 +1,114 @@
+From 98ff33bab7ee4b65f2ef9fa7ed45dde1fbe435d1 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 10:32:00 +0800
+Subject: [PATCH 6/6] cpu_init: skip EL2/EL0 stack init in
+ _boot/_secondary_boot under HV_GUEST_EL1
+
+The freertos-socfpga startup pre-seeds three stack pointers right
+at the top of _boot (and _secondary_boot):
+
+    ldr  x2, =EL2_stack
+    mov  sp, x2            ; SP for the current EL
+    ldr  x2, =EL1_stack
+    msr  sp_el1, x2        ; <-- EL2+ access only
+    ldr  x0, =EL0_stack
+    msr  sp_el0, x0
+
+That sequence is fine for the standalone product where U-Boot/ATF
+hand control to FreeRTOS at EL3 and the code drops down through EL2
+to EL1, pre-seeding each level's stack on the way. When the image is
+built as a hypervisor guest entering directly at EL1 (HV_GUEST_EL1=ON,
+e.g. for Bao) the architecture
+restricts MSR SP_EL1 to EL2 or higher (op1 = 4 in the system-register
+encoding). At EL1 the instruction traps to EL2, Bao does not emulate
+it (there is no useful guest semantic), an UNDEF is injected back
+into the guest, and we fall straight into the sync-exception vector
+at vector_base + 0x80 -- a `b .` self-branch -- so the UART stays
+silent forever.
+
+Symptom on hardware (Agilex5 SoCDK, TFTP boot, freertos-only config):
+
+    ## Starting application at 0xC0000000 ...
+    Bao Hypervisor
+    BAO ERROR: PSCI cpu3 power down failed with error 4294967294
+    BAO ERROR: PSCI cpu2 power down failed with error 4294967294
+    <hang - no FreeRTOS banner>
+
+Fix: under HV_GUEST_EL1, replace the three-stack pre-seed with a
+single `mov sp, =EL1_stack`. The hypervisor has already given us a
+valid SP_EL1 at entry, and we are not going to ERET down to EL0
+ourselves, so SP_EL0 stays hypervisor-managed. The bare-metal path
+is preserved verbatim inside the #else branch so the same source
+tree still produces a working standalone build for non-hypervisor
+targets.
+
+_secondary_boot gets the same treatment for symmetry: each secondary
+vCPU would otherwise hit the same trap without the guard.
+
+Pure rename of the previous BAO_GUEST guard. Under the umbrella
+-DBAO_GUEST=ON, HV_GUEST_EL1 is FORCEd ON by patch 0004 and the
+resulting .bin is byte-identical.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+index cfbb61c..3602b0a 100644
+--- a/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
++++ b/FreeRTOS/Demo/SOCFPGA/startup/cpu_init.S
+@@ -66,6 +66,20 @@
+ 
+ /* Boot core execution starts here */
+ _boot:
++#ifdef HV_GUEST_EL1
++    /* When this image enters at EL1 (HV_GUEST_EL1=ON for any AArch64
++     * hypervisor, e.g. Bao) the hypervisor
++     * has already given us a usable SP. MSR SP_EL1 / MSR SP_EL0 from EL1
++     * are forbidden (the SP_EL1 encoding requires EL2+ access; the write
++     * traps to EL2 and on Bao injects an UNDEF, leaving the guest spinning
++     * on its sync-exception vector at vector_base + 0x80). The standalone
++     * bare-metal flow needs them because it boots at EL3 and drops down
++     * through the ELs, pre-seeding each level's stack; the hypervisor
++     * already does that for us, so just install our chosen EL1 stack on
++     * the current SP and continue. */
++    ldr x2, =EL1_stack
++    mov sp, x2
++#else
+ 	// Initialize the stack pointer of EL2.
+ 	ldr	x2,=EL2_stack
+ 	mov	sp, x2
+@@ -75,6 +89,7 @@ _boot:
+ 
+ 	ldr x0, =EL0_stack // Load the stack pointer address for EL0 into x0
+ 	msr sp_el0, x0       // Set SP_EL0
++#endif
+ 
+     bl _core_setup
+ 
+@@ -88,6 +103,13 @@ _boot:
+     b error
+ 
+ _secondary_boot:
++#ifdef HV_GUEST_EL1
++    /* Phase-1 config pins the guest to cpu_num=1 so this path never
++     * runs, but keep the EL2/EL0 stack pokes guarded for the future
++     * AMP/SMP Phase-2 work. Same reasoning as _boot above. */
++    ldr x2, =EL11_stack
++    mov sp, x2
++#else
+ 	ldr	x2,=EL21_stack
+ 	mov	sp,x2
+ 
+@@ -96,6 +118,7 @@ _secondary_boot:
+ 
+ 	ldr x0, =EL01_stack
+ 	msr sp_el0, x0
++#endif
+ 
+     bl _core_setup
+ 
+-- 
+2.25.1
+

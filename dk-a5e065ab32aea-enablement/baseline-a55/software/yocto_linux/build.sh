@@ -2,7 +2,6 @@
 
 # Prerequisites:
 # - Build the design to create the SOF
-# - Compile the hps_debug application and create the SOF with the hps_debug application included
 # - Initialize your .gitconfig file
 
 # Command line parameters:

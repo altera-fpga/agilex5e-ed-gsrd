@@ -1,0 +1,270 @@
+From c6e5c536730fd26b07b8bbf8ad9ff77231f9751c Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Wed, 20 May 2026 16:26:26 +0800
+Subject: [PATCH] Add agilex5 platform
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ src/platform/agilex5/agilex5.c           |  28 ++++++
+ src/platform/agilex5/agilex5_desc.c      | 103 +++++++++++++++++++++++
+ src/platform/agilex5/inc/plat/platform.h |  19 ++++
+ src/platform/agilex5/inc/plat/psci.h     |  24 ++++
+ src/platform/agilex5/objects.mk          |   4 +
+ src/platform/agilex5/platform.mk         |  33 ++++++++
+ 6 files changed, 211 insertions(+)
+ create mode 100644 src/platform/agilex5/agilex5.c
+ create mode 100644 src/platform/agilex5/agilex5_desc.c
+ create mode 100644 src/platform/agilex5/inc/plat/platform.h
+ create mode 100644 src/platform/agilex5/inc/plat/psci.h
+ create mode 100644 src/platform/agilex5/objects.mk
+ create mode 100644 src/platform/agilex5/platform.mk
+
+diff --git a/src/platform/agilex5/agilex5.c b/src/platform/agilex5/agilex5.c
+new file mode 100644
+index 0000000..09e5e23
+--- /dev/null
++++ b/src/platform/agilex5/agilex5.c
+@@ -0,0 +1,28 @@
++/**
++ * SPDX-License-Identifier: Apache-2.0
++ * Copyright (c) Bao Project and Contributors. All rights reserved.
++ *
++ * Agilex5 platform initialization.
++ *
++ * SMMUv3 handling
++ * ---------------
++ * ATF enables the non-secure SMMUv3 (CR0.SMMUEN=1) and programs its stream
++ * table with BYPASS STEs for all HPS masters (QSPI, Ethernet/gmac2, SDMMC,
++ * USB, SDM, ...) before handing off to Bao.  With SMMU_VERSION:=3, Bao's
++ * smmuv3 driver takes over: it installs its own BYPASS stream table (keeping
++ * all DMA transparent) and then promotes VM-bound streams (SDMMC stream 5,
++ * gmac2 stream 3) to stage-2 translation so cache-colored VM memory is
++ * reachable by DMA.
++ */
++
++#include <platform.h>
++#include <cpu.h>
++
++void platform_default_init(void)
++{
++    if (!cpu_is_master()) {
++        return;
++    }
++    /* SMMUv3 is initialised by the generic smmuv3_init() call in
++     * iommu_arch_init(). Nothing platform-specific to do here. */
++}
+diff --git a/src/platform/agilex5/agilex5_desc.c b/src/platform/agilex5/agilex5_desc.c
+new file mode 100644
+index 0000000..6a99af4
+--- /dev/null
++++ b/src/platform/agilex5/agilex5_desc.c
+@@ -0,0 +1,103 @@
++#include <platform.h>
++
++/* DDR capacity of the board, in GiB. Injected via platform-cppflags
++ * (-DAGX5_MEM_GB=$(AGX5_MEM_GB), see platform.mk). Kept common across all
++ * Agilex5 boards; supported values: 1, 2, 4, 8.
++ *
++ * Agilex5 DRAM is split into two physical windows:
++ *   - low  window @ 0x80000000, capped at 2 GiB (…0xFFFFFFFF)
++ *   - high window @ 0x880000000 (bank 1), holds everything above 2 GiB
++ * so any capacity > 2 GiB adds a second mem_region. */
++#ifndef AGX5_MEM_GB
++#define AGX5_MEM_GB 2
++#endif
++
++#define AGX5_GB        (0x40000000ULL)
++/* Region 0 starts 32 MiB above the DDR base: the bottom 0x2000000 of the low
++ * window is reserved for ATF/bl31 and the Linux load stub. */
++#define AGX5_LOW_BASE  (0x82000000ULL)
++#define AGX5_LOW_RSVD  (AGX5_LOW_BASE - 0x80000000ULL)
++#define AGX5_HIGH_BASE (0x880000000ULL)
++
++/* GiB owned by each window for the requested capacity. */
++#define AGX5_LOW_GB    ((AGX5_MEM_GB) >= 2 ? 2ULL : (AGX5_MEM_GB))
++#define AGX5_HIGH_GB   ((AGX5_MEM_GB) > 2 ? ((AGX5_MEM_GB) - 2ULL) : 0ULL)
++
++struct platform platform = {
++    .cpu_num = 4,
++    .cache = {
++        .lvls = 3,
++        .min_shared_lvl = 2,                  /* L3 is the shared LLC */
++        .type = {
++            [0] = SEPARATE,                   /* L1: split I+D */
++            [1] = UNIFIED,                    /* L2: unified per-core */
++            [2] = UNIFIED,                    /* L3: shared across cluster */
++        },
++        .line_size = {
++            [0] = { [0] = 64, [1] = 64 },    /* L1D=64B, L1I=64B */
++            [1] = { [0] = 64 },              /* L2=64B */
++            [2] = { [0] = 64 },              /* L3=64B */
++        },
++        .assoc = {
++            [0] = { [0] = 4,  [1] = 4 },     /* L1D 4-way, L1I 4-way */
++            [1] = { [0] = 4 },               /* L2 4-way */
++            [2] = { [0] = 16 },              /* L3 16-way */
++        },
++        .numset = {
++            [0] = { [0] = 128, [1] = 128 },  /* L1D 128 sets, L1I 128 sets */
++            [1] = { [0] = 512 },             /* L2 512 sets */
++            [2] = { [0] = 2048 },            /* L3 2048 sets */
++        },
++        .indexed = {
++            [0] = { [0] = PIPT, [1] = PIPT },/* L1D PIPT, L1I PIPT */
++            [1] = { [0] = PIPT },            /* L2 PIPT */
++            [2] = { [0] = PIPT },            /* L3 PIPT */
++        },
++    },
++    .arch = {
++        .clusters = {
++            .num = 4,
++            .core_num = (size_t[]){ 1, 1, 1, 1 },
++        },
++        .gic = {
++            .gicc_addr = 0x0,
++            .gich_addr = 0x0,
++            .gicv_addr = 0x0,
++            .gicd_addr = 0x1d000000,
++            .gicr_addr = 0x1d060000,
++            .maintenance_id = 25,
++        },
++        /* Non-secure SMMUv3 (base 0x16000000). With SMMU_VERSION:=3, Bao's smmuv3
++         * driver takes over the ATF-enabled SMMU, keeps every stream in BYPASS
++         * (incoming attributes preserved) and promotes only VM-bound streams to
++         * stage-2. Ignored when SMMU_VERSION:=2. */
++        .smmu = {
++            .base = 0x16000000,
++            /* SMMUv3 event-queue (fault) interrupt: GIC SPI 134 (0x86) -> irqid
++             * 166. Routes translation faults to the driver's fault logger. */
++            .interrupt_id = 166,
++        },
++        .generic_timer = {
++            .base_addr = 0x10d02000,
++        },
++    },
++    /* > 2 GiB boards add the high DDR window (bank 1) as a second region. */
++    .region_num = (AGX5_MEM_GB > 2) ? 2 : 1,
++    .regions = (struct mem_region[]) {
++        {
++            /* Low window @ 0x82000000, capped at 2 GiB minus the 32 MiB
++             * ATF/stub reservation. For AGX5_MEM_GB=2 this is 0x7e000000. */
++            .base = AGX5_LOW_BASE,
++            .size = (AGX5_LOW_GB * AGX5_GB) - AGX5_LOW_RSVD,
++        },
++        {
++            /* High window @ 0x880000000 = capacity above 2 GiB.
++             * Only used when region_num == 2 (AGX5_MEM_GB > 2). */
++            .base = AGX5_HIGH_BASE,
++            .size = AGX5_HIGH_GB * AGX5_GB,
++        },
++    },
++    .console = {
++        .base = 0x10c02000,
++    },
++};
+diff --git a/src/platform/agilex5/inc/plat/platform.h b/src/platform/agilex5/inc/plat/platform.h
+new file mode 100644
+index 0000000..4c1402e
+--- /dev/null
++++ b/src/platform/agilex5/inc/plat/platform.h
+@@ -0,0 +1,19 @@
++/**
++ * SPDX-License-Identifier: Apache-2.0
++ * Copyright (c) Bao Project and Contributors. All rights reserved.
++ */
++
++#ifndef __PLAT_PLATFORM_H__
++#define __PLAT_PLATFORM_H__
++
++/**
++ * Agilex5 UART0 (snps,dw-apb-uart @ 0x10c02000)
++ * reg-shift = <2> means registers are 4-byte spaced (reg-io-width = <4>)
++ * UART8250_REG_WIDTH=4 selects uint32_t register type
++ * No page offset needed - registers start at base address
++ */
++#define UART8250_REG_WIDTH  (4)
++
++#include <drivers/8250_uart.h>
++
++#endif /* __PLAT_PLATFORM_H__ */
+diff --git a/src/platform/agilex5/inc/plat/psci.h b/src/platform/agilex5/inc/plat/psci.h
+new file mode 100644
+index 0000000..9e3aa31
+--- /dev/null
++++ b/src/platform/agilex5/inc/plat/psci.h
+@@ -0,0 +1,24 @@
++/**
++ * SPDX-License-Identifier: Apache-2.0
++ * Copyright (c) Bao Project and Contributors. All rights reserved.
++ */
++
++#ifndef __PLAT_PSCI_H__
++#define __PLAT_PSCI_H__
++
++/**
++ * Agilex5 uses ATF (arm-trusted-firmware) with PSCI-0.2 via SMC.
++ * Power state encoding follows ARM PSCI spec:
++ *   - StateID in bits [27:0], StateType in bit [30]
++ *   - PowerLevel in bits [25:24]
++ */
++#define PSCI_POWER_STATE_LVL_0          0x0000000
++#define PSCI_POWER_STATE_LVL_1          0x1000000
++#define PSCI_POWER_STATE_LVL_2          0x2000000
++#define PSCI_STATE_TYPE_STANDBY         0x00000
++#define PSCI_STATE_TYPE_POWERDOWN       (1UL << 30)
++#define PSCI_STATE_TYPE_BIT             (1UL << 30)
++
++/* Agilex5 ATF supports both standby and powerdown via PSCI_SUSPEND */
++
++#endif /* __PLAT_PSCI_H__ */
+diff --git a/src/platform/agilex5/objects.mk b/src/platform/agilex5/objects.mk
+new file mode 100644
+index 0000000..c92025a
+--- /dev/null
++++ b/src/platform/agilex5/objects.mk
+@@ -0,0 +1,4 @@
++## SPDX-License-Identifier: Apache-2.0
++## Copyright (c) Bao Project and Contributors. All rights reserved.
++boards-objs-y+=agilex5_desc.o
++boards-objs-y+=agilex5.o
+diff --git a/src/platform/agilex5/platform.mk b/src/platform/agilex5/platform.mk
+new file mode 100644
+index 0000000..5d4965a
+--- /dev/null
++++ b/src/platform/agilex5/platform.mk
+@@ -0,0 +1,33 @@
++## SPDX-License-Identifier: Apache-2.0
++## Copyright (c) Bao Project and Contributors. All rights reserved.
++
++# Architecture definition
++ARCH:=armv8
++# CPU definition - use cortex-a55 as base (the little cores)
++# cortex-a76 is the big core but gcc doesn't need separate tuning here
++CPU:=cortex-a55
++
++GIC_VERSION:=GICV3
++
++# Agilex5 ships a non-secure ARM SMMUv3 in the DMA path of every HPS
++# peripheral (SDMMC stream ID 5, Ethernet stream IDs 8/9, ...).
++# Bao's SMMUv3 driver is enabled here to provide Stage-2 translation and
++# the Inner-Shareable override required for cache-coherent DMA.
++
++SMMU_VERSION:=3
++#SMMU_VERSION:=2
++
++# Board DDR capacity in GiB. Drives the mem_region table in agilex5_desc.c,
++# which stays common across all Agilex5 boards. Supported: 1, 2, 4, 8.
++# Override per board from configs/<CONFIG>/config.mk or the make command line
++# (the orchestrator forwards AGX5_MEM_GB to this sub-make).
++AGX5_MEM_GB ?= 2
++
++drivers = 8250_uart
++
++platform_description:=agilex5_desc.c
++
++platform-cppflags = -DAGX5_MEM_GB=$(AGX5_MEM_GB)
++platform-cflags = -mtune=$(CPU)
++platform-asflags =
++platform-ldflags =
+-- 
+2.25.1

@@ -42,15 +42,15 @@ TOOLCHAIN_URL="https://github.com/cross-tools/musl-cross/releases/download/20250
 TOOLCHAIN_DIR="aarch64-unknown-linux-musl"
 
 ATF_REPO="https://github.com/altera-fpga/arm-trusted-firmware"
-ATF_BRANCH="QPDS26.1.1_REL_GSRD_PR"
+ATF_BRANCH="QPDS26.3_REL_BASELINE_PR"
 ATF_DIR="arm-trusted-firmware"
 
 UBOOT_REPO="https://github.com/altera-fpga/u-boot-socfpga"
-UBOOT_BRANCH="QPDS26.1.1_REL_GSRD_PR"
+UBOOT_BRANCH="QPDS26.3_REL_BASELINE_PR"
 UBOOT_DIR="u-boot-socfpga"
 
 LINUX_REPO="https://github.com/altera-fpga/linux-socfpga"
-LINUX_BRANCH="QPDS26.1.1_REL_GSRD_PR"
+LINUX_BRANCH="QPDS26.3_REL_BASELINE_PR"
 LINUX_DIR="linux-socfpga"
 
 TOYBOX_REPO="https://github.com/landley/toybox.git"

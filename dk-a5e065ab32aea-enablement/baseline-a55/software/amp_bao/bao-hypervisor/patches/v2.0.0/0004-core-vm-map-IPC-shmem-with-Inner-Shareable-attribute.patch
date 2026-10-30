@@ -1,0 +1,136 @@
+From c4d8e2f1a3b67890abcdef1234567890fedcba98 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 20:55:00 +0800
+Subject: [PATCH] core/vm: map inter-VM IPC shmem with Inner-Shareable
+ attribute
+
+Bao's default Stage-2 attribute for VM-mapped memory regions is Normal
+Cacheable WB Non-Shareable (PTE_VM_FLAGS uses PTE_SH_NS on armv8-a).
+For inter-VM IPC shmem regions this fights the Linux DMA-coherent
+allocator, which hands out Inner-Shareable backing for virtio vrings
+and rpmsg buffers, and creates an architecturally-fragile mismatch
+between the two stages.
+
+This caused a concrete fault:
+on Agilex5 cross-cluster (A55 FreeRTOS <-> A76 Linux), glibc's
+optimised aarch64 memcpy issued an unaligned 16-byte LDP against the
+shmem ring drained via /dev/mem (Stage-1 = Normal-NC via
+pgprot_writecombine, Stage-2 = PTE_VM_FLAGS), and took an alignment
+fault (BUS_ADRALN). Plain Normal-NC nominally permits unaligned wide
+loads, but the cross-cluster view of the Stage-2 = Cacheable WB
+Non-Shareable + Stage-1 = Non-Cacheable combo enforced strict
+alignment. An earlier consumer worked around it by staging every drain
+through a BSS buffer with byte-by-byte volatile loads, but the
+underlying mapping mismatch remained.
+
+Add a targeted PTE_VM_IPC_FLAGS macro in armv8-a's page_table.h that
+mirrors PTE_VM_FLAGS but with PTE_SH_IS (Inner-Shareable). Add a
+fallback in core/vm.c so archs that don't override the macro reuse
+PTE_VM_FLAGS (no behaviour change). Introduce a vm_map_ipc_region()
+helper and use it from vm_init_ipc() so memory-region and image
+mappings keep PTE_VM_FLAGS while IPC shmem mappings pick up the new
+attribute.
+
+This is required for RPMsg / virtio over Bao IPC: the
+Linux kernel's virtio_rpmsg_bus + remoteproc-attach stack assumes
+Inner-Shareable vring backing, and the OpenAMP / rpmsg-lite firmware
+side issues `dc cvac` / `dsb sy` over the same region from FreeRTOS.
+Promoting the IPC region matches the kernel's view and aligns with
+the standard rpmsg/virtio model used on Xilinx ZynqMP, ST STM32MP1,
+NXP i.MX A+M, TI Sitara, etc.
+
+Behaviour is unchanged on architectures that don't override
+PTE_VM_IPC_FLAGS (riscv, armv7, armv8-r, tricore, rh850).
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ src/arch/armv8/armv8-a/inc/arch/page_table.h | 15 +++++++++++++
+ src/core/vm.c                                | 32 +++++++++++++++++++++++++++-
+ 2 files changed, 46 insertions(+), 1 deletion(-)
+
+diff --git a/src/arch/armv8/armv8-a/inc/arch/page_table.h b/src/arch/armv8/armv8-a/inc/arch/page_table.h
+index bd955b4..6f260d3 100644
+--- a/src/arch/armv8/armv8-a/inc/arch/page_table.h
++++ b/src/arch/armv8/armv8-a/inc/arch/page_table.h
+@@ -124,6 +124,21 @@
+ #define PTE_VM_FLAGS \
+     (PTE_MEMATTR_NRML_OWBC | PTE_MEMATTR_NRML_IWBC | PTE_SH_NS | PTE_S2AP_RW | PTE_AF)
+ 
++/*
++ * Inter-VM IPC shmem regions get Inner-Shareable cacheable mapping. This is a
++ * targeted relaxation of the default PTE_VM_FLAGS (Non-Shareable) needed for
++ * cross-cluster cache coherence with Linux's DMA-coherent allocator (which
++ * hands out Inner-Shareable backing for vrings) and with virtio-rpmsg
++ * descriptor traffic. Mixing Bao Stage-2 = Normal Cacheable WB Non-Shareable
++ * with Linux Stage-1 = Normal Non-Cacheable was observed to enforce strict
++ * alignment for unaligned wide loads on Agilex5 (A55<->A76), causing
++ * BUS_ADRALN inside glibc's optimised aarch64 memcpy. Promoting the IPC
++ * region to Inner-Shareable matches the kernel's view and aligns with the
++ * standard rpmsg/virtio model used on Xilinx ZynqMP, ST STM32MP1 etc.
++ */
++#define PTE_VM_IPC_FLAGS \
++    (PTE_MEMATTR_NRML_OWBC | PTE_MEMATTR_NRML_IWBC | PTE_SH_IS | PTE_S2AP_RW | PTE_AF)
++
+ #define PTE_VM_DEV_FLAGS (PTE_MEMATTR_DEV_GRE | PTE_SH_NS | PTE_S2AP_RW | PTE_AF)
+ 
+ #ifndef __ASSEMBLER__
+diff --git a/src/core/vm.c b/src/core/vm.c
+index 003a609..af022f0 100644
+--- a/src/core/vm.c
++++ b/src/core/vm.c
+@@ -12,6 +12,17 @@
+ #include <objpool.h>
+ #include <list.h>
+ 
++/*
++ * Per-arch override for inter-VM IPC shmem mapping attributes. Architectures
++ * that need a stronger shareability domain for IPC regions (e.g. armv8-a on
++ * Agilex5, where Linux's DMA-coherent allocator gives Inner-Shareable
++ * backing to virtio vrings) define PTE_VM_IPC_FLAGS in their page_table.h.
++ * All other archs fall back to PTE_VM_FLAGS so behaviour is unchanged.
++ */
++#ifndef PTE_VM_IPC_FLAGS
++#define PTE_VM_IPC_FLAGS PTE_VM_FLAGS
++#endif
++
+ static void vm_master_init(struct vm* vm, const struct vm_config* vm_config, vmid_t vm_id)
+ {
+     vm->master = cpu()->id;
+@@ -78,6 +89,25 @@ static void vm_map_mem_region(struct vm* vm, struct vm_mem_region* reg)
+     }
+ }
+ 
++static void vm_map_ipc_region(struct vm* vm, struct vm_mem_region* reg)
++{
++    /*
++     * IPC shmem regions are always backed by a fixed shmem PA picked by Bao
++     * (place_phys=true) and use PTE_VM_IPC_FLAGS so that archs which need a
++     * stronger shareability domain (Inner-Shareable on armv8-a Agilex5) pick
++     * it up. Other archs fall back to PTE_VM_FLAGS via the macro guard above.
++     */
++    size_t n = NUM_PAGES(reg->size);
++    struct ppages pa_reg = mem_ppages_get(reg->phys, n);
++    pa_reg.colors = reg->colors;
++
++    vaddr_t va = mem_alloc_map(&vm->as, SEC_VM_ANY, &pa_reg, (vaddr_t)reg->base, n,
++        PTE_VM_IPC_FLAGS);
++    if (va != (vaddr_t)reg->base) {
++        ERROR("failed to allocate vm's IPC region at 0x%lx", reg->base);
++    }
++}
++
+ static void vm_map_img_rgn_inplace(struct vm* vm, const struct vm_config* vm_config,
+     struct vm_mem_region* reg)
+ {
+@@ -202,7 +232,7 @@ static void vm_init_ipc(struct vm* vm, const struct vm_config* vm_config)
+             .colors = shmem->colors,
+         };
+ 
+-        vm_map_mem_region(vm, &reg);
++        vm_map_ipc_region(vm, &reg);
+     }
+ }
+ 
+-- 
+2.25.1
+

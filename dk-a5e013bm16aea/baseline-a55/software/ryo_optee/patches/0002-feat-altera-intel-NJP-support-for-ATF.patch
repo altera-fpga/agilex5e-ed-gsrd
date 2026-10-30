@@ -1,0 +1,792 @@
+From d1c47cb0e5486915c4ce1e36b33f77545eb661e4 Mon Sep 17 00:00:00 2001
+From: Jit Loon Lim <jit.loon.lim@altera.com>
+Date: Thu, 29 Oct 2026 12:51:46 +0800
+Subject: [PATCH] feat(altera & intel): NJP support for ATF
+
+Ciena NJP needs ATF SiP coverage for secure EFUSE/VAB mailbox
+flows and a way to restrict which V3 SMCs non-secure world may
+call. Without this, HPS cannot drive the required SDM commands
+or enforce NS access policy for the NJP use case.
+
+Refresh the ryo_optee ATF NJP patch against public altera-fpga
+socfpga_v2.15.0 tip so it applies after the PSIRT default-deny
+generic mailbox allowlist. Content matches innersource ATF #408
+(NJP EFUSE/VAB SMCs + NS whitelist), with pubkey phase 2 at 0x28
+and EFUSE_PUBKEY_PROGRAM payload helper macros.
+
+Signed-off-by: Jit Loon Lim <jit.loon.lim@altera.com>
+---
+ .../soc/common/include/socfpga_mailbox.h      |  32 +
+ .../soc/common/include/socfpga_sip_svc.h      |  17 +
+ plat/intel/soc/common/socfpga_sip_svc.c       | 556 +++++++++++++++++-
+ 3 files changed, 597 insertions(+), 8 deletions(-)
+
+diff --git a/plat/intel/soc/common/include/socfpga_mailbox.h b/plat/intel/soc/common/include/socfpga_mailbox.h
+index 18c59127..abc54901 100644
+--- a/plat/intel/soc/common/include/socfpga_mailbox.h
++++ b/plat/intel/soc/common/include/socfpga_mailbox.h
+@@ -87,6 +87,7 @@
+ /* FCS Command */
+ #define MBOX_FCS_GET_PROVISION				0x7B
+ #define MBOX_FCS_CNTR_SET_PREAUTH			0x7C
++#define MBOX_CMD_VAB_GENERATE_SERVICE_ROOT_KEY		0x7D
+ #define MBOX_FCS_ENCRYPT_REQ				0x7E
+ #define MBOX_FCS_DECRYPT_REQ				0x7F
+ #define MBOX_FCS_RANDOM_GEN				0x80
+@@ -108,6 +109,27 @@
+ #define MBOX_FCS_GET_CS_KEY_INFO			0xA8
+ #define MBOX_FCS_CREATE_CS_KEY				0xA9
+ 
++/* EFUSE / VAB secure-client commands (NJP) */
++#define MBOX_CMD_USER_AES_ROOT_KEY_PROVISION		0x0D
++#define MBOX_CMD_EFUSE_READ				0x20
++#define MBOX_CMD_EFUSE_WRITE				0x21
++#define MBOX_CMD_EFUSE_TEST_WRITE			0x22
++#define MBOX_CMD_EFUSE_STATUS				0x23
++#define MBOX_CMD_EFUSE_RELOAD_CACHE			0x26
++#define MBOX_CMD_EFUSE_PUBKEY_PROGRAM			0x27
++#define MBOX_CMD_EFUSE_PUBKEY_PROGRAM_PHASE2		0x28
++#define MBOX_CMD_VOLATILE_AES_ERASE			0x29
++#define MBOX_CMD_VAB_PR_PUBKEY_PROGRAM			0x2A
++#define MBOX_CMD_USR_SECURITY_OPTION_PROGRAM		0x2B
++#define MBOX_CMD_USR_DEFINED_FUSES_PROGRAM		0x2C
++#define MBOX_CMD_USR_DEFINED_FUSES_READ			0x2D
++#define MBOX_CMD_USR_FEATURE_ENABLE_PROGRAM		0x2E
++#define MBOX_PUF_ENROL_USER				0xC9
++#define MBOX_IID_PUF_STATUS				0xCB
++#define MBOX_GET_SECURITY_CHALLENGE			0xCD
++#define MBOX_CMD_EFUSE_WRITE_DISABLE			0x6C4
++#define MBOX_CMD_DISABLE_ENTRY_TO_OWNED			0x7A
++
+ /* PSG SIGMA Commands */
+ #define MBOX_PSG_SIGMA_TEARDOWN				0xD5
+ 
+@@ -219,6 +241,16 @@
+ #define MBOX_DATA_MAX_LEN				0x3ff
+ #define MBOX_PAYLOAD_FLAG_BUSY				BIT(0)
+ 
++/* EFUSE_PUBKEY_PROGRAM payload */
++#define MBOX_EFUSE_PUBKEY_MAGIC_WORD			0x65537546U
++#define MBOX_EFUSE_PUBKEY_HEADER_WORDS			2U
++#define MBOX_EFUSE_PUBKEY_HASH_TYPE_MASK		0x3U
++#define MBOX_EFUSE_PUBKEY_HASH_TYPE_SECP256R1		1U
++#define MBOX_EFUSE_PUBKEY_HASH_TYPE_SECP384R1		2U
++#define MBOX_EFUSE_PUBKEY_SECP256R1_WORDS		8U
++#define MBOX_EFUSE_PUBKEY_SECP384R1_WORDS		12U
++#define MBOX_EFUSE_PUBKEY_MAX_KEY_SETS			5U
++
+ /* RSU Macros */
+ #define RSU_VERSION_ACMF				BIT(8)
+ #define RSU_VERSION_ACMF_MASK				0xff00
+diff --git a/plat/intel/soc/common/include/socfpga_sip_svc.h b/plat/intel/soc/common/include/socfpga_sip_svc.h
+index e274049f..a224e9f4 100644
+--- a/plat/intel/soc/common/include/socfpga_sip_svc.h
++++ b/plat/intel/soc/common/include/socfpga_sip_svc.h
+@@ -359,6 +359,23 @@ uintptr_t sip_smc_handler_v2(uint32_t smc_fid,
+ #define ALTERA_SIP_SMC_ASYNC_FCS_HKDF_REQUEST					(0x42000166)
+ #define ALTERA_SIP_SMC_ASYNC_FCS_CREATE_CS_KEY					(0x42000167)
+ 
++/* Secure Client VAB EFUSE Commands */
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_READ					(0x42000168)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_RELOAD_CACHE				(0x4200016C)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM			(0x4200016D)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_USR_SECURITY_OPTION_PROGRAM			(0x42000170)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_USR_DEFINED_FUSES_PROGRAM			(0x42000171)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_USR_DEFINED_FUSES_READ			(0x42000172)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE				(0x42000177)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2			(0x42000178)
++#define ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED			(0x42000179)
++
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD					(0x4200017E)
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE					(0x4200017F)
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_CLEAR					(0x42000180)
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE				(0x42000181)
++#define ALTERA_SIP_SMC_NS_ALLOWED_LIST_QUERY					(0x42000182)
++
+ #define GET_CLIENT_ID(x)							(((x) & 0xF0) >> 4)
+ #define GET_JOB_ID(x)								((x) & 0x0F)
+ #define GET_ADDR64(high, low)							(((uint64_t)(high) \
+diff --git a/plat/intel/soc/common/socfpga_sip_svc.c b/plat/intel/soc/common/socfpga_sip_svc.c
+index 4204bd8e..c91cb290 100644
+--- a/plat/intel/soc/common/socfpga_sip_svc.c
++++ b/plat/intel/soc/common/socfpga_sip_svc.c
+@@ -12,6 +12,7 @@
+ #include <common/runtime_svc.h>
+ #include <drivers/delay_timer.h>
+ #include <lib/mmio.h>
++#include <lib/spinlock.h>
+ #include <tools_share/uuid.h>
+ 
+ #include "lib/utils/alignment_utils.h"
+@@ -26,6 +27,16 @@
+ /* Total buffer the driver can hold */
+ #define FPGA_CONFIG_BUFFER_SIZE 4
+ 
++#if SOCFPGA_SIP_SVC_V3
++/* Dynamic NS whitelist (shared across all cores) */
++#define SIP_NS_WHITELIST_MAX			256U
++
++static spinlock_t g_ns_whitelist_lock = {.lock = 0};  /* protects all whitelist state */
++static uint32_t g_ns_whitelist[SIP_NS_WHITELIST_MAX];
++static size_t g_ns_whitelist_count;
++static bool g_ns_whitelist_active; /* strict mode off by default */
++#endif
++
+ static config_type request_type = NO_REQUEST;
+ static int current_block, current_buffer;
+ static int read_block, max_blocks;
+@@ -495,7 +506,7 @@ static int is_out_of_sec_range(uint64_t reg_addr)
+ uint32_t intel_secure_reg_read(uint64_t reg_addr, uint32_t *retval)
+ {
+ 	if (is_out_of_sec_range(reg_addr)) {
+-		return INTEL_SIP_SMC_STATUS_ERROR;
++		return INTEL_SIP_SMC_STATUS_REJECTED;
+ 	}
+ 
+ 	*retval = mmio_read_32(reg_addr);
+@@ -507,7 +518,7 @@ uint32_t intel_secure_reg_write(uint64_t reg_addr, uint32_t val,
+ 				uint32_t *retval)
+ {
+ 	if (is_out_of_sec_range(reg_addr)) {
+-		return INTEL_SIP_SMC_STATUS_ERROR;
++		return INTEL_SIP_SMC_STATUS_REJECTED;
+ 	}
+ 
+ 	switch (reg_addr) {
+@@ -526,13 +537,16 @@ uint32_t intel_secure_reg_write(uint64_t reg_addr, uint32_t val,
+ uint32_t intel_secure_reg_update(uint64_t reg_addr, uint32_t mask,
+ 				 uint32_t val, uint32_t *retval)
+ {
+-	if (!intel_secure_reg_read(reg_addr, retval)) {
+-		*retval &= ~mask;
+-		*retval |= val & mask;
+-		return intel_secure_reg_write(reg_addr, *retval, retval);
++	uint32_t status;
++
++	status = intel_secure_reg_read(reg_addr, retval);
++	if (status != INTEL_SIP_SMC_STATUS_OK) {
++		return status;
+ 	}
+ 
+-	return INTEL_SIP_SMC_STATUS_ERROR;
++	*retval &= ~mask;
++	*retval |= val & mask;
++	return intel_secure_reg_write(reg_addr, *retval, retval);
+ }
+ 
+ /* Intel Remote System Update (RSU) services */
+@@ -665,6 +679,14 @@ static uint32_t intel_mbox_send_cmd(uint32_t cmd, uint32_t *args,
+ 	*len_in_resp = 0;
+ 	*mbox_status = GENERIC_RESPONSE_ERROR;
+ 
++	if ((len != 0U) && (args == NULL)) {
++		return INTEL_SIP_SMC_STATUS_REJECTED;
++	}
++
++	if ((resp_len != 0U) && (response == 0U)) {
++		return INTEL_SIP_SMC_STATUS_REJECTED;
++	}
++
+ 	if (!is_address_in_ddr_range((uint64_t)args, sizeof(uint32_t) * len)) {
+ 		return INTEL_SIP_SMC_STATUS_REJECTED;
+ 	}
+@@ -1042,7 +1064,7 @@ uint8_t sip_smc_cmd_cb_ret2(void *resp_desc, void *cmd_desc, uint64_t *ret_args)
+ 	sdm_command_t *cmd = (sdm_command_t *)cmd_desc;
+ 
+ 	(void)cmd;
+-	/* Returns 3 SMC arguments for SMC_RET3 */
++	/* Returns 2 SMC arguments for SMC_RET2 */
+ 	ret_args[ret_args_len++] = INTEL_SIP_SMC_STATUS_OK;
+ 	ret_args[ret_args_len++] = resp->err_code;
+ 
+@@ -1265,6 +1287,116 @@ static uintptr_t smc_ret(void *handle, uint64_t *ret_args, uint32_t ret_args_len
+ 	}
+ }
+ 
++/*
++ * Strict mode blocks any FID that is not on the whitelist.
++ * The whitelist lock is held for the whole check.
++ */
++static bool is_fid_ns_blocked(uint32_t fid)
++{
++	bool blocked = false;
++
++	spin_lock(&g_ns_whitelist_lock);
++
++	if (g_ns_whitelist_active) {
++		blocked = true;
++		for (size_t i = 0U; i < g_ns_whitelist_count; i++) {
++			if (g_ns_whitelist[i] == fid) {
++				blocked = false;
++				break;
++			}
++		}
++	}
++
++	spin_unlock(&g_ns_whitelist_lock);
++	return blocked;
++}
++
++/*
++ * Add a FID to the NS whitelist.
++ * Returns -1 if the FID is not a SiP FID (OEN != 2), table is full, or already present.
++ * Thread-safe.
++ */
++static int sip_ns_whitelist_add(uint32_t fid, size_t *wl_count)
++{
++	int ret = -1;
++	bool sip_fid = (((fid >> 24U) & 0x3FU) == 2U);
++
++	if (!sip_fid) {
++		WARN("NS-FILTER: ADD rejected FID 0x%x - not a SiP FID (OEN=%u, expected 2)\n",
++		     fid, (unsigned int)((fid >> 24U) & 0x3FU));
++	}
++
++	spin_lock(&g_ns_whitelist_lock);
++
++	if (sip_fid && (g_ns_whitelist_count < SIP_NS_WHITELIST_MAX)) {
++		ret = 0;
++		for (size_t i = 0U; i < g_ns_whitelist_count; i++) {
++			if (g_ns_whitelist[i] == fid) {
++				ret = -1;
++				break;
++			}
++		}
++		if (ret == 0)
++			g_ns_whitelist[g_ns_whitelist_count++] = fid;
++	}
++
++	*wl_count = g_ns_whitelist_count;
++	spin_unlock(&g_ns_whitelist_lock);
++	return ret;
++}
++
++/*
++ * Remove a FID from the NS whitelist (block it from NS).
++ * Returns -1 if not found.
++ * Thread-safe.
++ */
++static int sip_ns_whitelist_remove(uint32_t fid, size_t *wl_count)
++{
++	int ret = -1;
++
++	spin_lock(&g_ns_whitelist_lock);
++
++	for (size_t i = 0U; i < g_ns_whitelist_count; i++) {
++		if (g_ns_whitelist[i] == fid) {
++			g_ns_whitelist_count--;
++			for (size_t j = i; j < g_ns_whitelist_count; j++)
++				g_ns_whitelist[j] = g_ns_whitelist[j + 1U];
++			g_ns_whitelist[g_ns_whitelist_count] = 0U;
++			ret = 0;
++			break;
++		}
++	}
++
++	*wl_count = g_ns_whitelist_count;
++	spin_unlock(&g_ns_whitelist_lock);
++	return ret;
++}
++
++/* Empty the whitelist and set strict mode. */
++static void sip_ns_whitelist_reset(bool active)
++{
++	spin_lock(&g_ns_whitelist_lock);
++
++	for (size_t i = 0U; i < g_ns_whitelist_count; i++)
++		g_ns_whitelist[i] = 0U;
++	g_ns_whitelist_count = 0U;
++	g_ns_whitelist_active = active;
++
++	spin_unlock(&g_ns_whitelist_lock);
++}
++
++/* Strict mode, empty list: NS may call only FIDs added afterwards. */
++static void sip_ns_whitelist_clear(void)
++{
++	sip_ns_whitelist_reset(true);
++}
++
++/* Default-permit: NS may call any FID. */
++static void sip_ns_whitelist_deactivate(void)
++{
++	sip_ns_whitelist_reset(false);
++}
++
+ static inline bool is_gen_mbox_cmd_allowed(uint32_t cmd)
+ {
+ 	/*
+@@ -1350,6 +1482,12 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 
+ 	case ALTERA_SIP_SMC_ASYNC_GET_DEVICE_IDENTITY:
+ 	{
++		if (x2 == 0U) {
++			ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(x2, MBOX_DATA_MAX_LEN * MBOX_WORD_BYTE)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+ 			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
+@@ -1480,6 +1618,12 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 		uint32_t qspi_addr;
+ 		uint32_t qspi_nwords;
+ 
++		if (qspi_payload == NULL) {
++			ERROR("MBOX: 0x%x: Command payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(x2, x3)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+ 			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
+@@ -1527,6 +1671,12 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 			SMC_RET1(handle, status);
+ 		}
+ 
++		if ((qspi_nwords != 0U) && (x3 == 0U)) {
++			ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(x3, x4)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+ 			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
+@@ -1551,6 +1701,12 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 	{
+ 		uint32_t *dst_addr = (uint32_t *)x2;
+ 
++		if (dst_addr == NULL) {
++			ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(x2, MBOX_DATA_MAX_LEN * MBOX_WORD_BYTE)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+ 			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
+@@ -1717,6 +1873,12 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 			SMC_RET1(handle, status);
+ 		}
+ 
++		if (ret_random_addr == 0U) {
++			ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(ret_random_addr, random_len)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+ 			status = INTEL_SIP_SMC_STATUS_REJECTED;
+@@ -1752,6 +1914,12 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 
+ 	case ALTERA_SIP_SMC_ASYNC_FCS_GET_PROVISION_DATA:
+ 	{
++		if (x2 == 0U) {
++			ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(x2, MBOX_DATA_MAX_LEN * MBOX_WORD_BYTE)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+ 			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
+@@ -2150,6 +2318,18 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 		uint32_t src_size = (uint32_t)x3;
+ 		uint32_t *dst_addr = (uint32_t *)x4;
+ 
++		if ((src_size != 0U) && (src_addr == NULL)) {
++			ERROR("MBOX: 0x%x: Command payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (dst_addr == NULL) {
++			ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
+ 		if (!is_address_in_ddr_range(x2, src_size) ||
+ 		    !is_address_in_ddr_range(x4, MBOX_DATA_MAX_LEN * MBOX_WORD_BYTE)) {
+ 			ERROR("MBOX: 0x%x: Addr not in DDR range\n", smc_fid);
+@@ -2176,6 +2356,358 @@ static uintptr_t sip_smc_handler_v3(uint32_t smc_fid,
+ 		SMC_RET1(handle, status);
+ 	}
+ 
++	case ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_READ:
++	{
++		uint32_t cmd_nbytes = 8U;
++		uint32_t resp_nwords = (uint32_t)x4 / MBOX_WORD_BYTE;
++		uint32_t *resp_buf = NULL;
++
++		if (resp_nwords > MBOX_GEN_CMD_MAX_WORDS) {
++			ERROR("MBOX: 0x%x: Payload length exceeds max limit\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (x2 == 0U) {
++			ERROR("MBOX: 0x%x: Command payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (!is_address_in_ddr_range(x2, cmd_nbytes)) {
++			ERROR("MBOX: 0x%x: Cmd payload addr not in DDR range\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (resp_nwords != 0U) {
++			if (x3 == 0U) {
++				ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			if (!is_address_in_ddr_range(x3, x4)) {
++				ERROR("MBOX: 0x%x: Resp payload addr not in DDR range\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			resp_buf = (uint32_t *)x3;
++		}
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_EFUSE_READ,
++						   (uint32_t *)x2,
++						   cmd_nbytes / MBOX_WORD_BYTE,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_ret_nbytes_cb,
++						   resp_buf,
++						   resp_nwords);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_RELOAD_CACHE:
++	{
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_EFUSE_RELOAD_CACHE,
++						   NULL,
++						   0U,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_cmd_cb_ret2,
++						   NULL,
++						   0);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM:
++	{
++		uint32_t nwords = (uint32_t)x4;
++		uint32_t hash_type = (uint32_t)x2 & MBOX_EFUSE_PUBKEY_HASH_TYPE_MASK;
++		uint32_t key_words, hash_words;
++		uint32_t *buf = (uint32_t *)x3;
++
++		if (buf == NULL) {
++			ERROR("MBOX: 0x%x: Command payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (hash_type == MBOX_EFUSE_PUBKEY_HASH_TYPE_SECP256R1) {
++			key_words = MBOX_EFUSE_PUBKEY_SECP256R1_WORDS;
++		} else if (hash_type == MBOX_EFUSE_PUBKEY_HASH_TYPE_SECP384R1) {
++			key_words = MBOX_EFUSE_PUBKEY_SECP384R1_WORDS;
++		} else {
++			ERROR("MBOX: 0x%x: EFUSE_PUBKEY_PROGRAM invalid hash type 0x%x\n",
++			      smc_fid, hash_type);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		hash_words = (nwords > MBOX_EFUSE_PUBKEY_HEADER_WORDS) ?
++			     (nwords - MBOX_EFUSE_PUBKEY_HEADER_WORDS) : 0U;
++
++		/* Length covers the 2-word header plus 1 to 5 sets of root keys */
++		if ((hash_words == 0U) ||
++		    ((hash_words % key_words) != 0U) ||
++		    ((hash_words / key_words) > MBOX_EFUSE_PUBKEY_MAX_KEY_SETS)) {
++			ERROR("MBOX: 0x%x: EFUSE_PUBKEY_PROGRAM invalid length %u words\n",
++			      smc_fid, nwords);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (!is_address_in_ddr_range(x3, nwords * MBOX_WORD_BYTE)) {
++			ERROR("MBOX: 0x%x: EFUSE_PUBKEY_PROGRAM buf not in DDR\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		buf[0] = MBOX_EFUSE_PUBKEY_MAGIC_WORD;
++		buf[1] = (uint32_t)x2;  /* flags: T[31], S[30], hash_type[1:0] */
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_EFUSE_PUBKEY_PROGRAM,
++						   buf,
++						   nwords,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_cmd_cb_ret2,
++						   NULL,
++						   0);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_USR_SECURITY_OPTION_PROGRAM:
++	{
++		uint32_t sec_opt_flags = (uint32_t)x2;
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_USR_SECURITY_OPTION_PROGRAM,
++						   &sec_opt_flags,
++						   1U,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_cmd_cb_ret2,
++						   NULL,
++						   0);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_USR_DEFINED_FUSES_PROGRAM:
++	{
++		uint32_t cmd_nwords = (uint32_t)x3 / MBOX_WORD_BYTE;
++		uint32_t resp_nwords = (uint32_t)x5 / MBOX_WORD_BYTE;
++		uint32_t *cmd_buf = NULL;
++		uint32_t *resp_buf = NULL;
++
++		if ((cmd_nwords > MBOX_GEN_CMD_MAX_WORDS) ||
++		    (resp_nwords > MBOX_GEN_CMD_MAX_WORDS)) {
++			ERROR("MBOX: 0x%x: Payload length exceeds max limit\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (cmd_nwords != 0U) {
++			if (x2 == 0U) {
++				ERROR("MBOX: 0x%x: Command payload address is NULL\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			if (!is_address_in_ddr_range(x2, x3)) {
++				ERROR("MBOX: 0x%x: Cmd payload addr not in DDR range\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			cmd_buf = (uint32_t *)x2;
++		}
++
++		if (resp_nwords != 0U) {
++			if (x4 == 0U) {
++				ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			if (!is_address_in_ddr_range(x4, x5)) {
++				ERROR("MBOX: 0x%x: Resp payload addr not in DDR range\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			resp_buf = (uint32_t *)x4;
++		}
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_USR_DEFINED_FUSES_PROGRAM,
++						   cmd_buf,
++						   cmd_nwords,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_ret_nbytes_cb,
++						   resp_buf,
++						   resp_nwords);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_USR_DEFINED_FUSES_READ:
++	{
++		uint32_t cmd_nbytes = 4U;
++		uint32_t resp_nwords = (uint32_t)x4 / MBOX_WORD_BYTE;
++		uint32_t *resp_buf = NULL;
++
++		if (resp_nwords > MBOX_GEN_CMD_MAX_WORDS) {
++			ERROR("MBOX: 0x%x: Payload length exceeds max limit\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (x2 == 0U) {
++			ERROR("MBOX: 0x%x: Command payload address is NULL\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (!is_address_in_ddr_range(x2, cmd_nbytes)) {
++			ERROR("MBOX: 0x%x: Cmd payload addr not in DDR range\n",
++			      smc_fid);
++			SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++		}
++
++		if (resp_nwords != 0U) {
++			if (x3 == 0U) {
++				ERROR("MBOX: 0x%x: Response payload address is NULL\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			if (!is_address_in_ddr_range(x3, x4)) {
++				ERROR("MBOX: 0x%x: Resp payload addr not in DDR range\n",
++				      smc_fid);
++				SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++			}
++			resp_buf = (uint32_t *)x3;
++		}
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_USR_DEFINED_FUSES_READ,
++						   (uint32_t *)x2,
++						   cmd_nbytes / MBOX_WORD_BYTE,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_ret_nbytes_cb,
++						   resp_buf,
++						   resp_nwords);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_WRITE_DISABLE:
++	{
++		uint32_t test_mode = (uint32_t)x2;
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_EFUSE_WRITE_DISABLE,
++						   (test_mode != 0U) ? &test_mode : NULL,
++						   (test_mode != 0U) ? 1U : 0U,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_cmd_cb_ret2,
++						   NULL,
++						   0);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_EFUSE_PUBKEY_PROGRAM_PHASE2:
++	{
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_EFUSE_PUBKEY_PROGRAM_PHASE2,
++						   NULL,
++						   0U,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_cmd_cb_ret2,
++						   NULL,
++						   0);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_ASYNC_SECURE_DISABLE_ENTRY_TO_OWNED:
++	{
++		/* Magic number designed by firmware, used to trigger the disown. */
++		const uint32_t disable_entry_to_owned_magic = 0x31168617U;
++		uint32_t t_bit = ((uint32_t)x2 != 0U) ? (1U << 31) : 0U;
++		uint32_t payload = disable_entry_to_owned_magic | t_bit;
++
++		status = mailbox_send_cmd_async_v3(GET_CLIENT_ID(x1),
++						   GET_JOB_ID(x1),
++						   MBOX_CMD_DISABLE_ENTRY_TO_OWNED,
++						   &payload,
++						   1U,
++						   MBOX_CMD_FLAG_CASUAL,
++						   sip_smc_cmd_cb_ret2,
++						   NULL,
++						   0);
++		SMC_RET1(handle, status);
++	}
++
++	case ALTERA_SIP_SMC_NS_ALLOWED_LIST_CLEAR:
++	{
++		sip_ns_whitelist_clear(); /* activates strict mode */
++		NOTICE("NS-FILTER: CLEAR -> strict mode ON, whitelist empty\n");
++		SMC_RET1(handle, INTEL_SIP_SMC_STATUS_OK);
++	}
++
++	case ALTERA_SIP_SMC_NS_ALLOWED_LIST_DEACTIVATE:
++	{
++		sip_ns_whitelist_deactivate(); /* back to default-permit mode */
++		NOTICE("NS-FILTER: DEACTIVATE -> strict mode OFF, whitelist cleared\n");
++		SMC_RET1(handle, INTEL_SIP_SMC_STATUS_OK);
++	}
++
++	case ALTERA_SIP_SMC_NS_ALLOWED_LIST_ADD:
++	{
++		size_t wl_count;
++
++		status = sip_ns_whitelist_add((uint32_t)x1, &wl_count);
++		NOTICE("NS-FILTER: ADD FID 0x%x -> %s (wl_count=%zu)\n",
++		       (uint32_t)x1,
++		       (status == 0) ? "OK" : "FAIL",
++		       wl_count);
++		SMC_RET1(handle, (status == 0) ?
++			 INTEL_SIP_SMC_STATUS_OK : INTEL_SIP_SMC_STATUS_REJECTED);
++	}
++
++	case ALTERA_SIP_SMC_NS_ALLOWED_LIST_REMOVE:
++	{
++		size_t wl_count;
++
++		status = sip_ns_whitelist_remove((uint32_t)x1, &wl_count);
++		NOTICE("NS-FILTER: REMOVE FID 0x%x -> %s (wl_count=%zu)\n",
++		       (uint32_t)x1,
++		       (status == 0) ? "OK" : "FAIL (not found)",
++		       wl_count);
++		SMC_RET1(handle, (status == 0) ?
++			 INTEL_SIP_SMC_STATUS_OK : INTEL_SIP_SMC_STATUS_REJECTED);
++	}
++
++	case ALTERA_SIP_SMC_NS_ALLOWED_LIST_QUERY:
++	{
++		size_t wl_count = 0U;
++		bool wl_active = false;
++		size_t i;
++
++		/* Query current whitelist state — thread-safe via spinlock */
++		spin_lock(&g_ns_whitelist_lock);
++		wl_count = g_ns_whitelist_count;
++		wl_active = g_ns_whitelist_active;
++
++		NOTICE("NS-FILTER: QUERY -> count=%zu, active=%s\n",
++		       wl_count, wl_active ? "strict-ON" : "default-permit");
++		for (i = 0U; i < wl_count; i++)
++			NOTICE("NS-FILTER:   [%zu] 0x%x\n", i, g_ns_whitelist[i]);
++
++		spin_unlock(&g_ns_whitelist_lock);
++
++		/* Return: x0=status, x1=whitelist_count, x2=active_state (1=strict, 0=permit) */
++		SMC_RET3(handle, INTEL_SIP_SMC_STATUS_OK, (uint64_t)wl_count,
++			 (wl_active ? 1UL : 0UL));
++	}
++
+ 	default:
+ 		return socfpga_sip_handler(smc_fid, x1, x2, x3, x4,
+ 					   cookie, handle, flags);
+@@ -2773,6 +3305,14 @@ uintptr_t sip_smc_handler(uint32_t smc_fid,
+ {
+ 	uint32_t cmd = smc_fid & INTEL_SIP_SMC_CMD_MASK;
+ 
++#if SOCFPGA_SIP_SVC_V3
++	/* Whitelist is part of the V3 service and covers v1, v2, and v3. */
++	if (is_caller_non_secure(flags) && is_fid_ns_blocked(smc_fid)) {
++		ERROR("NS-FILTER: FID 0x%x blocked\n", smc_fid);
++		SMC_RET1(handle, INTEL_SIP_SMC_STATUS_REJECTED);
++	}
++#endif
++
+ 	if (cmd >= INTEL_SIP_SMC_CMD_V2_RANGE_BEGIN &&
+ 	    cmd <= INTEL_SIP_SMC_CMD_V2_RANGE_END) {
+ 		return sip_smc_handler_v2(smc_fid, x1, x2, x3, x4,
+-- 
+2.43.7
+

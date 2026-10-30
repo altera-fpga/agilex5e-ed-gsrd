@@ -51,8 +51,23 @@ source $SIM_SCRIPT_GEN_DIR/xcelium/xcelium_setup.sh \
 SKIP_ELAB=1 \
 SKIP_SIM=1 \
 QSYS_SIMDIR=$SIM_SCRIPT_GEN_DIR
-SKIP_DEV_COM=1 \
-SKIP_COM=1
+
+# Ensure nios_mem.hex is present in *this* simulation run directory.
+if [ ! -f "nios_mem.hex" ]; then
+  echo "INFO: nios_mem.hex not found in $(pwd). Searching under DESIGN_ROOT_DIR=$DESIGN_ROOT_DIR"
+  NIOS_HEX_PATH="$(
+    find "$DESIGN_ROOT_DIR" \
+      -type d \( -name .git -o -name sim_setup_tsn_rgmii_hvio -o -name work -o -name output_files \) -prune -false \
+      -o -type f -name "nios_mem.hex" -print \
+    | head -n 1
+  )"
+  if [ -z "${NIOS_HEX_PATH}" ]; then
+    echo "ERROR: Could not locate nios_mem.hex anywhere under: $DESIGN_ROOT_DIR" >&2
+    exit 2
+  fi
+  echo "INFO: Found nios_mem.hex at: ${NIOS_HEX_PATH}"
+  cp -f "${NIOS_HEX_PATH}" "./nios_mem.hex"
+fi
 
 # Compile all design files and testbench files, including the top level.
 # (These are all the files required for simulation other than the files

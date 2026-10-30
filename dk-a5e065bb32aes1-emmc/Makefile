@@ -77,6 +77,9 @@ $(strip $(1))-pre-prep :
 $(strip $(1))-package-design :
 	$(MAKE) --no-print-directory -C $(strip $(1)) package-design ARCHIVE_NAME=$(PLATFORM_NAME)-$(strip $(1)) INSTALL_ROOT_DESIGNS=$(INSTALL_ROOT_DESIGNS) INSTALL_ROOT_BINARIES=$(INSTALL_ROOT_BINARIES)/$(strip $(1)) INSTALL_ROOT_ARTIFACTS=$(INSTALL_ROOT_ARTIFACTS)/$(strip $(1))
 
+$(strip $(1))-validate-readme-metadata :
+	$(MAKE) --no-print-directory -C $(strip $(1)) validate-readme-metadata
+
 $(strip $(1))-prep :
 	$(MAKE) --no-print-directory -C $(strip $(1)) prep
 

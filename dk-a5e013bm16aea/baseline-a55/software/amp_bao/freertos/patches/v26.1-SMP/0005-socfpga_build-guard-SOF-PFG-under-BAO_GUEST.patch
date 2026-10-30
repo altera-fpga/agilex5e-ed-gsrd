@@ -1,0 +1,102 @@
+From 8efe162eeb977019dea8510b42e5f35c9e3d94b8 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 09:59:00 +0800
+Subject: [PATCH 5/6] socfpga_build: guard SOF/PFG plumbing under
+ HV_GUEST_BIN
+
+The SOF copy_if_different / get_sof_file / get_sd_pfg_file /
+get_qspi_pfg_file targets only matter when add_sd_image /
+add_qspi_image are called from a per-sample CMakeLists.txt. In a
+raw-.bin-loader flow (HV_GUEST_BIN=ON, e.g. for hypervisor guests
+or any U-Boot TFTP boot) the sample CMakeLists skip those calls
+and download_dep.cmake never runs to set SOF_PATH, so the
+get_filename_component below would error with "incorrect number
+of arguments".
+
+Pure rename of the previous BAO_GUEST gate. Under the umbrella
+-DBAO_GUEST=ON, HV_GUEST_BIN is FORCEd ON by patch 0004 and the
+behaviour is byte-identical to before.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ tools/socfpga_build.cmake | 60 ++++++++++++++++++++++-----------------
+ 1 file changed, 34 insertions(+), 26 deletions(-)
+
+diff --git a/tools/socfpga_build.cmake b/tools/socfpga_build.cmake
+index ffa90e1..8ee511f 100644
+--- a/tools/socfpga_build.cmake
++++ b/tools/socfpga_build.cmake
+@@ -257,36 +257,44 @@ if(QUARTUS_PFG_EXECUTABLE)
+     endif()
+ endif()
+ 
+-get_filename_component(SOCFPGA_SOF_FILE ${SOF_PATH} NAME)
+-set(SOCFPGA_SOF_FILE ${SOCFPGA_SOF_FILE} CACHE STRING "Name of the SOF file to be used for the FPGA")
++# SOF/PFG file plumbing - only needed when producing SD/eMMC/QSPI flash images
++# from the per-sample CMakeLists via add_sd_image/add_qspi_image. When
++# HV_GUEST_BIN is ON the per-sample CMakeLists skip those calls (and
++# download_dep.cmake never runs to set SOF_PATH), so the get_filename_component
++# below would error with "incorrect number of arguments". Skip the whole block
++# for raw-.bin-loader builds.
++if(NOT HV_GUEST_BIN)
++    get_filename_component(SOCFPGA_SOF_FILE ${SOF_PATH} NAME)
++    set(SOCFPGA_SOF_FILE ${SOCFPGA_SOF_FILE} CACHE STRING "Name of the SOF file to be used for the FPGA")
+ 
+-add_custom_command(
+-    OUTPUT  "${CMAKE_BINARY_DIR}/${SOCFPGA_SOF_FILE}"
+-    COMMAND ${CMAKE_COMMAND} -E echo "Checking SOF file: ${SOF_PATH}"
+-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+-            "${SOF_PATH}"
+-            "${CMAKE_BINARY_DIR}/${SOCFPGA_SOF_FILE}"
+-    DEPENDS "${SOF_PATH}"
+-    VERBATIM
+-)
++    add_custom_command(
++        OUTPUT  "${CMAKE_BINARY_DIR}/${SOCFPGA_SOF_FILE}"
++        COMMAND ${CMAKE_COMMAND} -E echo "Checking SOF file: ${SOF_PATH}"
++        COMMAND ${CMAKE_COMMAND} -E copy_if_different
++                "${SOF_PATH}"
++                "${CMAKE_BINARY_DIR}/${SOCFPGA_SOF_FILE}"
++        DEPENDS "${SOF_PATH}"
++        VERBATIM
++    )
+ 
+-add_custom_target(get_sof_file
+-    DEPENDS ${CMAKE_BINARY_DIR}/${SOCFPGA_SOF_FILE}
+-)
++    add_custom_target(get_sof_file
++        DEPENDS ${CMAKE_BINARY_DIR}/${SOCFPGA_SOF_FILE}
++    )
+ 
+-add_custom_target(get_sd_pfg_file
+-    COMMAND ${CMAKE_COMMAND} -E echo "Checking PFG_SDMMC file: ${PFG_SDMMC}"
+-    COMMAND ${CMAKE_COMMAND} -E compare_files "${PFG_SDMMC}" "${PFG_SDMMC}"
+-    DEPENDS "${PFG_SDMMC}"
+-    VERBATIM
+-)
++    add_custom_target(get_sd_pfg_file
++        COMMAND ${CMAKE_COMMAND} -E echo "Checking PFG_SDMMC file: ${PFG_SDMMC}"
++        COMMAND ${CMAKE_COMMAND} -E compare_files "${PFG_SDMMC}" "${PFG_SDMMC}"
++        DEPENDS "${PFG_SDMMC}"
++        VERBATIM
++    )
+ 
+-add_custom_target(get_qspi_pfg_file
+-    COMMAND ${CMAKE_COMMAND} -E echo "Checking PFG_QSPI file: ${PFG_QSPI}"
+-    COMMAND ${CMAKE_COMMAND} -E compare_files "${PFG_QSPI}" "${PFG_QSPI}"
+-    DEPENDS "${PFG_QSPI}"
+-    VERBATIM
+-)
++    add_custom_target(get_qspi_pfg_file
++        COMMAND ${CMAKE_COMMAND} -E echo "Checking PFG_QSPI file: ${PFG_QSPI}"
++        COMMAND ${CMAKE_COMMAND} -E compare_files "${PFG_QSPI}" "${PFG_QSPI}"
++        DEPENDS "${PFG_QSPI}"
++        VERBATIM
++    )
++endif()
+ 
+ function(add_sd_image executable_name)
+     if(executable_name MATCHES "\\.elf$")
+-- 
+2.25.1
+

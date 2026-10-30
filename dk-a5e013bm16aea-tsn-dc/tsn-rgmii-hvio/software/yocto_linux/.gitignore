@@ -1,0 +1,14 @@
+/.gitconfig
+/build/
+/meta-altera-fpga/
+/meta-openembedded/
+/meta-clang/
+/meta-filesystems/
+/meta-virtualization/
+/bitbake/
+/meta-yocto/
+/openembedded-core/
+/poky/
+/venv/
+/meta-custom/recipes-fpga/fpga-bitstream/files/*.rbf
+

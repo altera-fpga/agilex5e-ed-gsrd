@@ -1,0 +1,329 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2025  Altera Corporation. All rights reserved.
+# Your use of Altera Corporation's design tools, logic functions
+# and other software and tools, and any partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Altera Program License
+# Subscription Agreement, the Altera Quartus Prime License Agreement,
+# the Altera IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Altera and sold by Altera or its authorized distributors.  Please
+# refer to the Altera Software License Subscription Agreements
+# on the Quartus Prime software download page.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 25.1.0 Build 109 02/26/2025 SC Pro Edition
+# Date created = 15:43:58  March 05, 2025
+#
+# -------------------------------------------------------------------------- #
+
+
+# Quartus version assignments
+set_global_assignment -name LAST_QUARTUS_VERSION "26.3.0 Pro Edition"
+
+
+# Device properties
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name DEVICE A5DD064AB32BE2VR0
+
+
+# Toplevel and toplevel RTL
+set_global_assignment -name TOP_LEVEL_ENTITY baseline_a55
+
+
+# Flow assignments
+# Put all reports into the output_files directory
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+# Set the defaulr parallelizaiton to 4
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
+# Define the board as default
+set_global_assignment -name BOARD default
+# Convert timing failures to errors
+set_global_assignment -name PROMOTE_WARNING_TO_ERROR 332148
+# Include custom IP in IP search path
+set_global_assignment -name IP_SEARCH_PATHS "custom_ip/**/*; ip/fabric_subsys/**/*; ip/shell_subsys/**/*"
+# Disable assembler during "play button" flow
+set_global_assignment -name FLOW_DISABLE_ASSEMBLER ON
+# Disable spawning the Timing Analyzer GUI during the "play button" flow
+set_global_assignment -name FLOW_ENABLE_INTERACTIVE_TIMING_ANALYZER OFF
+# Set POWER_TOGGLE_RATE
+set_global_assignment -name POWER_DEFAULT_TOGGLE_RATE 20%
+# Set POWER_DEFAULT_INPUT_IO_TOGGLE_RATE
+set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE 20%
+# Promote pins without location assignments to errors
+set_global_assignment -name PROMOTE_WARNING_TO_ERROR 12677
+# workaround to regenerate HPS EMIF IP and prevent synthesis error
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+
+
+# Configuration Assignments
+set_global_assignment -name HPS_DAP_NO_CERTIFICATE on
+set_global_assignment -name QSPI_OWNERSHIP HPS
+set_global_assignment -name ENABLE_INTERMEDIATE_SNAPSHOTS ON
+set_global_assignment -name USE_HPS_COLD_RESET SDM_IO10
+set_global_assignment -name USE_CONF_DONE SDM_IO16
+set_global_assignment -name HPS_INITIALIZATION "HPS FIRST"
+set_global_assignment -name DEVICE_INITIALIZATION_CLOCK OSC_CLK_1_125MHZ
+set_global_assignment -name HPS_DAP_SPLIT_MODE "SDM PINS"
+set_global_assignment -name VID_OPERATION_MODE "PMBUS MASTER"
+set_global_assignment -name USE_PWRMGT_SCL SDM_IO14
+set_global_assignment -name USE_PWRMGT_SDA SDM_IO11
+set_global_assignment -name PWRMGT_BUS_SPEED_MODE "400 KHZ"
+set_global_assignment -name PWRMGT_PAGE_COMMAND_ENABLE ON
+set_global_assignment -name PWRMGT_SLAVE_DEVICE_TYPE OTHER
+set_global_assignment -name PWRMGT_SLAVE_DEVICE0_ADDRESS 74
+set_global_assignment -name PWRMGT_SLAVE_DEVICE1_ADDRESS 00
+set_global_assignment -name PWRMGT_SLAVE_DEVICE2_ADDRESS 00
+set_global_assignment -name PWRMGT_SLAVE_DEVICE3_ADDRESS 00
+set_global_assignment -name PWRMGT_SLAVE_DEVICE4_ADDRESS 00
+set_global_assignment -name PWRMGT_SLAVE_DEVICE5_ADDRESS 00
+set_global_assignment -name PWRMGT_SLAVE_DEVICE6_ADDRESS 00
+set_global_assignment -name PWRMGT_SLAVE_DEVICE7_ADDRESS 00
+set_global_assignment -name PWRMGT_TRANSLATED_VOLTAGE_VALUE_UNIT VOLTS
+set_global_assignment -name USE_CHECKSUM_AS_USERCODE OFF
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name NUMBER_OF_SLAVE_DEVICE 1
+
+# Pin location and IO standard assignments
+# Clocks, resets, GPIO
+set_location_assignment PIN_AU23 -to pll_refclk_100
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to pll_refclk_100 -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to pll_refclk_100
+set_location_assignment PIN_AY41 -to fpga_reset_n
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_reset_n
+set_location_assignment PIN_BA21 -to fpga_user_leds[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_leds[0] -entity baseline_a55
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to fpga_user_leds[0] -entity baseline_a55
+set_location_assignment PIN_AU19 -to fpga_user_switches[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_switches[0] -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_user_switches[0] -entity baseline_a55
+set_location_assignment PIN_BF18 -to fpga_user_switches[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_switches[1] -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to fpga_user_switches[1] -entity baseline_a55
+set_location_assignment PIN_AT19 -to fpga_user_push_buttons[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_user_push_buttons[0] -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to fpga_user_push_buttons[0]
+
+set_location_assignment PIN_BE18 -to usb31_io_vbus_det
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_vbus_det -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_vbus_det
+set_location_assignment PIN_AT16 -to usb31_io_flt_bar
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_flt_bar -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_flt_bar
+set_location_assignment PIN_AU16 -to usb31_io_usb31_id
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_usb31_id -entity baseline_a55
+set_instance_assignment -name INPUT_TERMINATION OFF -to usb31_io_usb31_id
+set_location_assignment PIN_AY31 -to usb31_io_usb_ctrl
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to usb31_io_usb_ctrl -entity baseline_a55
+set_instance_assignment -name OUTPUT_TERMINATION "SERIES 40 OHM WITHOUT CALIBRATION" -to usb31_io_usb_ctrl -entity baseline_a55
+set_location_assignment PIN_AF95 -to usb31_phy_refclk_p
+set_instance_assignment -name IO_STANDARD "CURRENT MODE LOGIC (CML)" -to usb31_phy_refclk_p -entity baseline_a55
+set_location_assignment PIN_AF98 -to "usb31_phy_refclk_p(n)"
+set_instance_assignment -name IO_STANDARD "CURRENT MODE LOGIC (CML)" -to "usb31_phy_refclk_p(n)"
+set_location_assignment PIN_U112 -to usb31_phy_rx_serial_p
+set_instance_assignment -name IO_STANDARD "HIGH SPEED DIFFERENTIAL I/O" -to usb31_phy_rx_serial_p -entity baseline_a55
+set_location_assignment PIN_U110 -to usb31_phy_rx_serial_n
+set_instance_assignment -name IO_STANDARD "HIGH SPEED DIFFERENTIAL I/O" -to usb31_phy_rx_serial_n -entity baseline_a55
+set_location_assignment PIN_R106 -to usb31_phy_tx_serial_p
+set_instance_assignment -name IO_STANDARD "HIGH SPEED DIFFERENTIAL I/O" -to usb31_phy_tx_serial_p -entity baseline_a55
+set_location_assignment PIN_R103 -to usb31_phy_tx_serial_n
+set_instance_assignment -name IO_STANDARD "HIGH SPEED DIFFERENTIAL I/O" -to usb31_phy_tx_serial_n -entity baseline_a55
+
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_jtag_tdo -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tck -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tms -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_jtag_tdi -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_STP -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_CLK -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DIR -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_NXT -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA0 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA0 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA1 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA1 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA2 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA2 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA3 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA3 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA4 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA4 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA5 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA5 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA6 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA6 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_usb1_DATA7 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_usb1_DATA7 -entity baseline_a55
+set_location_assignment PIN_V76 -to emif_hps_emif_oct_0_oct_rzqin
+set_location_assignment PIN_P74 -to emif_hps_emif_mem_0_mem_alert_n
+set_location_assignment PIN_F66 -to emif_hps_emif_ref_clk_0_clk
+set_location_assignment PIN_D66 -to "emif_hps_emif_ref_clk_0_clk(n)"
+set_location_assignment PIN_D88 -to emif_hps_emif_mem_0_mem_dqs_t[0]
+set_location_assignment PIN_K88 -to emif_hps_emif_mem_0_mem_dqs_t[1]
+set_location_assignment PIN_B73 -to emif_hps_emif_mem_0_mem_dqs_t[2]
+set_location_assignment PIN_Y62 -to emif_hps_emif_mem_0_mem_dqs_t[3]
+set_location_assignment PIN_F57 -to emif_hps_emif_mem_0_mem_dqs_t[4]
+set_location_assignment PIN_F88 -to emif_hps_emif_mem_0_mem_dqs_c[0]
+set_location_assignment PIN_M88 -to emif_hps_emif_mem_0_mem_dqs_c[1]
+set_location_assignment PIN_A71 -to emif_hps_emif_mem_0_mem_dqs_c[2]
+set_location_assignment PIN_AA59 -to emif_hps_emif_mem_0_mem_dqs_c[3]
+set_location_assignment PIN_D57 -to emif_hps_emif_mem_0_mem_dqs_c[4]
+set_location_assignment PIN_H91 -to emif_hps_emif_mem_0_mem_dq[0]
+set_location_assignment PIN_F91 -to emif_hps_emif_mem_0_mem_dq[1]
+set_location_assignment PIN_K91 -to emif_hps_emif_mem_0_mem_dq[2]
+set_location_assignment PIN_M91 -to emif_hps_emif_mem_0_mem_dq[3]
+set_location_assignment PIN_F84 -to emif_hps_emif_mem_0_mem_dq[4]
+set_location_assignment PIN_H84 -to emif_hps_emif_mem_0_mem_dq[5]
+set_location_assignment PIN_D81 -to emif_hps_emif_mem_0_mem_dq[6]
+set_location_assignment PIN_F81 -to emif_hps_emif_mem_0_mem_dq[7]
+set_location_assignment PIN_T81 -to emif_hps_emif_mem_0_mem_dq[8]
+set_location_assignment PIN_P88 -to emif_hps_emif_mem_0_mem_dq[9]
+set_location_assignment PIN_V91 -to emif_hps_emif_mem_0_mem_dq[10]
+set_location_assignment PIN_T91 -to emif_hps_emif_mem_0_mem_dq[11]
+set_location_assignment PIN_P81 -to emif_hps_emif_mem_0_mem_dq[12]
+set_location_assignment PIN_T88 -to emif_hps_emif_mem_0_mem_dq[13]
+set_location_assignment PIN_K81 -to emif_hps_emif_mem_0_mem_dq[14]
+set_location_assignment PIN_M81 -to emif_hps_emif_mem_0_mem_dq[15]
+set_location_assignment PIN_B77 -to emif_hps_emif_mem_0_mem_dq[16]
+set_location_assignment PIN_A65 -to emif_hps_emif_mem_0_mem_dq[17]
+set_location_assignment PIN_B75 -to emif_hps_emif_mem_0_mem_dq[18]
+set_location_assignment PIN_B65 -to emif_hps_emif_mem_0_mem_dq[19]
+set_location_assignment PIN_A77 -to emif_hps_emif_mem_0_mem_dq[20]
+set_location_assignment PIN_A61 -to emif_hps_emif_mem_0_mem_dq[21]
+set_location_assignment PIN_A73 -to emif_hps_emif_mem_0_mem_dq[22]
+set_location_assignment PIN_B63 -to emif_hps_emif_mem_0_mem_dq[23]
+set_location_assignment PIN_Y64 -to emif_hps_emif_mem_0_mem_dq[24]
+set_location_assignment PIN_AA50 -to emif_hps_emif_mem_0_mem_dq[25]
+set_location_assignment PIN_AA67 -to emif_hps_emif_mem_0_mem_dq[26]
+set_location_assignment PIN_AA47 -to emif_hps_emif_mem_0_mem_dq[27]
+set_location_assignment PIN_AA64 -to emif_hps_emif_mem_0_mem_dq[28]
+set_location_assignment PIN_Y53 -to emif_hps_emif_mem_0_mem_dq[29]
+set_location_assignment PIN_Y67 -to emif_hps_emif_mem_0_mem_dq[30]
+set_location_assignment PIN_Y50 -to emif_hps_emif_mem_0_mem_dq[31]
+set_location_assignment PIN_H60 -to emif_hps_emif_mem_0_mem_dq[32]
+set_location_assignment PIN_F49 -to emif_hps_emif_mem_0_mem_dq[33]
+set_location_assignment PIN_F60 -to emif_hps_emif_mem_0_mem_dq[34]
+set_location_assignment PIN_D49 -to emif_hps_emif_mem_0_mem_dq[35]
+set_location_assignment PIN_M60 -to emif_hps_emif_mem_0_mem_dq[36]
+set_location_assignment PIN_H52 -to emif_hps_emif_mem_0_mem_dq[37]
+set_location_assignment PIN_K60 -to emif_hps_emif_mem_0_mem_dq[38]
+set_location_assignment PIN_F52 -to emif_hps_emif_mem_0_mem_dq[39]
+set_location_assignment PIN_K84 -to emif_hps_emif_mem_0_mem_dm_n[0]
+set_location_assignment PIN_T84 -to emif_hps_emif_mem_0_mem_dm_n[1]
+set_location_assignment PIN_B68 -to emif_hps_emif_mem_0_mem_dm_n[2]
+set_location_assignment PIN_Y59 -to emif_hps_emif_mem_0_mem_dm_n[3]
+set_location_assignment PIN_M52 -to emif_hps_emif_mem_0_mem_dm_n[4]
+set_location_assignment PIN_T69 -to emif_hps_emif_mem_ck_0_mem_ck_t[0]
+set_location_assignment PIN_V69 -to emif_hps_emif_mem_ck_0_mem_ck_c[0]
+set_location_assignment PIN_H76 -to emif_hps_emif_mem_0_mem_ca[0]
+set_location_assignment PIN_F76 -to emif_hps_emif_mem_0_mem_ca[1]
+set_location_assignment PIN_M76 -to emif_hps_emif_mem_0_mem_ca[2]
+set_location_assignment PIN_K76 -to emif_hps_emif_mem_0_mem_ca[3]
+set_location_assignment PIN_F74 -to emif_hps_emif_mem_0_mem_ca[4]
+set_location_assignment PIN_D74 -to emif_hps_emif_mem_0_mem_ca[5]
+set_location_assignment PIN_M69 -to emif_hps_emif_mem_0_mem_ca[6]
+set_location_assignment PIN_K69 -to emif_hps_emif_mem_0_mem_ca[7]
+set_location_assignment PIN_H69 -to emif_hps_emif_mem_0_mem_ca[8]
+set_location_assignment PIN_F69 -to emif_hps_emif_mem_0_mem_ca[9]
+set_location_assignment PIN_T74 -to emif_hps_emif_mem_0_mem_ca[10]
+set_location_assignment PIN_K74 -to emif_hps_emif_mem_0_mem_ca[11]
+set_location_assignment PIN_M74 -to emif_hps_emif_mem_0_mem_ca[12]
+set_location_assignment PIN_P66 -to emif_hps_emif_mem_0_mem_cs_n[0]
+set_location_assignment PIN_T76 -to emif_hps_emif_mem_reset_n_mem_reset_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_TX_CLK -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TX_CTL -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RX_CLK -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RX_CTL -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD0 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD0 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD1 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD1 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD2 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD2 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to hps_emac2_TXD3 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_RXD3 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_MDIO -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_emac2_MDC -entity baseline_a55
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_emac2_MDIO -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_emac2_MDIO -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio0_io0 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_gpio0_io0 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio0_io10 -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_gpio0_io10 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio1_io3 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 2MA -to hps_gpio1_io4 -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_i2c_emac1_SDA -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_i2c_emac1_SCL -entity baseline_a55
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_i2c_emac1_SDA -entity baseline_a55
+set_instance_assignment -name AUTO_OPEN_DRAIN_PINS ON -to hps_i2c_emac1_SCL -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_i2c_emac1_SDA -entity baseline_a55
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_i2c_emac1_SCL -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 2 -to hps_i2c_emac1_SCL -entity baseline_a55
+set_instance_assignment -name SLEW_RATE 2 -to hps_i2c_emac1_SDA -entity baseline_a55
+set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hps_uart0_TX
+set_instance_assignment -name WEAK_PULL_UP_DN_SEL PULL_UP_20 -to hps_uart0_RX
+
+
+# Variant IP source files
+set_global_assignment -name VDS_IP_FILE src/vds/hps_subsys/ip/agilex_hps.ip -tag "vds::hps_subsys"
+set_global_assignment -name IP_FILE src/ip/emif_io96b_hps.ip
+set_global_assignment -name VDS_FILE src/vds/hps_subsys/hps_subsys.vds -tag "vds::hps_subsys"
+
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/system_clock.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/system_reset.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/sysid.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/button_pio.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/dipsw_pio.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/led_pio.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/peripherals_mm_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/ace5lite_cache_coherency_translator.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/ocm.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/lwh2f_axi_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/lwh2f_mm_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/f2sdram_adapter.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/fabric_subsys/ip/h2f_axi_bridge.ip -tag "vds::fabric_subsys"
+set_global_assignment -name VDS_FILE src/vds/fabric_subsys/fabric_subsys.vds -tag "vds::fabric_subsys"
+
+set_global_assignment -name VDS_IP_FILE src/vds/shell_subsys/ip/clks_and_rsts.ip -tag "vds::shell_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/shell_subsys/ip/gts_reset_sequencer.ip -tag "vds::shell_subsys"
+set_global_assignment -name IP_FILE src/ip/sys_pll.ip
+set_global_assignment -name IP_FILE src/ip/user_rst_clkgate.ip
+set_global_assignment -name VDS_FILE src/vds/shell_subsys/shell_subsys.vds -tag "vds::shell_subsys"
+
+set_global_assignment -name VDS_IP_FILE src/vds/baseline_top/ip/sys_clock.ip -tag "vds::baseline_top"
+set_global_assignment -name VDS_IP_FILE src/vds/baseline_top/ip/sys_reset.ip -tag "vds::baseline_top"
+set_global_assignment -name VDS_FILE src/vds/baseline_top/baseline_top.vds -tag "vds::baseline_top"
+
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/fpga2hps_address_span_extender.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/f2sdram_address_span_extender.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/jtag_avalon_master.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/jtag_uart.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_clock.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_m.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_onchip_memory.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_pio_in.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_pio_out.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_IP_FILE src/vds/niosv_subsys/ip/niosv_reset.ip -tag "vds::niosv_subsys"
+set_global_assignment -name VDS_FILE src/vds/niosv_subsys/niosv_subsys.vds -tag "vds::niosv_subsys"
+
+
+# Variant RTL source files
+set_global_assignment -name SYSTEMVERILOG_FILE baseline_a55.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/debounce.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/clocks_and_resets.sv
+
+
+# SDC files
+set_global_assignment -name SDC_FILE baseline_a55.sdc
+set_global_assignment -name SDC_FILE jtag.sdc
+
+
+# Design Assistant files
+set_global_assignment -name DESIGN_ASSISTANT_WAIVER_FILE baseline_a55.dawf

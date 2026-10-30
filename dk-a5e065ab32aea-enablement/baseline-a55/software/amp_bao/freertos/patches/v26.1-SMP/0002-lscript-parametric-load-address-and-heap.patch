@@ -1,0 +1,69 @@
+From ac966a6ff049e06f7436835397f84e35aa218756 Mon Sep 17 00:00:00 2001
+From: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+Date: Fri, 22 May 2026 09:51:00 +0800
+Subject: [PATCH 2/6] lscript: parametric load address and heap
+
+Make the linker script's MEMORY layout parametric so the same source
+tree can produce both the standalone bare-metal image (default origin
+0x82000000, length 0x7E000000) and a hypervisor-guest image at the IPA
+the partition manifest assigns.
+
+The CMake plumbing in patch 0004 passes the chosen origin/length via
+--defsym=HV_GUEST_LOAD_ADDR=... and --defsym=HV_GUEST_MEM_SIZE=...
+when HV_GUEST_BIN=ON. The linker-script locals
+(_HV_GUEST_LOAD_ADDR, _HV_GUEST_MEM_SIZE) fall back to the bare-metal
+defaults via DEFINED() so non-hypervisor builds stay byte-identical.
+
+Pure rename of the previous _BAO_LOAD_ADDR / _BAO_MEM_SIZE locals
+(and the matching BAO_LOAD_ADDR / BAO_MEM_SIZE --defsym injections);
+the symbol names now match the orthogonal HV_GUEST_BIN flag in
+patch 0004 rather than the Bao-specific umbrella.
+
+Signed-off-by: Niravkumar L Rabara <niravkumarlaxmidas.rabara@altera.com>
+---
+ lscript.ld | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/lscript.ld b/lscript.ld
+index 37ddd7d..3278e0f 100644
+--- a/lscript.ld
++++ b/lscript.ld
+@@ -1,4 +1,12 @@
+ 
++/* When this image is built as a hypervisor guest, HV_GUEST_LOAD_ADDR and
++ * HV_GUEST_MEM_SIZE are injected via `--defsym=` from the root CMakeLists.txt
++ * (gated by the HV_GUEST_BIN CMake option). The defaults below match the
++ * original bare-metal layout (0x82000000, 2 GB) so builds without
++ * HV_GUEST_BIN remain byte-identical to upstream. */
++_HV_GUEST_LOAD_ADDR = DEFINED(HV_GUEST_LOAD_ADDR) ? HV_GUEST_LOAD_ADDR : 0x82000000;
++_HV_GUEST_MEM_SIZE  = DEFINED(HV_GUEST_MEM_SIZE)  ? HV_GUEST_MEM_SIZE  : 0x7E000000;
++
+ _STACK_SIZE = DEFINED(_STACK_SIZE) ? _STACK_SIZE : 0x2000;
+ _HEAP_SIZE = DEFINED(_HEAP_SIZE) ? _HEAP_SIZE : 0x2000;
+ 
+@@ -8,8 +16,8 @@ _EL2_STACK_SIZE = DEFINED(_EL2_STACK_SIZE) ? _EL2_STACK_SIZE : 0x2000;
+ 
+ MEMORY
+ {
+-   SRAM_RO (rx): ORIGIN = 0x82000000, LENGTH = 0x100000
+-   SRAM    (rw): ORIGIN = 0x82100000, LENGTH = 0x7DF00000
++   SRAM_RO (rx): ORIGIN = _HV_GUEST_LOAD_ADDR,            LENGTH = 0x100000
++   SRAM    (rw): ORIGIN = _HV_GUEST_LOAD_ADDR + 0x100000, LENGTH = _HV_GUEST_MEM_SIZE - 0x100000
+ }
+ 
+ /* Specify the default entry point to the program */
+@@ -269,6 +277,10 @@ SECTIONS
+     } > SRAM
+ 
+     _end = .; PROVIDE (end = .);
+-    _heap_end = 0xFFEFEFF0;
++    /* Place the libc/newlib heap upper bound at the top of the allocated
++     * memory region (minus a small guard). The default 0xFFEFEFF0 value
++     * lies outside any reasonable hypervisor-guest IPA window, so derive
++     * it from the run-time region instead. */
++    _heap_end = _HV_GUEST_LOAD_ADDR + _HV_GUEST_MEM_SIZE - 0x10;
+ 
+ }
+-- 
+2.25.1
+
